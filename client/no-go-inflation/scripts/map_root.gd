@@ -1,12 +1,8 @@
 extends Node2D
 
 const TILE_SIZE := Vector2(64, 64)
-
 @export var map_file_path: String = "res://data/maps/static_map.json"
-
 var map_data: Dictionary = {}
-var tile_nodes: Array = []
-
 const TILE_TEXTURES := {
 	"forest": preload("res://assets/tiles/forrest.png"),
 	"field": preload("res://assets/tiles/soil.png"),
@@ -14,7 +10,6 @@ const TILE_TEXTURES := {
 }
 
 signal tile_clicked(tile_x: int, tile_y: int, tile_type: String)
-
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -52,7 +47,11 @@ func render_map() -> void:
 			tile.position = Vector2(x * TILE_SIZE.x, y * TILE_SIZE.y)
 
 			var sprite := Sprite2D.new()
-			sprite.texture = TILE_TEXTURES.get(tile_type)
+			var texture = TILE_TEXTURES.get(tile_type)
+			if texture == null:
+				push_warning("No texture found for tile type: %s" % tile_type)
+				continue
+			sprite.texture = texture
 			sprite.centered = false
 			tile.add_child(sprite)
 

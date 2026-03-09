@@ -1,11 +1,14 @@
 extends Node2D
 
+@onready var map_root = $MapRoot
+@onready var building_popup = $BuildingPopup
 
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	pass # Replace with function body.
+	map_root.tile_clicked.connect(_on_tile_clicked)
+	building_popup.build_requested.connect(_on_build_requested)
 
+func _on_tile_clicked(x: int, y: int, tile_type: String) -> void:
+	building_popup.show_for_tile(x, y, tile_type)
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
+func _on_build_requested(x: int, y: int, tile_type: String) -> void:
+	print("Build requested at (%d, %d) on %s" % [x, y, tile_type])
