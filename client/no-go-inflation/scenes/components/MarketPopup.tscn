@@ -1,0 +1,75 @@
+[gd_scene format=3 uid="uid://blkhx4m6ckc5p"]
+
+[ext_resource type="Script" uid="uid://b8kgqgu5ivus2" path="res://scripts/market_popup.gd" id="1_v6sqn"]
+
+[node name="MarketPopup" type="CanvasLayer" unique_id=746828363]
+script = ExtResource("1_v6sqn")
+
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=1663390383]
+visible = false
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer" unique_id=531228679]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer" unique_id=1225936957]
+layout_mode = 2
+
+[node name="CreatePanel" type="VBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=978101065]
+layout_mode = 2
+
+[node name="CreateTitle" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=1990946046]
+layout_mode = 2
+text = "Create Offer"
+
+[node name="TypeOption" type="OptionButton" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=1878009874]
+layout_mode = 2
+item_count = 2
+popup/item_0/text = "Buy"
+popup/item_0/id = 0
+popup/item_1/text = "Sell"
+popup/item_1/id = 1
+
+[node name="ResourceOption" type="OptionButton" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=886206914]
+layout_mode = 2
+item_count = 3
+popup/item_0/text = "Wood"
+popup/item_0/id = 0
+popup/item_1/text = "Stone"
+popup/item_1/id = 1
+popup/item_2/text = "Grain"
+popup/item_2/id = 2
+
+[node name="AmountSpin" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=1527205649]
+layout_mode = 2
+
+[node name="PriceSpin" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=1397303371]
+layout_mode = 2
+
+[node name="CreateButton" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=1709897023]
+layout_mode = 2
+text = "Create"
+
+[node name="CloseButton" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=1021925881]
+layout_mode = 2
+text = "Close"
+
+[node name="OffersPanel" type="VBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=1782436429]
+layout_mode = 2
+
+[node name="OffersTitle" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/OffersPanel" unique_id=2116967514]
+layout_mode = 2
+text = "Offers"
+
+[node name="OfferList" type="VBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer/OffersPanel" unique_id=1264095160]
+layout_mode = 2
+
+[node name="PlayerStatePanel" type="VBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=1079195078]
+layout_mode = 2
+
+[node name="PlayerStateTitle" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel" unique_id=2044160794]
+layout_mode = 2
+
+[node name="PlayerStateLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel" unique_id=1614398074]
+layout_mode = 2

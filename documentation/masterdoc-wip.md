@@ -39,7 +39,7 @@
 - Găzduire joc
 	- Privat / Public ?
 	- Cod: (generat de joc)
-	- Listă participanți curenți cu status (Ready / Not Ready
+	- Listă participanți curenți cu status (Ready / Not Ready)
 	- Lansează joc
 	- Anulare
 - Setări
@@ -70,7 +70,9 @@
 	- Cost upgrade 2->3: 3 lemn 2 grâne / 5 galbeni
 - Similar și la Lemnărie / Fermă
 ## Harta -> Ecran principal
-- Tip grid 10 × 15
+- Tip grid 8 x 10
+- Fiecare jucător are harta sa
+- Layout echilibrat între cele 3 tipuri de lot
 - Numărul din fiecare lot aleator dar acestea sunt grupate
 - Poate lipsi cel mult 1 tip de lot
 ## GUI

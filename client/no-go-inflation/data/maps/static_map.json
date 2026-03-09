@@ -1,0 +1,14 @@
+{
+   "width": 10,
+   "height": 8,
+   "tiles": [
+	  ["forest","forest","forest","field","field","field","quarry","quarry","quarry","quarry"],
+	  ["forest","forest","forest","field","field","field","quarry","quarry","quarry","quarry"],
+	  ["forest","forest","forest","field","field","field","quarry","quarry","quarry","quarry"],
+	  ["forest","forest","field","field","field","field","quarry","quarry","quarry","quarry"],
+	  ["forest","forest","field","field","field","field","quarry","quarry","quarry","quarry"],
+	  ["forest","forest","field","field","field","quarry","quarry","quarry","quarry","field"],
+	  ["forest","forest","forest","field","field","quarry","quarry","quarry","field","field"],
+	  ["forest","forest","forest","field","field","field","quarry","field","field","field"]
+   ]
+}

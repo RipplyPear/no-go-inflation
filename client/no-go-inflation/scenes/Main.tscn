@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://dqmksyanqiovo"]
+
+[ext_resource type="PackedScene" uid="uid://dygonr3lodr0u" path="res://scenes/GameScreen.tscn" id="1_elqb8"]
+
+[node name="Main" type="Node" unique_id=540108587]
+
+[node name="GameScreen" parent="." unique_id=728743057 instance=ExtResource("1_elqb8")]

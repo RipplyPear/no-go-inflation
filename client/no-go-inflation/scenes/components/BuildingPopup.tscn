@@ -1,0 +1,41 @@
+[gd_scene format=3 uid="uid://bnnqxkbwcbhbg"]
+
+[ext_resource type="Script" uid="uid://t61na8qyrr88" path="res://scripts/building_popup.gd" id="1_ji3a8"]
+
+[node name="BuildingPopup" type="CanvasLayer" unique_id=663094514]
+script = ExtResource("1_ji3a8")
+
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=254046705]
+visible = false
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer" unique_id=971977003]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer" unique_id=125861375]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1519101757]
+layout_mode = 2
+text = "Quary"
+
+[node name="InfoLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1935396783]
+layout_mode = 2
+text = "Level 1"
+
+[node name="BuildButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=719579153]
+layout_mode = 2
+text = "Build"
+
+[node name="UpgradeButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=195762858]
+layout_mode = 2
+text = "Upgrade"
+
+[node name="CollectButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1091753325]
+layout_mode = 2
+text = "Collect"
+
+[node name="CloseButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1388975632]
+layout_mode = 2
+text = "Close"
