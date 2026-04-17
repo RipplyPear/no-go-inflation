@@ -1,7 +1,7 @@
 ---
 title: Masterdoc
-status: draft
-version: 0.4
+status: stable
+version: 1.0
 lastUpdated: 17-04-2026
 description: Project source of truth
 ---
@@ -113,11 +113,25 @@ Jucătorul este actorul principal al sistemului. Acesta controlează o economie 
 - participă activ la menținerea stabilității economice generale.
 
 ### 7.2 Bot
-Botul este un actor software controlat de server, cu rolul de a susține funcționarea ecosistemului economic al jocului. Acesta poate participa la sesiune pentru a completa numărul de jucători sau pentru a menține activitatea economică a pieței. Botul poate:
+Botul este un actor software controlat exclusiv de server, cu rolul de a susține funcționarea ecosistemului economic al jocului. În varianta canonică a proiectului, boții au două roluri principale:
+- completarea sesiunilor mici, atunci când este necesar;
+- menținerea unui nivel minim de activitate economică pe piață.
+
+Boții sunt adăugați de server la începutul sesiunii, dacă regulile de configurare ale partidei o cer. Ei nu au client propriu și nu interacționează cu jocul printr-o interfață separată.
+
+În versiunea de bază, boții pot:
 - produce resurse într-un mod controlat;
-- lansa și accepta oferte pe piață;
-- contribui la dinamica economică a sesiunii;
-- respecta aceleași reguli economice de bază ca jucătorii umani, în limitele stabilite de sistem.
+- lansa oferte de cumpărare și vânzare pe piață;
+- accepta oferte compatibile cu regulile lor interne;
+- reacționa la prețurile de referință și la nivelul inflației.
+
+În versiunea de bază, boții nu:
+- construiesc clădiri;
+- realizează upgrade-uri;
+- urmăresc strategii complexe pe termen lung;
+- destabilizează intenționat economia.
+
+Comportamentul boților este bazat pe reguli simple definite de server. Scopul lor nu este să înlocuiască fidel un jucător uman, ci să susțină funcționarea sesiunii și să reducă riscul unei piețe complet inactive.
 
 ### 7.3 Server
 Serverul este actorul tehnic autoritativ al sistemului. Acesta are responsabilitatea de a valida, procesa și sincroniza toate acțiunile relevante din joc. Serverul:
@@ -138,23 +152,23 @@ Fiecare actor are un rol bine definit în sistem:
 
 ### 7.5 Matrice de permisiuni
 
-| Activitate                           | Jucător   | Bot              | Server                  |
-| ------------------------------------ | --------- | ---------------- | ----------------------- |
-| Înregistrare / autentificare         | Da        | Nu               | Nu                      |
-| Creare lobby                         | Da        | Nu               | Da                      |
-| Alăturare la lobby                   | Da        | Adăugat de sistem| Da                      |
-| Părăsire lobby                       | Da        | Nu               | Da                      |
-| Ready / Not Ready                    | Da        | Nu               | Da                      |
-| Lansare sesiune                      | Da (Host) | Nu               | Da                      |
-| Producție de resurse                 | Da        | Da               | Nu                      |
-| Construire / upgrade                 | Da        | Nu               | Validare                |
-| Colectare resurse                    | Da        | Nu               | Validare                |
-| Lansare ofertă pe piață              | Da        | Da               | Administrare / validare |
-| Acceptare ofertă                     | Da        | Da               | Administrare / validare |
-| Vizualizare indicatori economici     | Da        | Da               | Da                      |
-| Calcul inflație / procesare economie | Nu        | Nu               | Da                      |
-| Persistență date                     | Nu        | Nu               | Da                      |
-| Gestionare boți                      | Nu        | Nu               | Da                      |
+| Activitate                           | Jucător   | Bot               | Server                  |
+| ------------------------------------ | --------- | ----------------- | ----------------------- |
+| Înregistrare / autentificare         | Da        | Nu                | Nu                      |
+| Creare lobby                         | Da        | Nu                | Da                      |
+| Alăturare la lobby                   | Da        | Adăugat de sistem | Da                      |
+| Părăsire lobby                       | Da        | Nu                | Da                      |
+| Ready / Not Ready                    | Da        | Nu                | Da                      |
+| Lansare sesiune                      | Da (Host) | Nu                | Da                      |
+| Producție de resurse                 | Da        | Da                | Nu                      |
+| Construire / upgrade                 | Da        | Nu                | Validare                |
+| Colectare resurse                    | Da        | Nu                | Validare                |
+| Lansare ofertă pe piață              | Da        | Da                | Administrare / validare |
+| Acceptare ofertă                     | Da        | Da                | Administrare / validare |
+| Vizualizare indicatori economici     | Da        | Da                | Da                      |
+| Calcul inflație / procesare economie | Nu        | Nu                | Da                      |
+| Persistență date                     | Nu        | Nu                | Da                      |
+| Gestionare boți                      | Nu        | Nu                | Da                      |
 
 ## 8. Gameplay loop
 
@@ -246,7 +260,9 @@ La începutul fiecărei sesiuni:
 - fiecare jucător primește aceleași resurse inițiale și aceeași cantitate inițială de galbeni;
 - economia globală este inițializată într-o stare stabilă.
 
-Boții pot fi adăugați într-o sesiune pentru a completa numărul de participanți sau pentru a susține activitatea economică a pieței. Prezența boților nu este obligatorie pentru pornirea unei sesiuni.
+Boții pot fi adăugați de server la începutul unei sesiuni pentru a completa sesiunile mici sau pentru a susține activitatea economică minimă a pieței. Prezența boților nu este obligatorie pentru pornirea unei sesiuni.
+
+În versiunea de bază, boții participă la economie într-un mod limitat și controlat. Ei pot produce resurse și tranzacționa pe piață, dar nu construiesc clădiri și nu realizează upgrade-uri.
 
 ### 10.2 Timpul în joc
 Timpul din joc urmează o convenție accelerată, în care **1 secundă reală corespunde unui minut în joc**.
@@ -372,12 +388,25 @@ Inflația este un indicator economic global, calculat exclusiv de server, care r
 
 La începutul fiecărei sesiuni, inflația pornește de la o valoare fixă și redusă, egală cu **20**.
 
-Inflația este influențată de mai mulți factori economici, printre care:
-- dezechilibrul dintre cerere și ofertă;
-- tranzacțiile realizate la prețuri semnificativ peste media pieței;
-- utilizarea repetată și agresivă a reciclării.
+Inflația urmează un model **hibrid de actualizare**:
+- are o **recalculare periodică** la fiecare **30 de minute in-game**;
+- poate primi **impulsuri imediate** în urma unor acțiuni economice cu impact puternic, precum reciclarea excesivă sau tranzacțiile realizate la prețuri mult peste media de referință.
 
-În perioadele de stabilitate economică, inflația poate scădea gradual.
+La fiecare recalculare periodică, serverul actualizează inflația pe baza unei formule conceptuale de forma:
+
+> inflație nouă = inflație veche + presiune cerere/ofertă + presiune de suprapreț + presiune din reciclare - factor de stabilizare
+
+În mod canonic, cei trei factori care cresc inflația sunt:
+- **presiunea cerere/ofertă**, generată de dezechilibre semnificative între cererea și oferta de pe piață;
+- **presiunea de suprapreț**, generată de tranzacții realizate semnificativ peste media de referință a resursei tranzacționate;
+- **presiunea din reciclare**, generată de utilizarea repetată și agresivă a reciclării într-un interval scurt de timp.
+
+Inflația poate și **scădea**, dar nu în mod automat sau arbitrar. Scăderea are loc doar în perioade în care economia este relativ stabilă, iar piața nu prezintă dezechilibre puternice. În mod conceptual, factorul de stabilizare apare atunci când:
+- diferențele dintre cerere și ofertă rămân moderate;
+- tranzacțiile recente nu se abat puternic de la media pieței;
+- reciclarea nu este folosită excesiv.
+
+Pentru a evita variațiile haotice, serverul limitează inflația în intervalul **0–100** și o actualizează într-un ritm controlat, astfel încât aceasta să reacționeze vizibil la comportamente economice problematice, dar fără oscilații disproporționate produse de un număr foarte mic de acțiuni.
 
 Pentru interpretare, inflația este împărțită în următoarele praguri:
 - **0–24**: stabilă;
@@ -385,7 +414,7 @@ Pentru interpretare, inflația este împărțită în următoarele praguri:
 - **50–74**: critică;
 - **75–100**: colaps iminent.
 
-Nivelul inflației influențează starea generală a economiei și afectează dinamica pieței, inclusiv prețurile medii de referință ale resurselor.
+Nivelul inflației influențează direct starea generală a economiei și afectează dinamica pieței, inclusiv **prețurile medii de referință** ale resurselor. De asemenea, inflația contribuie direct la evaluarea rezultatului final al sesiunii și poate influența comportamentul sistemelor auxiliare, inclusiv al boților, în funcție de implementarea aleasă.
 
 Inflația nu crește artificial din lipsa de activitate a jucătorilor. Inacțiunea este penalizată separat, prin neatingerea pragului minim de performanță economică necesar pentru succesul sesiunii.
 
@@ -403,6 +432,15 @@ Sesiunea este considerată pierdută dacă, la finalul acesteia:
 În versiunea de bază a jocului nu există condiții de eșec anticipat. Evaluarea finală are loc doar la încheierea naturală a sesiunii.
 
 Pe lângă rezultatul colectiv, fiecare jucător primește la final și o evaluare individuală sub formă de **rang**. Acest rang este derivat din performanța economică proprie a jucătorului și din contribuția sa la evoluția generală a sesiunii.
+
+În varianta canonică minimă, la finalul unei sesiuni sunt determinate și pot fi salvate sau afișate cel puțin următoarele informații:
+- rezultatul colectiv al sesiunii;
+- valoarea finală a inflației;
+- rangul fiecărui jucător;
+- scorul economic individual;
+- numărul de tranzacții realizate de fiecare jucător;
+- valoarea totală tranzacționată de fiecare jucător;
+- cantitatea totală reciclată de fiecare jucător.
 
 ## 11. Fluxurile utilizatorului
 
@@ -844,33 +882,66 @@ Această separare permite păstrarea unei structuri clare:
 ### 13.5 Persistență
 Persistența este proiectată astfel încât să rețină informațiile importante pentru continuitatea aplicației, pentru integritatea sistemului și pentru analiza ulterioară a sesiunilor, fără a încărca inutil infrastructura cu salvarea fiecărei stări tranzitorii.
 
-În mod logic, sistemul persistă în mod prioritar:
-- datele conturilor și credențialele procesate în siguranță;
-- informațiile necesare autentificării și sesiunii utilizatorului;
-- tranzacțiile relevante din punct de vedere economic;
-- rezultatele finale ale sesiunilor;
-- statistici și loguri importante pentru audit sau debugging;
-- alte entități persistente necesare funcționării aplicației în afara unei sesiuni active.
+În varianta canonică minimă a proiectului, sistemul persistă obligatoriu:
+- datele utilizatorilor și informațiile necesare autentificării;
+- sesiunile de joc și participanții asociați acestora;
+- tranzacțiile finalizate relevante din punct de vedere economic;
+- rezultatele finale individuale ale jucătorilor.
 
-În schimb, elementele strict tranzitorii ale unei partide, precum:
-- starea exactă a fiecărei clădiri la fiecare moment;
-- toate variațiile temporare ale stocurilor în timp real;
-- fiecare actualizare intermediară a hărții sau a interfeței;
-sunt tratate în principal ca **runtime state** și sunt menținute de server în memorie pe durata sesiunii.
+La nivel conceptual, entitățile persistente minime sunt:
+- **User**
+- **GameSession**
+- **SessionParticipant**
+- **TradeTransaction**
+- **PlayerSessionResult**
+
+Sistemul poate persista suplimentar, dacă este util pentru implementare:
+- metadate relevante despre lobby-uri;
+- loguri importante de audit sau debugging;
+- statistici agregate de sesiune.
+
+În varianta canonică de bază, nivelul de audit păstrat este unul **minim-mediu**. Auditul urmărește doar evenimente importante pentru trasabilitate, debugging și analiză post-sesiune, fără a încerca să persiste fiecare acțiune minoră sau fiecare stare intermediară a jocului.
+
+În mod canonic, auditul poate include:
+- începutul sesiunii;
+- finalul sesiunii;
+- tranzacțiile finalizate;
+- reciclările;
+- deconectările și reconectările;
+- adăugarea boților la începutul sesiunii, dacă este relevantă pentru configurarea partidei.
+
+În schimb, elementele strict tranzitorii ale unei partide sunt tratate în principal ca **runtime state** și sunt menținute de server în memorie pe durata sesiunii. În varianta canonică de bază, sistemul nu persistă obligatoriu:
+- ofertele active sau expirate;
+- istoricul complet al chat-ului;
+- hărțile generate pentru sesiunea curentă;
+- starea completă și continuă a clădirilor în timp;
+- toate valorile intermediare ale inflației;
+- fiecare eveniment minor de gameplay.
 
 Această decizie simplifică arhitectura, reduce costul persistenței și este adecvată pentru scope-ul proiectului de licență.
 
 ### 13.6 Rolul boților
 Boții sunt entități controlate exclusiv de server și fac parte din logica internă a sesiunii. Ei nu au client propriu și nu interacționează cu jocul printr-o interfață separată.
 
+În varianta canonică a proiectului, boții au două roluri principale:
+- completarea sesiunilor mici, atunci când este necesar;
+- menținerea unui nivel minim de activitate economică pe piață.
+
+Boții sunt introduși de server la începutul sesiunii, conform regulilor de configurare ale partidei. În versiunea de bază, ei nu apar și nu dispar dinamic în timpul sesiunii.
+
 Din perspectivă arhitecturală, boții:
 - sunt generați și administrați de server;
-- pot participa la economie și la piață conform regulilor stabilite;
-- pot completa numărul de participanți sau pot susține dinamica pieței;
+- pot produce resurse într-un mod controlat;
+- pot lansa și accepta oferte pe piață;
 - folosesc aceleași reguli economice de bază ca jucătorii umani, în limitele definite de sistem;
+- nu construiesc clădiri și nu realizează upgrade-uri în versiunea de bază;
 - nu introduc o sursă separată de adevăr și nu ocolesc validarea logicii server-side.
 
-Bot Manager-ul decide acțiunile boților pe baza stării sesiunii și a obiectivelor economice urmărite de sistem. Astfel, boții sunt integrați natural în ecosistemul jocului, fără a necesita o infrastructură separată de comunicare sau de randare.
+Comportamentul boților este bazat pe reguli simple, nu pe strategii complexe sau pe o simulare avansată de tip AI. Boții reacționează la contextul economic al sesiunii, inclusiv la prețurile de referință și la nivelul inflației.
+
+În condiții de inflație ridicată, boții adoptă un comportament mai prudent și evită acțiunile care ar accentua dezechilibrul economic. Astfel, ei pot contribui la stabilizarea pieței fără a deveni actori dominanți sau greu de controlat din punct de vedere al balancing-ului.
+
+Bot Manager-ul decide acțiunile boților pe baza stării sesiunii și a regulilor economice urmărite de sistem. Scopul boților nu este să înlocuiască fidel jucătorii umani, ci să susțină funcționarea sesiunii și să reducă riscul unei piețe complet inactive.
 
 ### 13.7 Relația dintre componente
 La nivel conceptual, arhitectura logică a sistemului urmează următorul model:
@@ -896,6 +967,7 @@ Pentru proiectul de licență, prioritatea este păstrarea unui design clar, mod
 
 ### 14.1 Entități persistente
 Modelul de date conceptual separă entitățile care trebuie păstrate în timp de cele care există doar pe durata unei sesiuni active. Entitățile persistente sunt cele necesare pentru funcționarea aplicației dincolo de o partidă individuală, pentru autentificare, istoric, audit și evaluarea rezultatelor.
+În varianta canonică minimă a proiectului, entitățile persistente obligatorii sunt: **User**, **GameSession**, **SessionParticipant**, **TradeTransaction** și **PlayerSessionResult**.
 
 #### 14.1.1 User
 Entitatea **User** reprezintă utilizatorul uman înregistrat în sistem. Aceasta păstrează informațiile necesare identificării și autentificării, precum și datele de bază asociate contului.
@@ -968,13 +1040,30 @@ Această entitate permite separarea clară dintre desfășurarea sesiunii și ev
 #### 14.1.7 Loguri și date de audit
 În funcție de nivelul de detaliu dorit la implementare, sistemul poate include și entități sau structuri persistente pentru loguri, evenimente sau audit.
 
-La nivel conceptual, aceste date pot fi folosite pentru:
+În varianta canonică de bază, nivelul de audit păstrat este unul **minim-mediu** și vizează doar evenimentele importante ale sesiunii, nu întreaga evoluție completă a runtime state-ului.
+
+La nivel conceptual, auditul poate fi folosit pentru:
 - urmărirea evenimentelor importante;
 - debugging;
 - verificarea consistenței economice;
 - analizarea sesiunilor după încheiere.
 
-Aceste structuri nu reprezintă centrul modelului de date, dar pot completa partea de persistență acolo unde este util.
+În mod canonic, auditul poate include:
+- startul sesiunii;
+- finalul sesiunii;
+- tranzacțiile finalizate;
+- reciclările;
+- deconectările și reconectările;
+- adăugarea boților la începutul sesiunii, dacă este relevantă.
+
+Auditul nu urmărește în mod obligatoriu:
+- fiecare acțiune minoră a jucătorului;
+- fiecare click sau interacțiune de UI;
+- fiecare modificare intermediară a stării sesiunii;
+- fiecare variație intermediară a inflației;
+- fiecare ofertă anulată sau expirată.
+
+Aceste structuri completează partea de persistență acolo unde este util, dar nu transformă sistemul într-un mecanism de event sourcing complet.
 
 ### 14.2 Entități runtime
 Entitățile runtime există în principal pe durata unei sesiuni active și sunt menținute de server în memorie pentru a permite procesare rapidă și sincronizare realtime eficientă. Ele descriu starea vie a jocului, nu istoricul său.
@@ -1130,6 +1219,8 @@ O decizie canonică importantă a modelului de date este separarea clară dintre
 - hărțile generate, stările curente ale clădirilor, ofertele active și valorile intermediare ale sesiunii sunt tratate în principal ca runtime state.
 
 Această separare este în acord cu arhitectura autoritativă a serverului și cu nevoia de a menține performanță bună pentru procesarea sesiunilor active.
+
+În mod explicit, ofertele active, chat-ul, hărțile generate și stările intermediare ale sesiunii nu fac parte din setul minim de date persistate al versiunii canonice de bază.
 
 ### 14.5 Observații de modelare
 Modelul de date conceptual nu trebuie interpretat ca o schemă relațională finală unu-la-unu. Rolul său este de a defini obiectele esențiale ale domeniului, responsabilitățile lor și relațiile importante dintre ele.
@@ -1359,11 +1450,17 @@ Această secțiune centralizează deciziile de design, gameplay și arhitectură
 | GAME-026 | Creatorul unei oferte poate reînnoi valabilitatea acesteia prin refresh | Canon | Ofertele nu sunt permanente |
 | GAME-027 | Reciclarea reprezintă o vânzare către sistem la valoare inferioară pieței | Canon | Mecanism de rezervă pentru obținerea de galbeni |
 | GAME-028 | Reciclarea este disponibilă și în afara programului pieței | Canon | Spre deosebire de tranzacțiile dintre participanți |
-| GAME-029 | Inflația este indicator global calculat exclusiv de server | Canon | Formula exactă rămâne de stabilit separat |
-| GAME-030 | Inflația are valori între 0 și 100 și pornește de la 20 | Canon | Pragurile sunt deja definite în regulile jocului |
-| GAME-031 | Inacțiunea nu crește artificial inflația | Canon | Este penalizată separat prin performanță economică slabă |
-| GAME-032 | Succesul sesiunii depinde atât de stabilitatea economică, cât și de atingerea unui prag minim de performanță | Canon | Condiție colectivă de reușită |
-| GAME-033 | Fiecare jucător primește la final o evaluare individuală sub formă de rang | Canon | Separată de rezultatul colectiv al sesiunii |
+| GAME-029 | Inflația este un indicator global calculat exclusiv de server | Canon | Serverul este singura sursă validă pentru actualizarea sa |
+| GAME-030 | Inflația are valori între 0 și 100 și pornește de la 20 | Canon | Pragurile de interpretare sunt definite în regulile jocului |
+| GAME-031 | Inflația folosește un model hibrid: recalculare periodică + impulsuri imediate | Canon | Recalculare la fiecare 30 de minute in-game |
+| GAME-032 | Inflația este influențată de cerere/ofertă, suprapreț și reciclare excesivă | Canon | Cei trei factori principali ai presiunii inflaționiste |
+| GAME-033 | Inflația poate scădea doar în condiții de stabilitate economică relativă | Canon | Nu se reduce automat în absența presiunilor |
+| GAME-034 | Inacțiunea nu crește artificial inflația | Canon | Este penalizată separat prin performanță economică slabă |
+| GAME-035 | Succesul sesiunii depinde atât de stabilitatea economică, cât și de atingerea unui prag minim de performanță | Canon | Condiție colectivă de reușită |
+| GAME-036 | Fiecare jucător primește la final o evaluare individuală sub formă de rang | Canon | Separată de rezultatul colectiv al sesiunii |
+| GAME-037 | În versiunea de bază, boții pot produce și tranzacționa, dar nu construiesc și nu fac upgrade-uri | Canon | Rol economic limitat și controlat |
+| GAME-038 | Comportamentul boților este bazat pe reguli simple și devine mai prudent la inflație ridicată | Canon | Nu urmăresc strategii complexe și nu destabilizează intenționat economia |
+| GAME-039 | La finalul sesiunii se determină și se pot salva statistici finale minime per sesiune și per jucător | Canon | Include rezultat colectiv, inflație finală, rang și statistici economice de bază |
 | UI-001   | Ecranul principal de joc este centrul experienței in-session | Canon | Piața și chat-ul nu scot jucătorul complet din contextul gameplay-ului |
 | UI-002   | Piața este accesată ca overlay din ecranul principal de joc | Canon | Nu este tratată ca ecran full separat |
 | UI-003   | Chat-ul este un panel lateral retractabil | Canon | Componentă contextuală a sesiunii |
@@ -1376,10 +1473,16 @@ Această secțiune centralizează deciziile de design, gameplay și arhitectură
 | ARCH-005 | Baza de date persistă informațiile importante, nu întreaga stare runtime | Canon | Separare clară între persistent și runtime |
 | ARCH-006 | WebSocket este canalul principal pentru comunicarea realtime | Canon | REST poate fi utilizat pentru bootstrap și autentificare |
 | ARCH-007 | Boții sunt controlați exclusiv de server și nu au client propriu | Canon | Participă la economie fără infrastructură separată de UI |
+| ARCH-008 | Boții sunt introduși la începutul sesiunii, nu dinamic în timpul acesteia | Canon | Simplifică implementarea și controlul sesiunii |
 | DATA-001 | ActiveOffer este entitate runtime, nu persistentă canonic | Canon | Efectul persistent al unei oferte finalizate este TradeTransaction |
 | DATA-002 | TradeTransaction este entitatea persistentă pentru tranzacțiile finalizate | Canon | Relevantă pentru istoric și audit |
 | DATA-003 | Relația dintre User și GameSession este modelată prin SessionParticipant | Canon | Separă identitatea persistentă de participarea concretă |
 | DATA-004 | PlayerSessionResult păstrează evaluarea finală individuală | Canon | Leagă sesiunea de performanța jucătorului |
+| DATA-005 | Setul minim de entități persistente este format din User, GameSession, SessionParticipant, TradeTransaction și PlayerSessionResult | Canon | Nucleul minim al persistenței |
+| DATA-006 | ActiveOffer, chat-ul, hărțile generate și runtime state-ul complet nu sunt persistate canonic | Canon | Rămân în principal în memorie pe durata sesiunii |
+| DATA-007 | Nivelul de audit păstrat în varianta canonică de bază este minim-mediu | Canon | Audit orientat pe evenimente importante, nu pe toate stările intermediare |
+| DATA-008 | Auditul poate include start/end sesiune, tranzacții, reciclări, disconnect/reconnect și adăugarea boților | Canon | Trasabilitate și debugging de bază |
+| DATA-009 | Auditul nu urmărește fiecare acțiune minoră, fiecare click sau fiecare variație intermediară a sesiunii | Canon | Se evită complexitatea inutilă |
 | NF-001   | Proiectul este optimizat pentru sesiuni multiplayer mici, nu pentru scară mare | Canon | Scope realist pentru lucrarea de licență |
 | NF-002   | Scalarea orizontală reală nu intră în scope-ul versiunii de licență | Canon | Poate exista doar ca extensie ulterioară |
 | NF-003   | Securitatea se bazează pe validare server-side, autentificare și procesarea securizată a parolelor | Canon | Nivel adecvat scopului proiectului |
@@ -1390,28 +1493,29 @@ Această secțiune centralizează aspectele care nu sunt încă fixate complet l
 
 - [x] Numărul final de jucători per sesiune
 - [x] Piață globală vs P2P vs hibrid
-- [ ] Formula exactă a inflației
-- [ ] Gradul exact de complexitate al logicii boților
+- [x] Formula exactă a inflației
+- [x] Gradul exact de complexitate al logicii boților
 - [x] Condiții precise de win / lose
 - [x] Structura principală a ecranelor și a navigării UI
 - [x] Rolul arhitectural al clientului, serverului și bazei de date
 - [x] Separarea dintre entitățile persistente și entitățile runtime
-- [ ] Lista exactă a datelor persistate la nivel de implementare
-- [ ] Lista minimă de statistici finale și nivelul de audit păstrat
+- [x] Lista minimă a datelor persistate
+- [x] Lista minimă de statistici finale
+- [x] Nivelul exact de audit păstrat
 - [ ] Finețuri de balancing pentru economie, costuri și progresie
 
 ### 18.1 Prioritate ridicată
-Aceste aspecte ar trebui stabilite înainte de considerarea documentului ca versiune aproape finală:
-- formula exactă a inflației;
-- rolul exact al boților;
-- datele persistate în mod obligatoriu;
-- statisticile finale minime necesare.
+În acest moment nu mai există întrebări deschise critice care să blocheze considerarea documentului ca versiune aproape finală.
+
+Aspectele rămase țin în principal de balancing, rafinare de implementare și eventuale extensii ulterioare.
 
 ### 18.2 Prioritate medie
 Aceste aspecte pot fi rafinate mai târziu, fără a bloca structura generală a documentului:
 - finețuri de balancing pentru costuri, progresie și ritmul economic;
 - eventuale extensii ale sistemului de audit;
-- detalii suplimentare privind afișarea statisticilor.
+- detalii suplimentare privind afișarea statisticilor;
+- ajustări ale comportamentului boților în urma playtesting-ului;
+- rafinarea coeficienților concreți ai inflației la nivel de implementare.
 
 ### 18.3 Observație
 Întrebările deschise din această secțiune trebuie să rămână cât mai puține și cât mai concrete. Orice decizie stabilită ulterior ar trebui mutată din această listă în secțiunile canonice relevante și, unde este cazul, adăugată și în tabelul de decizii canonice.
