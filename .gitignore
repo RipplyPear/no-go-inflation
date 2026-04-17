@@ -1,34 +1,72 @@
-# Godot 4+ specific ignores
-.godot/
+# =========================
+# OS / editor
+# =========================
+.DS_Store
+Thumbs.db
 .nomedia
 
-# Godot-specific ignores
+.idea/
+.vscode/
+*.iml
+
+# JetBrains
+/shelf/
+/workspace.xml
+/queries/
+/dataSources/
+/dataSources.local.xml
+/httpRequests/
+
+# =========================
+# Environment / secrets
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Node / TypeScript backend
+# =========================
+node_modules/
+server/node_modules/
+dist/
+server/dist/
+build/
+coverage/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Optional TS / tooling caches
+*.tsbuildinfo
+
+# =========================
+# Godot 4
+# =========================
+.godot/
 .import/
+.mono/
 export.cfg
 export_credentials.cfg
-
-# Imported translations (automatically generated from CSV files)
 *.translation
-
-# Mono-specific ignores
-.mono/
 data_*/
 mono_crash.*.json
 
+# Godot C# / Mono temp
+client/no-go-inflation/.godot/
+client/no-go-inflation/.mono/
+
+# =========================
+# Generated docs / exports
+# =========================
+documentation/exports/
+
+# documentation/archive/*.pdf
+# documentation/archive/*.odt
+
+# =========================
+# Misc
+# =========================
 others/
-
-# Default ignored files
-/shelf/
-/workspace.xml
-# Ignored default folder with query files
-/queries/
-# Datasource local storage ignored files
-/dataSources/
-/dataSources.local.xml
-# Editor-based HTTP Client requests
-/httpRequests/
-
-.env
-node_modules
-dist
-.idea
