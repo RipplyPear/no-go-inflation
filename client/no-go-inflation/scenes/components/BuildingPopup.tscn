@@ -18,7 +18,7 @@ layout_mode = 2
 
 [node name="TitleLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1519101757]
 layout_mode = 2
-text = "Quary"
+text = "Selected"
 
 [node name="InfoLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1935396783]
 layout_mode = 2
