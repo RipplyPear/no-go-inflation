@@ -6,6 +6,9 @@ const TILE_SIZE := Vector2(64, 64)
 @export var map_file_path: String = "res://data/maps/static_map.json"
 
 var map_data: Dictionary = {}
+
+# Temporary local prototype state
+# Will later come from the authoritative server
 var buildings: Dictionary = {}
 
 const TILE_TEXTURES := {

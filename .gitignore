@@ -38,9 +38,22 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-
-# Optional TS / tooling caches
 *.tsbuildinfo
+
+# Package manager caches
+.npm/
+.pnpm-store/
+.yarn/
+
+# =========================
+# Database local artifacts
+# =========================
+*.sql.gz
+*.dump
+*.backup
+*.db
+*.sqlite
+*.sqlite3
 
 # =========================
 # Godot 4
@@ -54,7 +67,6 @@ export_credentials.cfg
 data_*/
 mono_crash.*.json
 
-# Godot C# / Mono temp
 client/no-go-inflation/.godot/
 client/no-go-inflation/.mono/
 
@@ -63,6 +75,10 @@ client/no-go-inflation/.mono/
 # =========================
 documentation/exports/
 
+# Local fonts for PDF export
+documentation/styles/fonts/
+
+# Keep archive tracked unless you decide otherwise
 # documentation/archive/*.pdf
 # documentation/archive/*.odt
 
