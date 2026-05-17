@@ -669,7 +669,448 @@ PostgreSQL este folosit pentru datele importante și pentru snapshot-uri minime 
 
 ---
 
-## 16. Observații finale
+## 16. Detalierea arhitecturii în raport cu cerințele
+
+### 16.1 Alegerea tipului de arhitectură
+
+Pentru aplicația **No-go Inflation** a fost aleasă o arhitectură de tip **client-server**, cu backend organizat ca **monolit modular**.
+
+Sistemul este împărțit în trei zone principale:
+
+- **clientul Godot**, responsabil pentru interfață, input și afișarea stării jocului;
+- **serverul Node.js + TypeScript**, responsabil pentru validarea acțiunilor, procesarea logicii de joc și sincronizarea participanților;
+- **baza de date PostgreSQL**, responsabilă pentru persistența datelor importante.
+
+Backend-ul nu este împărțit în microservicii separate, ci într-o singură aplicație server organizată pe module interne. Această alegere permite separarea clară a responsabilităților fără a introduce complexitatea suplimentară a unei arhitecturi distribuite.
+
+Tipul de arhitectură ales poate fi rezumat astfel:
+
+| Nivel | Alegere |
+|---|---|
+| Arhitectură generală | Client-server |
+| Organizare backend | Monolit modular |
+| Comunicare pre-game | REST |
+| Comunicare in-game | WebSocket |
+| Persistență | PostgreSQL |
+| Autoritate asupra stării jocului | Server autoritativ |
+
+---
+
+### 16.2 Justificarea alegerii arhitecturale în funcție de cerințe
+
+Alegerea unei arhitecturi client-server cu server autoritativ este potrivită pentru cerințele proiectului deoarece aplicația presupune o sesiune multiplayer în care mai mulți jucători interacționează cu aceeași economie globală.
+
+Într-un astfel de sistem, starea jocului trebuie să fie coerentă pentru toți participanții. Dacă fiecare client ar putea modifica local resursele, clădirile sau piața, ar apărea riscul ca jucătorii să vadă stări diferite sau ca unele acțiuni invalide să fie acceptate. Prin urmare, serverul este componenta care validează și aplică toate acțiunile importante.
+
+Arhitectura aleasă răspunde următoarelor cerințe:
+
+| Cerință | Răspuns arhitectural |
+|---|---|
+| Multiplayer sincronizat | Folosirea unui server central care menține starea sesiunii |
+| Validarea acțiunilor | Server autoritativ, clientul trimite doar intenții |
+| Trading între jucători | Modul dedicat de market/trading pe server |
+| Actualizări rapide | WebSocket pentru comunicare realtime |
+| Persistență date | PostgreSQL pentru utilizatori, sesiuni, tranzacții și rezultate |
+| Mentenabilitate | Backend modular, organizat pe responsabilități clare |
+| Scope realist pentru licență | Monolit modular în loc de microservicii |
+
+Monolitul modular este potrivit pentru dimensiunea proiectului deoarece permite dezvoltarea rapidă și testarea mai simplă. Microserviciile ar introduce costuri suplimentare de infrastructură, comunicare inter-servicii, deployment și debugging, care nu sunt necesare pentru un joc multiplayer de dimensiune mică, destinat unui proiect de licență.
+
+În același timp, împărțirea backend-ului pe module precum `auth`, `session`, `websocket`, `game`, `market`, `economy` și `persistence` păstrează codul ușor de extins ulterior.
+
+---
+
+### 16.3 Layer-ele aplicației
+
+Aplicația este organizată logic pe mai multe layer-e. Fiecare layer are o responsabilitate clară și comunică doar cu layer-ele relevante.
+
+```mermaid
+flowchart TB
+    Presentation["Presentation Layer\nGodot UI, HUD, formulare, popups"]
+    ClientNetwork["Client Communication Layer\nHTTP client, WebSocket client"]
+    ServerAPI["API / Gateway Layer\nREST API, WebSocket Gateway"]
+    Application["Application Layer\nAuth, Session, Market, Game Services"]
+    Domain["Domain / Game Logic Layer\nReguli joc, validări, economie, trading"]
+    Persistence["Persistence Layer\nRepository / SQL access"]
+    Database["Database Layer\nPostgreSQL"]
+
+    Presentation --> ClientNetwork
+    ClientNetwork --> ServerAPI
+    ServerAPI --> Application
+    Application --> Domain
+    Domain --> Persistence
+    Persistence --> Database
+```
+
+#### 16.3.1 Presentation Layer
+
+Acest layer se află în clientul Godot și include toate elementele vizuale ale aplicației:
+
+- ecrane de autentificare;
+- meniul principal;
+- lobby-ul;
+- harta jucătorului;
+- HUD-ul;
+- popup-urile pentru clădiri;
+- interfața de market.
+
+Rolul acestui layer este să afișeze informații și să preia input de la jucător. El nu decide validitatea acțiunilor economice.
+
+#### 16.3.2 Client Communication Layer
+
+Acest layer se află tot în clientul Godot și este responsabil pentru comunicarea cu serverul.
+
+Include:
+
+- request-uri HTTP pentru register și login;
+- conexiune WebSocket pentru gameplay;
+- trimiterea mesajelor către server;
+- primirea actualizărilor de stare.
+
+#### 16.3.3 API / Gateway Layer
+
+Acest layer se află pe server și reprezintă punctul de intrare în backend.
+
+Include:
+
+- endpoint-uri REST pentru autentificare;
+- WebSocket Gateway pentru comunicare realtime;
+- validarea token-ului;
+- rutarea mesajelor către modulele interne.
+
+#### 16.3.4 Application Layer
+
+Application Layer coordonează fluxurile principale ale aplicației.
+
+Include servicii precum:
+
+- `AuthService`;
+- `SessionService`;
+- `GameService`;
+- `MarketService`;
+- `EconomyService`.
+
+Acest layer primește cereri de la API/Gateway, apelează logica de domeniu și coordonează salvarea datelor.
+
+#### 16.3.5 Domain / Game Logic Layer
+
+Acest layer conține regulile propriu-zise ale jocului.
+
+Responsabilități:
+
+- validarea construirii clădirilor;
+- validarea upgrade-urilor;
+- procesarea producției;
+- procesarea colectării;
+- validarea ofertelor de market;
+- procesarea tranzacțiilor;
+- calcularea indicatorilor economici;
+- actualizarea inflației.
+
+Acesta este layer-ul cel mai important pentru corectitudinea jocului.
+
+#### 16.3.6 Persistence Layer
+
+Persistence Layer izolează accesul la baza de date. Restul aplicației nu ar trebui să construiască direct query-uri SQL în orice loc, ci să folosească funcții/repository-uri dedicate.
+
+Responsabilități:
+
+- salvarea și citirea utilizatorilor;
+- salvarea sesiunilor;
+- salvarea participanților;
+- salvarea resurselor și clădirilor;
+- salvarea ofertelor și tranzacțiilor;
+- salvarea snapshot-urilor economice.
+
+#### 16.3.7 Database Layer
+
+Database Layer este reprezentat de PostgreSQL.
+
+Aici sunt stocate:
+
+- conturile utilizatorilor;
+- sesiunile de joc;
+- participanții;
+- state-ul curent minim;
+- ofertele de market;
+- tranzacțiile finalizate;
+- indicatorii economici;
+- rezultatele finale.
+
+---
+
+### 16.4 Componentele principale ale sistemului
+
+Componentele principale ale sistemului sunt:
+
+| Componentă | Rol |
+|---|---|
+| Godot Client | Interfață, input, afișare hartă, HUD, market |
+| REST API | Register, login, operații administrative |
+| WebSocket Gateway | Comunicare realtime între client și server |
+| Auth Module | Înregistrare, autentificare, validare token |
+| Session Module | Lobby-uri, participanți, start sesiune |
+| Game Engine | Timp, hartă, clădiri, producție, colectare |
+| Market Module | Oferte, acceptări, tranzacții |
+| Economy Module | Inflație, prețuri medii, indicatori economici |
+| Persistence Layer | Acces controlat la baza de date |
+| PostgreSQL Database | Persistență pentru datele aplicației |
+
+Relația dintre aceste componente este centrată în jurul serverului. Clientul nu comunică direct cu baza de date și nu modifică direct starea jocului. Toate modificările relevante trec prin server.
+
+---
+
+### 16.5 Diagramă arhitecturală high-level - C4 Container View
+
+Diagrama următoare prezintă sistemul într-o formă apropiată de modelul **C4 - Container View**. Ea evidențiază containerele principale ale aplicației și modul în care acestea comunică.
+
+```mermaid
+flowchart LR
+    Player["Jucător"]
+
+    subgraph GameClient["Container: Godot Game Client"]
+        UI["UI / HUD"]
+        HTTPClient["HTTP Client"]
+        WSClient["WebSocket Client"]
+    end
+
+    subgraph Backend["Container: Node.js + TypeScript Server"]
+        REST["REST API"]
+        WSGateway["WebSocket Gateway"]
+        Auth["Auth Module"]
+        Session["Session Module"]
+        Game["Game Engine"]
+        Market["Market Module"]
+        Economy["Economy Module"]
+        Persistence["Persistence Layer"]
+    end
+
+    subgraph DB["Container: PostgreSQL Database"]
+        Users["users"]
+        Sessions["game_sessions"]
+        State["player_states / player_resources / player_buildings"]
+        Offers["market_offers"]
+        Trades["trade_transactions"]
+        EconomyTables["session_economy_state / economy_snapshots"]
+    end
+
+    Player --> UI
+    UI --> HTTPClient
+    UI --> WSClient
+
+    HTTPClient <-->|"REST / HTTPS\nregister, login"| REST
+    WSClient <-->|"WebSocket\nstate, gameplay, trading"| WSGateway
+
+    REST --> Auth
+    REST --> Session
+
+    WSGateway --> Session
+    WSGateway --> Game
+    WSGateway --> Market
+
+    Game --> Economy
+    Game --> Market
+
+    Auth --> Persistence
+    Session --> Persistence
+    Game --> Persistence
+    Market --> Persistence
+    Economy --> Persistence
+
+    Persistence <-->|"SQL"| DB
+```
+
+Această diagramă arată că aplicația are trei containere majore:
+
+1. **Godot Game Client** - aplicația instalată/rulată de jucător;
+2. **Node.js + TypeScript Server** - backend-ul autoritativ;
+3. **PostgreSQL Database** - sistemul de persistare a datelor.
+
+---
+
+### 16.6 Fluxul de date între componente
+
+Fluxul de date diferă în funcție de tipul acțiunii realizate de utilizator.
+
+#### 16.6.1 Flux de date pentru register/login
+
+Pentru autentificare, fluxul este de tip request/response:
+
+1. Jucătorul completează formularul în Godot.
+2. Clientul trimite un request HTTP către REST API.
+3. REST API trimite datele către Auth Module.
+4. Auth Module validează datele și comunică cu baza de date.
+5. Baza de date salvează sau returnează utilizatorul.
+6. Serverul returnează un răspuns către client.
+7. Clientul salvează token-ul primit și permite accesul mai departe în aplicație.
+
+```mermaid
+sequenceDiagram
+    participant Player as Jucător
+    participant Client as Godot Client
+    participant REST as REST API
+    participant Auth as Auth Module
+    participant DB as PostgreSQL
+
+    Player->>Client: Introduce date register/login
+    Client->>REST: HTTP request
+    REST->>Auth: Validează date
+    Auth->>DB: Citește/scrie user
+    DB-->>Auth: Rezultat DB
+    Auth-->>REST: User/token sau eroare
+    REST-->>Client: HTTP response
+    Client-->>Player: Feedback în UI
+```
+
+#### 16.6.2 Flux de date pentru acțiuni de gameplay
+
+Pentru acțiunile din timpul jocului, fluxul folosește WebSocket:
+
+1. Jucătorul face o acțiune în interfață.
+2. Clientul trimite un mesaj WebSocket către server.
+3. WebSocket Gateway primește mesajul și identifică utilizatorul.
+4. Mesajul este trimis către modulul potrivit.
+5. Serverul validează acțiunea.
+6. Serverul actualizează state-ul runtime.
+7. Dacă este necesar, serverul persistă modificarea în PostgreSQL.
+8. Serverul trimite actualizări către clientul inițial și către ceilalți participanți.
+
+```mermaid
+sequenceDiagram
+    participant Client as Godot Client
+    participant WS as WebSocket Gateway
+    participant Game as Game Engine
+    participant Persistence as Persistence Layer
+    participant DB as PostgreSQL
+
+    Client->>WS: Mesaj gameplay
+    WS->>Game: Trimite intenția jucătorului
+    Game->>Game: Validează și procesează acțiunea
+    Game->>Persistence: Salvează snapshot dacă este necesar
+    Persistence->>DB: SQL insert/update
+    DB-->>Persistence: Confirmare
+    Game-->>WS: State actualizat
+    WS-->>Client: STATE_UPDATE
+```
+
+#### 16.6.3 Flux de date pentru trading
+
+Pentru trading, datele circulă între client, WebSocket Gateway, Market Module, Game Engine și baza de date.
+
+1. Un jucător creează o ofertă.
+2. Serverul validează oferta și o adaugă în market.
+3. Alți jucători primesc starea actualizată a pieței.
+4. Un jucător acceptă oferta.
+5. Serverul verifică resursele și galbenii.
+6. Serverul transferă resursele și galbenii între participanți.
+7. Tranzacția finalizată este salvată în `trade_transactions`.
+8. Participanții primesc confirmarea tranzacției.
+
+```mermaid
+sequenceDiagram
+    participant Seller as Client vânzător
+    participant Buyer as Client cumpărător
+    participant WS as WebSocket Gateway
+    participant Market as Market Module
+    participant Game as Game Engine
+    participant DB as PostgreSQL
+
+    Seller->>WS: CREATE_OFFER
+    WS->>Market: Creează ofertă
+    Market->>Game: Validează resurse/stare
+    Game-->>Market: Validare OK
+    Market->>DB: Salvează oferta
+    Market-->>WS: Oferta creată
+    WS-->>Seller: OFFER_CREATED
+    WS-->>Buyer: MARKET_STATE actualizat
+
+    Buyer->>WS: ACCEPT_OFFER
+    WS->>Market: Acceptă oferta
+    Market->>Game: Verifică resurse și galbeni
+    Game-->>Market: Validare OK
+    Market->>Game: Aplică transferul
+    Market->>DB: Salvează tranzacția
+    DB-->>Market: Confirmare
+    Market-->>WS: Tranzacție finalizată
+    WS-->>Seller: TRADE_COMPLETED
+    WS-->>Buyer: TRADE_COMPLETED
+```
+
+---
+
+### 16.7 Protocoale de comunicare între componente
+
+Sistemul folosește mai multe forme de comunicare, în funcție de componentele implicate.
+
+| Sursă | Destinație | Protocol / mecanism | Scop |
+|---|---|---|---|
+| Godot Client | REST API | HTTP/REST | Register, login, operații administrative |
+| Godot Client | WebSocket Gateway | WebSocket | Gameplay realtime, market, state updates |
+| REST API | Auth Module | Apel intern în backend | Validare date autentificare |
+| WebSocket Gateway | Game / Market / Session Modules | Apel intern în backend | Rutare mesaje realtime |
+| Backend Modules | Persistence Layer | Apel intern în backend | Cereri de citire/scriere date |
+| Persistence Layer | PostgreSQL | SQL peste conexiune DB | Persistență date |
+| Server | Godot Client | WebSocket messages | Actualizări de stare, confirmări, erori |
+
+#### 16.7.1 HTTP / REST
+
+HTTP/REST este folosit pentru operații care nu necesită comunicare continuă.
+
+Exemple:
+
+- `POST /auth/register`;
+- `POST /auth/login`;
+- `GET /health`.
+
+REST este potrivit pentru autentificare deoarece aceste operații sunt punctuale și au un răspuns clar.
+
+#### 16.7.2 WebSocket
+
+WebSocket este folosit pentru comunicarea realtime din timpul jocului.
+
+Exemple de mesaje:
+
+- `JOIN_SESSION`;
+- `BUILD_REQUEST`;
+- `COLLECT_REQUEST`;
+- `CREATE_OFFER`;
+- `ACCEPT_OFFER`;
+- `MARKET_STATE`;
+- `PLAYER_STATE_UPDATED`;
+- `TRADE_COMPLETED`;
+- `ERROR`.
+
+WebSocket este potrivit pentru gameplay deoarece permite serverului să trimită actualizări către client fără ca acesta să facă request-uri repetate.
+
+#### 16.7.3 SQL / PostgreSQL
+
+Serverul comunică cu baza de date prin query-uri SQL. Clientul Godot nu are acces direct la baza de date.
+
+Această separare este importantă pentru securitate și consistență, deoarece doar serverul poate decide ce date sunt citite sau modificate.
+
+#### 16.7.4 Apeluri interne între module
+
+Modulele backend comunică între ele prin apeluri interne de funcții sau servicii. De exemplu, WebSocket Gateway primește un mesaj `ACCEPT_OFFER`, apoi apelează Market Module. Market Module poate apela Game Engine pentru validarea resurselor și Persistence Layer pentru salvarea tranzacției.
+
+Acest mecanism păstrează codul modular fără a transforma fiecare modul într-un serviciu separat.
+
+---
+
+### 16.8 Maparea subtask-urilor de arhitectură
+
+| Subtask | Unde este acoperit |
+|---|---|
+| Alegerea tipului de arhitectură | Secțiunea 16.1 |
+| Justificarea alegerii arhitecturale în funcție de cerințe | Secțiunea 16.2 |
+| Definirea layerelor aplicației | Secțiunea 16.3 |
+| Identificarea componentelor principale ale sistemului | Secțiunea 16.4 |
+| Diagrama arhitecturală high-level / C4 | Secțiunea 16.5 |
+| Descrierea fluxului de date între componente | Secțiunea 16.6 |
+| Descrierea protocoalelor de comunicare între componente | Secțiunea 16.7 |
+
+---
+
+## 17. Observații finale
 
 Arhitectura descrisă în acest document reprezintă baza tehnică pentru următoarele task-uri de implementare:
 
