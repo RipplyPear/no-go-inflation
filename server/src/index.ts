@@ -1,6 +1,9 @@
 import "dotenv/config";
+import { createServer } from "node:http";
+
 import app from "./app";
 import { pool } from "./config/db";
+import { setupWebSocketServer } from "./websocket/wsServer";
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -9,8 +12,12 @@ async function startServer() {
         await pool.query("SELECT NOW()");
         console.log("Query OK");
 
-        app.listen(PORT, () => {
-            console.log("Server started on port: " + PORT);
+        const server = createServer(app);
+
+        setupWebSocketServer(server);
+
+        server.listen(PORT, () => {
+            console.log(`Server started on port: ${PORT}`);
         });
     } catch (error) {
         console.error("Failed to start server:" + error);

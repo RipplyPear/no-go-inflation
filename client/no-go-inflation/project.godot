@@ -22,3 +22,4 @@ config/icon="res://icon.svg"
 [autoload]
 
 AuthClient="*uid://c7lc7rnidacwd"
+GameSocket="*uid://c02x1mhod1y01"

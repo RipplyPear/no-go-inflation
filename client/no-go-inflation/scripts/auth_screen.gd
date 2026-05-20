@@ -10,8 +10,6 @@ extends Control
 
 
 func _ready() -> void:
-	print("AuthScreen ready")
-	
 	password_input.secret = true
 
 	register_button.pressed.connect(_on_register_pressed)
@@ -20,12 +18,20 @@ func _ready() -> void:
 	AuthClient.register_succeeded.connect(_on_register_succeeded)
 	AuthClient.login_succeeded.connect(_on_login_succeeded)
 	AuthClient.auth_failed.connect(_on_auth_failed)
+	
+	if not GameSocket.connected.is_connected(_on_ws_connected):
+		GameSocket.connected.connect(_on_ws_connected)
+
+	if not GameSocket.connection_failed.is_connected(_on_ws_connection_failed):
+		GameSocket.connection_failed.connect(_on_ws_connection_failed)
+
+	if not GameSocket.message_received.is_connected(_on_ws_message_received):
+		GameSocket.message_received.connect(_on_ws_message_received)
 
 	status_label.text = ""
 
 
 func _on_register_pressed() -> void:
-	print("Register button pressed")
 	var username := username_input.text.strip_edges()
 	var email := email_input.text.strip_edges()
 	var password := password_input.text
@@ -42,7 +48,6 @@ func _on_register_pressed() -> void:
 
 
 func _on_login_pressed() -> void:
-	print("Login button pressed")
 	var email := email_input.text.strip_edges()
 	var password := password_input.text
 
@@ -71,11 +76,36 @@ func _on_login_succeeded(user: Dictionary, token: String) -> void:
 	status_label.text = "Login reușit. Bun venit, %s!" % str(user.get("username", "jucător"))
 
 	# Pentru test, după login intrăm direct în joc.
-	get_tree().change_scene_to_file("res://scenes/Main.tscn")
-
+	# get_tree().change_scene_to_file("res://scenes/Main.tscn")
+	GameSocket.connect_to_server(token)
 
 func _on_auth_failed(message: String) -> void:
 	register_button.disabled = false
 	login_button.disabled = false
 
 	status_label.text = message
+	
+
+
+func _on_ws_connected() -> void:
+	status_label.text = "WebSocket conectat. Trimit PING..."
+	GameSocket.send_ping()
+
+
+func _on_ws_connection_failed(message: String) -> void:
+	status_label.text = message
+
+
+func _on_ws_message_received(message: Dictionary) -> void:
+	var message_type := str(message.get("type", ""))
+
+	if message_type == "AUTHENTICATED":
+		print("WebSocket authenticated: ", message)
+		status_label.text = "WebSocket autentificat."
+
+	if message_type == "PONG":
+		print("PONG primit: ", message)
+		status_label.text = "PING/PONG OK. WebSocket funcționează."
+
+		# După test, poți decomenta asta:
+		# get_tree().change_scene_to_file("res://scenes/Main.tscn")
