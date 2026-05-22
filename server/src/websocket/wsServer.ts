@@ -2,6 +2,7 @@ import type { IncomingMessage, Server as HttpServer } from "node:http";
 import { WebSocket, WebSocketServer, type RawData } from "ws";
 import jwt from "jsonwebtoken";
 import { pool } from "../config/db";
+import { generatePlayerMap } from "../game/mapGenerator";
 
 type AuthenticatedUser = {
     id: number;
@@ -90,16 +91,7 @@ async function createDemoSession(user: AuthenticatedUser) {
 
     const lobbyCode = Math.random().toString(36).slice(2, 8).toUpperCase();
 
-    const demoTiles: string[][] = [
-        ["forest", "forest", "forest", "field", "field", "field", "quarry", "quarry", "quarry", "quarry"],
-        ["forest", "forest", "forest", "field", "field", "field", "quarry", "quarry", "quarry", "quarry"],
-        ["forest", "forest", "forest", "field", "field", "field", "quarry", "quarry", "quarry", "quarry"],
-        ["forest", "forest", "field", "field", "field", "field", "quarry", "quarry", "quarry", "quarry"],
-        ["forest", "forest", "field", "field", "field", "field", "quarry", "quarry", "quarry", "quarry"],
-        ["forest", "forest", "field", "field", "field", "quarry", "quarry", "quarry", "quarry", "field"],
-        ["forest", "forest", "forest", "field", "field", "quarry", "quarry", "quarry", "field", "field"],
-        ["forest", "forest", "forest", "field", "field", "field", "quarry", "field", "field", "field"],
-    ];
+    const demoMap = generatePlayerMap();
 
     try {
         await client.query("BEGIN");
@@ -168,19 +160,19 @@ async function createDemoSession(user: AuthenticatedUser) {
             );
         }
 
-        for (let y = 0; y < demoTiles.length; y++) {
-            for (let x = 0; x < demoTiles[y].length; x++) {
+        for (let y = 0; y < demoMap.tiles.length; y++) {
+            for (let x = 0; x < demoMap.tiles[y].length; x++) {
                 await client.query(
                     `
-                    INSERT INTO player_map_tiles (
-                        participant_id,
-                        tile_x,
-                        tile_y,
-                        tile
-                    )
-                    VALUES ($1, $2, $3, $4)
-                    `,
-                    [participant.id, x, y, demoTiles[y][x]]
+            INSERT INTO player_map_tiles (
+                participant_id,
+                tile_x,
+                tile_y,
+                tile
+            )
+            VALUES ($1, $2, $3, $4)
+            `,
+                    [participant.id, x, y, demoMap.tiles[y][x]]
                 );
             }
         }
@@ -226,6 +218,7 @@ async function createDemoSession(user: AuthenticatedUser) {
                     grain: 1,
                 },
             },
+            map: demoMap,
         };
     } catch (error) {
         await client.query("ROLLBACK");

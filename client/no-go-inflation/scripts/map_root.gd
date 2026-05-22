@@ -44,8 +44,11 @@ const BUILDING_TEXTURES := {
 signal tile_clicked(tile_x: int, tile_y: int, tile_type: String)
 
 func _ready() -> void:
-	load_map()
-	render_map()
+	if not GameState.map_data.is_empty():
+		set_map_data(GameState.map_data)
+	else:
+		load_map()
+		render_map()
 
 func load_map() -> void:
 	var file := FileAccess.open(map_file_path, FileAccess.READ)
@@ -192,3 +195,8 @@ func _render_building_on_tile(tile: Area2D, x: int, y: int) -> void:
 func _on_tile_input(_viewport, event, _shape_idx, x: int, y: int, tile_type: String) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		tile_clicked.emit(x, y, tile_type)
+		
+		
+func set_map_data(new_map_data: Dictionary) -> void:
+	map_data = new_map_data
+	render_map()

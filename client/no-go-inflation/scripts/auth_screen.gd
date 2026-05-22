@@ -113,9 +113,9 @@ func _on_ws_message_received(message: Dictionary) -> void:
 		print("SESSION_STATE primit: ", message)
 
 		var payload: Dictionary = message.get("payload", {})
-		var session_id := str(payload.get("sessionId", ""))
 
-		status_label.text = "Sesiune demo creată: %s" % session_id
+		GameState.load_session_state(payload)
 
-		# După ce confirmăm că merge, intrăm în joc.
+		status_label.text = "Sesiune demo creată: %s" % GameState.session_id
+
 		get_tree().change_scene_to_file("res://scenes/Main.tscn")
