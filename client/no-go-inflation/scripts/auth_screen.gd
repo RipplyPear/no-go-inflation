@@ -62,7 +62,7 @@ func _on_login_pressed() -> void:
 	AuthClient.login_user(email, password)
 
 
-func _on_register_succeeded(user: Dictionary) -> void:
+func _on_register_succeeded(_user: Dictionary) -> void:
 	register_button.disabled = false
 	login_button.disabled = false
 
@@ -105,7 +105,17 @@ func _on_ws_message_received(message: Dictionary) -> void:
 
 	if message_type == "PONG":
 		print("PONG primit: ", message)
-		status_label.text = "PING/PONG OK. WebSocket funcționează."
+		status_label.text = "PING/PONG OK. Creez sesiune demo..."
 
-		# După test, poți decomenta asta:
-		# get_tree().change_scene_to_file("res://scenes/Main.tscn")
+		GameSocket.send_message("CREATE_DEMO_SESSION")
+
+	if message_type == "SESSION_STATE":
+		print("SESSION_STATE primit: ", message)
+
+		var payload: Dictionary = message.get("payload", {})
+		var session_id := str(payload.get("sessionId", ""))
+
+		status_label.text = "Sesiune demo creată: %s" % session_id
+
+		# După ce confirmăm că merge, intrăm în joc.
+		get_tree().change_scene_to_file("res://scenes/Main.tscn")

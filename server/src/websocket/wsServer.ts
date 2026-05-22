@@ -1,6 +1,7 @@
 import type { IncomingMessage, Server as HttpServer } from "node:http";
 import { WebSocket, WebSocketServer, type RawData } from "ws";
 import jwt from "jsonwebtoken";
+import { pool } from "../config/db";
 
 type AuthenticatedUser = {
     id: number;
@@ -84,13 +85,177 @@ function parseClientMessage(rawMessage: RawData): ClientMessage | null {
     }
 }
 
-function handleClientMessage(ws: AuthenticatedWebSocket, message: ClientMessage) {
+async function createDemoSession(user: AuthenticatedUser) {
+    const client = await pool.connect();
+
+    const lobbyCode = Math.random().toString(36).slice(2, 8).toUpperCase();
+
+    const demoTiles: string[][] = [
+        ["forest", "forest", "forest", "field", "field", "field", "quarry", "quarry", "quarry", "quarry"],
+        ["forest", "forest", "forest", "field", "field", "field", "quarry", "quarry", "quarry", "quarry"],
+        ["forest", "forest", "forest", "field", "field", "field", "quarry", "quarry", "quarry", "quarry"],
+        ["forest", "forest", "field", "field", "field", "field", "quarry", "quarry", "quarry", "quarry"],
+        ["forest", "forest", "field", "field", "field", "field", "quarry", "quarry", "quarry", "quarry"],
+        ["forest", "forest", "field", "field", "field", "quarry", "quarry", "quarry", "quarry", "field"],
+        ["forest", "forest", "forest", "field", "field", "quarry", "quarry", "quarry", "field", "field"],
+        ["forest", "forest", "forest", "field", "field", "field", "quarry", "field", "field", "field"],
+    ];
+
+    try {
+        await client.query("BEGIN");
+
+        const sessionResult = await client.query(
+            `
+            INSERT INTO game_sessions (
+                host_user_id,
+                lobby_code,
+                is_private,
+                status,
+                started_at
+            )
+            VALUES ($1, $2, false, 'active', now())
+            RETURNING id, lobby_code, status, current_day, current_minute
+            `,
+            [user.id, lobbyCode]
+        );
+
+        const session = sessionResult.rows[0];
+
+        const participantResult = await client.query(
+            `
+            INSERT INTO session_participants (
+                session_id,
+                user_id,
+                participant_type,
+                role,
+                display_name,
+                is_ready,
+                is_connected
+            )
+            VALUES ($1, $2, 'human', 'host', $3, true, true)
+            RETURNING id, display_name, role
+            `,
+            [session.id, user.id, user.username]
+        );
+
+        const participant = participantResult.rows[0];
+
+        await client.query(
+            `
+            INSERT INTO player_states (
+                session_id,
+                participant_id,
+                galbeni,
+                economic_score,
+                total_recycled_amount
+            )
+            VALUES ($1, $2, 100, 0, 0)
+            `,
+            [session.id, participant.id]
+        );
+
+        for (const resource of ["wood", "stone", "grain"]) {
+            await client.query(
+                `
+                INSERT INTO player_resources (
+                    participant_id,
+                    resource,
+                    amount
+                )
+                VALUES ($1, $2, 50)
+                `,
+                [participant.id, resource]
+            );
+        }
+
+        for (let y = 0; y < demoTiles.length; y++) {
+            for (let x = 0; x < demoTiles[y].length; x++) {
+                await client.query(
+                    `
+                    INSERT INTO player_map_tiles (
+                        participant_id,
+                        tile_x,
+                        tile_y,
+                        tile
+                    )
+                    VALUES ($1, $2, $3, $4)
+                    `,
+                    [participant.id, x, y, demoTiles[y][x]]
+                );
+            }
+        }
+
+        await client.query(
+            `
+            INSERT INTO session_economy_state (
+                session_id,
+                inflation,
+                wood_avg_price,
+                stone_avg_price,
+                grain_avg_price
+            )
+            VALUES ($1, 20, 1.00, 1.00, 1.00)
+            `,
+            [session.id]
+        );
+
+        await client.query("COMMIT");
+
+        return {
+            sessionId: session.id,
+            lobbyCode: session.lobby_code,
+            status: session.status,
+            currentDay: session.current_day,
+            currentMinute: session.current_minute,
+            participant: {
+                id: participant.id,
+                displayName: participant.display_name,
+                role: participant.role,
+            },
+            resources: {
+                wood: 50,
+                stone: 50,
+                grain: 50,
+                galbeni: 100,
+            },
+            economy: {
+                inflation: 20,
+                averagePrices: {
+                    wood: 1,
+                    stone: 1,
+                    grain: 1,
+                },
+            },
+        };
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
+async function handleClientMessage(ws: AuthenticatedWebSocket, message: ClientMessage) {
     switch (message.type) {
         case "PING": {
             sendJson(ws, "PONG", {
                 receivedAt: new Date().toISOString(),
                 user: ws.user,
             });
+            break;
+        }
+
+        case "CREATE_DEMO_SESSION": {
+            if (!ws.user) {
+                sendJson(ws, "ERROR", {
+                    message: "User not authenticated.",
+                });
+                return;
+            }
+
+            const sessionState = await createDemoSession(ws.user);
+
+            sendJson(ws, "SESSION_STATE", sessionState);
             break;
         }
 
@@ -141,7 +306,13 @@ export function setupWebSocketServer(server: HttpServer) {
                 return;
             }
 
-            handleClientMessage(ws, message);
+            handleClientMessage(ws, message).catch((error) => {
+                console.error("WebSocket message handling failed:", error);
+
+                sendJson(ws, "ERROR", {
+                    message: "Server error while handling WebSocket message.",
+                });
+            });
         });
 
         ws.on("close", () => {
