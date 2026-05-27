@@ -14,6 +14,9 @@ func _ready() -> void:
 	building_popup.upgrade_requested.connect(_on_upgrade_requested)
 	building_popup.collect_requested.connect(_on_collect_requested)
 
+	if not GameSocket.message_received.is_connected(_on_ws_message_received):
+		GameSocket.message_received.connect(_on_ws_message_received)
+
 	_update_hud_from_game_state()
 
 
@@ -62,31 +65,49 @@ func _on_tile_clicked(x: int, y: int, tile_type: String) -> void:
 	building_popup.show_for_selection(x, y, tile_type, building)
 
 
-func _on_build_requested(x: int, y: int, tile_type: String) -> void:
-	var success: bool = map_root.build_at(x, y, tile_type)
+func _on_build_requested(x: int, y: int, _tile_type: String) -> void:
+	GameSocket.send_message("BUILD_BUILDING", {
+		"sessionId": GameState.session_id,
+		"x": x,
+		"y": y
+	})
 
-	if success:
-		print("Build confirmed locally at (%d, %d) on %s" % [x, y, tile_type])
-	else:
-		print("Build failed locally at (%d, %d) on %s" % [x, y, tile_type])
-
-	_update_hud_from_game_state()
+	print("BUILD_BUILDING trimis către server pentru (%d, %d)" % [x, y])
 
 
 func _on_upgrade_requested(x: int, y: int) -> void:
-	var success: bool = map_root.upgrade_at(x, y)
+	GameSocket.send_message("UPGRADE_BUILDING", {
+		"sessionId": GameState.session_id,
+		"x": x,
+		"y": y
+	})
 
-	if success:
-		print("Upgrade confirmed locally at (%d, %d)" % [x, y])
-	else:
-		print("Upgrade failed locally at (%d, %d)" % [x, y])
-
-	_update_hud_from_game_state()
+	print("UPGRADE_BUILDING trimis către server pentru (%d, %d)" % [x, y])
 
 
 func _on_collect_requested(x: int, y: int) -> void:
-	var collected: int = map_root.collect_at(x, y)
+	GameSocket.send_message("COLLECT_BUILDING", {
+		"sessionId": GameState.session_id,
+		"x": x,
+		"y": y
+	})
 
-	print("Collected %d resources from building at (%d, %d)" % [collected, x, y])
+	print("COLLECT_BUILDING trimis către server pentru (%d, %d)" % [x, y])
 
-	_update_hud_from_game_state()
+func _on_ws_message_received(message: Dictionary) -> void:
+	var message_type := str(message.get("type", ""))
+
+	if message_type == "SESSION_STATE":
+		var payload = message.get("payload", {})
+
+		if typeof(payload) != TYPE_DICTIONARY:
+			print("SESSION_STATE invalid primit în GameScreen.")
+			return
+
+		GameState.load_session_state(payload)
+		map_root.apply_server_state(GameState.map_data, GameState.buildings)
+		_update_hud_from_game_state()
+
+	if message_type == "ERROR":
+		var payload: Dictionary = message.get("payload", {})
+		print("Server error: ", payload.get("message", "Eroare necunoscută."))

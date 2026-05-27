@@ -45,7 +45,7 @@ signal tile_clicked(tile_x: int, tile_y: int, tile_type: String)
 
 func _ready() -> void:
 	if not GameState.map_data.is_empty():
-		set_map_data(GameState.map_data)
+		apply_server_state(GameState.map_data, GameState.buildings)
 	else:
 		load_map()
 		render_map()
@@ -62,6 +62,34 @@ func load_map() -> void:
 		return
 
 	map_data = parsed
+	
+func load_buildings_from_server(server_buildings: Array) -> void:
+	buildings.clear()
+
+	for item in server_buildings:
+		if typeof(item) != TYPE_DICTIONARY:
+			continue
+
+		var building_data: Dictionary = item
+
+		var x := int(building_data.get("x", -1))
+		var y := int(building_data.get("y", -1))
+
+		if x < 0 or y < 0:
+			continue
+
+		var key := Vector2i(x, y)
+
+		buildings[key] = {
+			"type": str(building_data.get("type", "")),
+			"level": int(building_data.get("level", 1)),
+			"stored": int(building_data.get("stored", 0))
+		}
+
+func apply_server_state(new_map_data: Dictionary, server_buildings: Array) -> void:
+	map_data = new_map_data
+	load_buildings_from_server(server_buildings)
+	render_map()
 
 func render_map() -> void:
 	if not map_data.has("tiles"):
