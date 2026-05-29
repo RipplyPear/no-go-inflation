@@ -6,19 +6,73 @@ extends Node2D
 @onready var time_label: Label = $HUD/TopPanel/MarginContainer/VBoxContainer/TimeLabel
 @onready var resource_label: Label = $HUD/TopPanel/MarginContainer/VBoxContainer/ResourceLabel
 
+@onready var market_popup: MarketPopup = $MarketPopup
+@onready var open_market_button: Button = $HUD/TopPanel/MarginContainer/VBoxContainer/OpenMarketButton
+
+const DEV_SEED_PRICES := [5, 7, 9, 12]
+
+var dev_seed_price_index := 0
+var dev_seed_button: Button
 
 func _ready() -> void:
 	map_root.tile_clicked.connect(_on_tile_clicked)
-
+	
 	building_popup.build_requested.connect(_on_build_requested)
 	building_popup.upgrade_requested.connect(_on_upgrade_requested)
 	building_popup.collect_requested.connect(_on_collect_requested)
-
+	
 	if not GameSocket.message_received.is_connected(_on_ws_message_received):
 		GameSocket.message_received.connect(_on_ws_message_received)
-
+		
+	open_market_button.pressed.connect(_on_open_market_pressed)
+	market_popup.create_offer_requested.connect(_on_create_offer_requested)
+	market_popup.accept_offer_requested.connect(_on_accept_offer_requested)
+	
+	if OS.is_debug_build():
+		dev_seed_button = Button.new()
+		dev_seed_button.text = "DEV: ofertă bot (%d galbeni)" % DEV_SEED_PRICES[dev_seed_price_index]
+		dev_seed_button.pressed.connect(_on_dev_seed_bot_offer_pressed)
+		$HUD/TopPanel/MarginContainer/VBoxContainer.add_child(dev_seed_button)
+	
 	_update_hud_from_game_state()
 
+func _on_dev_seed_bot_offer_pressed() -> void:
+	if GameState.session_id.is_empty():
+		print("Nu există sesiune activă pentru oferta de test.")
+		return
+
+	var price: int = DEV_SEED_PRICES[dev_seed_price_index]
+
+	GameSocket.send_message("DEV_SEED_BOT_OFFER", {
+		"sessionId": GameState.session_id,
+		"offerType": "sell",
+		"resource": "wood",
+		"quantity": 100,
+		"pricePerUnit": price
+	})
+
+	print("DEV_SEED_BOT_OFFER trimis cu preț %d." % price)
+
+	dev_seed_price_index = (dev_seed_price_index + 1) % DEV_SEED_PRICES.size()
+
+	if dev_seed_button != null:
+		dev_seed_button.text = "DEV: ofertă bot (%d galbeni)" % DEV_SEED_PRICES[dev_seed_price_index]
+
+func _on_accept_offer_requested(offer_id: String, quantity: int) -> void:
+	if GameState.session_id.is_empty():
+		print("Nu există sesiune activă pentru acceptarea ofertei.")
+		return
+
+	GameSocket.send_message("ACCEPT_MARKET_OFFER", {
+		"sessionId": GameState.session_id,
+		"offerId": offer_id,
+		"quantity": quantity
+	})
+
+	print("ACCEPT_MARKET_OFFER trimis pentru oferta %s, cantitate %d" % [
+		offer_id,
+		quantity
+	])
 
 func _update_hud_from_game_state() -> void:
 	time_label.text = _format_time_label(
@@ -53,7 +107,7 @@ func _format_time_label(day: int, minute: int) -> String:
 		5: "Vineri",
 	}
 
-	var hour := int(minute / 60)
+	var hour := floori(float(minute) / 60.0)
 	var min_part := minute % 60
 	var day_label := str(day_names.get(day, "Ziua %d" % day))
 
@@ -66,33 +120,15 @@ func _on_tile_clicked(x: int, y: int, tile_type: String) -> void:
 
 
 func _on_build_requested(x: int, y: int, _tile_type: String) -> void:
-	GameSocket.send_message("BUILD_BUILDING", {
-		"sessionId": GameState.session_id,
-		"x": x,
-		"y": y
-	})
-
-	print("BUILD_BUILDING trimis către server pentru (%d, %d)" % [x, y])
+	_send_tile_action("BUILD_BUILDING", x, y)
 
 
 func _on_upgrade_requested(x: int, y: int) -> void:
-	GameSocket.send_message("UPGRADE_BUILDING", {
-		"sessionId": GameState.session_id,
-		"x": x,
-		"y": y
-	})
-
-	print("UPGRADE_BUILDING trimis către server pentru (%d, %d)" % [x, y])
+	_send_tile_action("UPGRADE_BUILDING", x, y)
 
 
 func _on_collect_requested(x: int, y: int) -> void:
-	GameSocket.send_message("COLLECT_BUILDING", {
-		"sessionId": GameState.session_id,
-		"x": x,
-		"y": y
-	})
-
-	print("COLLECT_BUILDING trimis către server pentru (%d, %d)" % [x, y])
+	_send_tile_action("COLLECT_BUILDING", x, y)
 
 func _on_ws_message_received(message: Dictionary) -> void:
 	var message_type := str(message.get("type", ""))
@@ -108,6 +144,79 @@ func _on_ws_message_received(message: Dictionary) -> void:
 		map_root.apply_server_state(GameState.map_data, GameState.buildings)
 		_update_hud_from_game_state()
 
-	if message_type == "ERROR":
+	elif message_type == "MARKET_STATE":
+		var payload = message.get("payload", {})
+
+		if typeof(payload) != TYPE_DICTIONARY:
+			print("MARKET_STATE invalid primit în GameScreen.")
+			return
+
+		market_popup.set_market_state(payload)
+
+	elif message_type == "OFFER_CREATED":
+		print("Oferta a fost creată.")
+
+	elif message_type == "TRADE_COMPLETED":
+		print("Tranzacție finalizată.")
+	
+	elif message_type == "DEV_BOT_OFFER_CREATED":
+		print("Oferta botului de test a fost creată.")
+
+		if not GameState.session_id.is_empty():
+			GameSocket.send_message("GET_MARKET_STATE", {
+				"sessionId": GameState.session_id
+			})
+	
+	elif message_type == "ERROR":
 		var payload: Dictionary = message.get("payload", {})
 		print("Server error: ", payload.get("message", "Eroare necunoscută."))
+		
+func _send_tile_action(message_type: String, x: int, y: int) -> void:
+	if GameState.session_id.is_empty():
+		print("Nu există sesiune activă pentru acțiunea: ", message_type)
+		return
+
+	GameSocket.send_message(message_type, {
+		"sessionId": GameState.session_id,
+		"x": x,
+		"y": y
+	})
+
+	print("%s trimis către server pentru (%d, %d)" % [message_type, x, y])
+	
+func _on_open_market_pressed() -> void:
+	market_popup.show_popup()
+
+	if GameState.session_id.is_empty():
+		print("Nu există sesiune activă pentru piață.")
+		return
+
+	GameSocket.send_message("GET_MARKET_STATE", {
+		"sessionId": GameState.session_id
+	})
+
+
+func _on_create_offer_requested(
+	offer_type: String,
+	resource: String,
+	amount: int,
+	price: int
+) -> void:
+	if GameState.session_id.is_empty():
+		print("Nu există sesiune activă pentru crearea ofertei.")
+		return
+
+	GameSocket.send_message("CREATE_MARKET_OFFER", {
+		"sessionId": GameState.session_id,
+		"offerType": offer_type,
+		"resource": resource,
+		"quantity": amount,
+		"pricePerUnit": price
+	})
+
+	print("CREATE_MARKET_OFFER trimis: %s %d %s la %d galbeni/unitate" % [
+		offer_type,
+		amount,
+		resource,
+		price
+	])

@@ -7,20 +7,14 @@ const TILE_SIZE := Vector2(64, 64)
 
 var map_data: Dictionary = {}
 
-# Temporary local prototype state
-# Will later come from the authoritative server
+# Client-side view of the authoritative server state.
+# Gameplay actions are validated and applied by the server.
 var buildings: Dictionary = {}
 
 const TILE_TEXTURES := {
 	"forest": preload("res://assets/tiles/forrest.png"),
 	"field": preload("res://assets/tiles/soil.png"),
 	"quarry": preload("res://assets/tiles/stone.png")
-}
-
-const TILE_TO_BUILDING := {
-	"field": "farm",
-	"quarry": "mine",
-	"forest": "lumberyard"
 }
 
 const BUILDING_TEXTURES := {
@@ -139,57 +133,6 @@ func get_building_at(x: int, y: int) -> Dictionary:
 
 	return {}
 
-func build_at(x: int, y: int, tile_type: String) -> bool:
-	var key := Vector2i(x, y)
-
-	if buildings.has(key):
-		return false
-
-	if not TILE_TO_BUILDING.has(tile_type):
-		return false
-
-	buildings[key] = {
-		"type": TILE_TO_BUILDING[tile_type],
-		"level": 1,
-		"stored": 0
-	}
-
-	render_map()
-	return true
-
-func upgrade_at(x: int, y: int) -> bool:
-	var key := Vector2i(x, y)
-
-	if not buildings.has(key):
-		return false
-
-	var building: Dictionary = buildings[key]
-	var level := int(building.get("level", 1))
-
-	if level >= 3:
-		return false
-
-	building["level"] = level + 1
-	buildings[key] = building
-
-	render_map()
-	return true
-
-func collect_at(x: int, y: int) -> int:
-	var key := Vector2i(x, y)
-
-	if not buildings.has(key):
-		return 0
-
-	var building: Dictionary = buildings[key]
-	var stored := int(building.get("stored", 0))
-
-	building["stored"] = 0
-	buildings[key] = building
-
-	render_map()
-	return stored
-
 func _render_building_on_tile(tile: Area2D, x: int, y: int) -> void:
 	var building := get_building_at(x, y)
 
@@ -223,8 +166,3 @@ func _render_building_on_tile(tile: Area2D, x: int, y: int) -> void:
 func _on_tile_input(_viewport, event, _shape_idx, x: int, y: int, tile_type: String) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		tile_clicked.emit(x, y, tile_type)
-		
-		
-func set_map_data(new_map_data: Dictionary) -> void:
-	map_data = new_map_data
-	render_map()

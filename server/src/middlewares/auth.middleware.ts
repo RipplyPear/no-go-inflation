@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import {NextFunction, Request, Response} from "express";
 import jwt from "jsonwebtoken";
 
 export interface AuthRequest extends Request {
@@ -32,13 +32,11 @@ export function authMiddleware(
     }
 
     try {
-        const decoded = jwt.verify(token, secret) as {
+        req.user = jwt.verify(token, secret) as {
             userId: number;
             username: string;
             email: string;
         };
-
-        req.user = decoded;
         next();
     } catch (error) {
         return res.status(401).json({

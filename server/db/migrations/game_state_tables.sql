@@ -324,9 +324,9 @@ CREATE TABLE IF NOT EXISTS session_economy_state (
 
                                                      inflation INTEGER NOT NULL DEFAULT 20,
 
-                                                     wood_avg_price NUMERIC(10, 2) NOT NULL DEFAULT 1.00,
-                                                     stone_avg_price NUMERIC(10, 2) NOT NULL DEFAULT 1.00,
-                                                     grain_avg_price NUMERIC(10, 2) NOT NULL DEFAULT 1.00,
+                                                     wood_avg_price NUMERIC(10, 2) NOT NULL DEFAULT 5.00,
+                                                     stone_avg_price NUMERIC(10, 2) NOT NULL DEFAULT 5.00,
+                                                     grain_avg_price NUMERIC(10, 2) NOT NULL DEFAULT 5.00,
 
                                                      last_calculated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 

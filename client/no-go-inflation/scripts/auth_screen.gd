@@ -88,8 +88,7 @@ func _on_auth_failed(message: String) -> void:
 
 
 func _on_ws_connected() -> void:
-	status_label.text = "WebSocket conectat. Trimit PING..."
-	GameSocket.send_ping()
+	status_label.text = "WebSocket conectat. Aștept autentificarea..."
 
 
 func _on_ws_connection_failed(message: String) -> void:
@@ -101,21 +100,24 @@ func _on_ws_message_received(message: Dictionary) -> void:
 
 	if message_type == "AUTHENTICATED":
 		print("WebSocket authenticated: ", message)
-		status_label.text = "WebSocket autentificat."
+		status_label.text = "WebSocket autentificat. Creez sesiune demo..."
+		GameSocket.create_demo_session()
 
-	if message_type == "PONG":
-		print("PONG primit: ", message)
-		status_label.text = "PING/PONG OK. Creez sesiune demo..."
+	elif message_type == "SESSION_STATE":
+		print("SESSION_STATE primit.")
 
-		GameSocket.send_message("CREATE_DEMO_SESSION")
+		var payload = message.get("payload", {})
 
-	if message_type == "SESSION_STATE":
-		print("SESSION_STATE primit: ", message)
-
-		var payload: Dictionary = message.get("payload", {})
+		if typeof(payload) != TYPE_DICTIONARY:
+			status_label.text = "SESSION_STATE invalid primit de la server."
+			return
 
 		GameState.load_session_state(payload)
 
 		status_label.text = "Sesiune demo creată: %s" % GameState.session_id
 
 		get_tree().change_scene_to_file("res://scenes/Main.tscn")
+
+	elif message_type == "ERROR":
+		var payload: Dictionary = message.get("payload", {})
+		status_label.text = str(payload.get("message", "Eroare necunoscută."))

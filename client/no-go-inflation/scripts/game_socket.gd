@@ -50,11 +50,11 @@ func _process(_delta: float) -> void:
 		while socket.get_available_packet_count() > 0:
 			var packet := socket.get_packet()
 			var text := packet.get_string_from_utf8()
-			print("WebSocket received: ", text)
-
 			var parsed = JSON.parse_string(text)
 
 			if typeof(parsed) == TYPE_DICTIONARY:
+				var message_type := str(parsed.get("type", "UNKNOWN"))
+				print("WebSocket received: ", message_type)
 				message_received.emit(parsed)
 			else:
 				print("Invalid WebSocket JSON: ", text)
@@ -80,9 +80,35 @@ func send_message(type: String, payload: Dictionary = {}) -> void:
 	}
 
 	var text := JSON.stringify(message)
-	print("WebSocket sending: ", text)
+	print("WebSocket sending: ", type)
 	socket.send_text(text)
 
+func create_demo_session() -> void:
+	send_message("CREATE_DEMO_SESSION")
+
+
+func build_building(session_id: String, x: int, y: int) -> void:
+	_send_tile_action("BUILD_BUILDING", session_id, x, y)
+
+
+func upgrade_building(session_id: String, x: int, y: int) -> void:
+	_send_tile_action("UPGRADE_BUILDING", session_id, x, y)
+
+
+func collect_building(session_id: String, x: int, y: int) -> void:
+	_send_tile_action("COLLECT_BUILDING", session_id, x, y)
+
+
+func _send_tile_action(message_type: String, session_id: String, x: int, y: int) -> void:
+	if session_id.is_empty():
+		print("Cannot send %s. Missing session id." % message_type)
+		return
+
+	send_message(message_type, {
+		"sessionId": session_id,
+		"x": x,
+		"y": y
+	})
 
 func send_ping() -> void:
 	send_message("PING", {

@@ -33,11 +33,7 @@ text = "Lemn: 0 | Piatră: 0 | Grâne: 0 | Galbeni: 0"
 
 [node name="OpenMarketButton" type="Button" parent="HUD/TopPanel/MarginContainer/VBoxContainer" unique_id=916144777]
 layout_mode = 2
-text = "Open Market
-"
-
-[node name="Ticktimer" type="Timer" parent="." unique_id=1660498962]
-autostart = true
+text = "Piață"
 
 [node name="BuildingPopup" parent="." unique_id=663094514 instance=ExtResource("3_i1jb3")]
 

@@ -4,6 +4,25 @@ import jwt from "jsonwebtoken";
 import { pool } from "../config/db";
 import { generatePlayerMap, type TileType } from "../game/mapGenerator";
 
+type BuildingType = "farm" | "mine" | "lumberyard";
+type ResourceType = "wood" | "stone" | "grain";
+
+type OfferType = "buy" | "sell";
+
+type CreateMarketOfferPayload = {
+    sessionId: string;
+    offerType: OfferType;
+    resource: ResourceType;
+    quantity: number;
+    pricePerUnit: number;
+};
+
+type AcceptMarketOfferPayload = {
+    sessionId: string;
+    offerId: string;
+    quantity: number;
+};
+
 type AuthenticatedUser = {
     id: number;
     username: string;
@@ -20,8 +39,43 @@ type ClientMessage = {
     payload?: unknown;
 };
 
-type BuildingType = "farm" | "mine" | "lumberyard";
-type ResourceType = "wood" | "stone" | "grain";
+type EconomySnapshotReason =
+    | "session_start"
+    | "periodic"
+    | "trade"
+    | "recycle"
+    | "disconnect"
+    | "session_end";
+
+type EconomyPressures = {
+    demandSupplyPressure?: number;
+    overpricePressure?: number;
+    recyclePressure?: number;
+};
+
+const DAY_START_MINUTE = 480; // 08:00
+const DAY_END_MINUTE = 1200; // 20:00
+const FINAL_DAY = 5;
+
+const MARKET_OPEN_MINUTE = 540; // 09:00
+const MARKET_CLOSE_MINUTE = 1020; // 17:00
+const OFFER_DURATION_MINUTES = 30;
+
+const GAME_TICK_REAL_SECONDS = 5;
+const GAME_MINUTES_PER_TICK = 5;
+
+const INITIAL_RESOURCE_AMOUNT = 200;
+const INITIAL_GALBENI = 100;
+const INITIAL_INFLATION = 20;
+
+const OVERPRICE_THRESHOLD_MULTIPLIER = 1.5;
+const MAX_TRADE_INFLATION_PRESSURE = 8;
+
+const INITIAL_AVERAGE_PRICE = 5;
+
+const AVG_PRICE_TRADE_QUANTITY_CAP = 100;
+const DEMAND_SUPPLY_PRESSURE_THRESHOLD = 0.6;
+const MAX_DEMAND_SUPPLY_PRESSURE = 5;
 
 const BUILDING_BY_TILE: Record<TileType, BuildingType> = {
     field: "farm",
@@ -53,8 +107,98 @@ const RESOURCE_BY_BUILDING: Record<BuildingType, ResourceType> = {
 const connectedClients = new Set<AuthenticatedWebSocket>();
 let gameLoopStarted = false;
 
-const GAME_TICK_REAL_SECONDS = 5;
-const GAME_MINUTES_PER_TICK = 5;
+function clampNumber(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, value));
+}
+
+function getAveragePriceColumn(resource: ResourceType): string {
+    switch (resource) {
+        case "wood":
+            return "wood_avg_price";
+        case "stone":
+            return "stone_avg_price";
+        case "grain":
+            return "grain_avg_price";
+    }
+}
+
+async function calculateDemandSupplyPressure(
+    queryable: Pick<typeof pool, "query">,
+    sessionId: string
+): Promise<number> {
+    const result = await queryable.query(
+        `
+        SELECT
+            resource,
+            SUM(
+                CASE
+                    WHEN offer_type = 'buy' THEN remaining_quantity
+                    ELSE 0
+                END
+            ) AS buy_quantity,
+            SUM(
+                CASE
+                    WHEN offer_type = 'sell' THEN remaining_quantity
+                    ELSE 0
+                END
+            ) AS sell_quantity
+        FROM market_offers
+        WHERE session_id = $1
+          AND status = 'active'
+          AND expires_at > now()
+        GROUP BY resource
+        `,
+        [sessionId]
+    );
+
+    let totalPressure = 0;
+
+    for (const row of result.rows) {
+        const buyQuantity = Number(row.buy_quantity ?? 0);
+        const sellQuantity = Number(row.sell_quantity ?? 0);
+        const totalQuantity = buyQuantity + sellQuantity;
+
+        if (totalQuantity <= 0) {
+            continue;
+        }
+
+        const imbalance = Math.abs(buyQuantity - sellQuantity) / totalQuantity;
+
+        if (imbalance <= DEMAND_SUPPLY_PRESSURE_THRESHOLD) {
+            continue;
+        }
+
+        const rawPressure =
+            (imbalance - DEMAND_SUPPLY_PRESSURE_THRESHOLD) * 10;
+
+        totalPressure += rawPressure;
+    }
+
+    return clampNumber(
+        Math.round(totalPressure),
+        0,
+        MAX_DEMAND_SUPPLY_PRESSURE
+    );
+}
+
+function calculateOverpricePressure(
+    pricePerUnit: number,
+    currentAveragePrice: number
+): number {
+    if (currentAveragePrice <= 0) {
+        return 0;
+    }
+
+    const ratio = pricePerUnit / currentAveragePrice;
+
+    if (ratio <= OVERPRICE_THRESHOLD_MULTIPLIER) {
+        return 0;
+    }
+
+    const rawPressure = Math.ceil((ratio - OVERPRICE_THRESHOLD_MULTIPLIER) * 4);
+
+    return clampNumber(rawPressure, 1, MAX_TRADE_INFLATION_PRESSURE);
+}
 
 function startGameLoop(): void {
     if (gameLoopStarted) {
@@ -66,6 +210,29 @@ function startGameLoop(): void {
     setInterval(() => {
         void processGameLoopTick(GAME_MINUTES_PER_TICK);
     }, GAME_TICK_REAL_SECONDS * 1000);
+}
+
+async function getHumanParticipantForSession(
+    queryable: Pick<typeof pool, "query">,
+    user: AuthenticatedUser,
+    sessionId: string
+) {
+    const participantResult = await queryable.query(
+        `
+        SELECT id, display_name, role
+        FROM session_participants
+        WHERE session_id = $1
+          AND user_id = $2
+        LIMIT 1
+        `,
+        [sessionId, user.id]
+    );
+
+    if (participantResult.rows.length === 0) {
+        throw new Error("Jucătorul nu aparține acestei sesiuni.");
+    }
+
+    return participantResult.rows[0];
 }
 
 async function processGameLoopTick(gameMinutesToAdvance: number): Promise<void> {
@@ -83,7 +250,14 @@ async function processGameLoopTick(gameMinutesToAdvance: number): Promise<void> 
 
     for (const sessionId of sessionIds) {
         try {
-            await advanceSessionTime(sessionId, gameMinutesToAdvance);
+            const sessionWasUpdated = await advanceSessionTime(
+                sessionId,
+                gameMinutesToAdvance
+            );
+
+            if (!sessionWasUpdated) {
+                continue;
+            }
 
             for (const ws of connectedClients) {
                 if (
@@ -201,17 +375,17 @@ function parseClientMessage(rawMessage: RawData): ClientMessage | null {
     }
 }
 
-type BuildBuildingPayload = {
-    sessionId: string;
-    x: number;
-    y: number;
-};
-
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parseBuildBuildingPayload(payload: unknown): BuildBuildingPayload | null {
+type TileActionPayload = {
+    sessionId: string;
+    x: number;
+    y: number;
+};
+
+function parseTileActionPayload(payload: unknown): TileActionPayload | null {
     if (!isRecord(payload)) {
         return null;
     }
@@ -235,68 +409,205 @@ function parseBuildBuildingPayload(payload: unknown): BuildBuildingPayload | nul
     };
 }
 
-type UpgradeBuildingPayload = {
-    sessionId: string;
-    x: number;
-    y: number;
-};
+function isResourceType(value: unknown): value is ResourceType {
+    return value === "wood" || value === "stone" || value === "grain";
+}
 
-function parseUpgradeBuildingPayload(payload: unknown): UpgradeBuildingPayload | null {
+function isOfferType(value: unknown): value is OfferType {
+    return value === "buy" || value === "sell";
+}
+
+function parseCreateMarketOfferPayload(payload: unknown): CreateMarketOfferPayload | null {
     if (!isRecord(payload)) {
         return null;
     }
 
     if (
         typeof payload.sessionId !== "string" ||
-        typeof payload.x !== "number" ||
-        typeof payload.y !== "number"
+        !isOfferType(payload.offerType) ||
+        !isResourceType(payload.resource) ||
+        typeof payload.quantity !== "number" ||
+        typeof payload.pricePerUnit !== "number"
     ) {
         return null;
     }
 
-    if (!Number.isInteger(payload.x) || !Number.isInteger(payload.y)) {
+    if (
+        !Number.isInteger(payload.quantity) ||
+        !Number.isInteger(payload.pricePerUnit) ||
+        payload.quantity <= 0 ||
+        payload.pricePerUnit <= 0
+    ) {
         return null;
     }
 
     return {
         sessionId: payload.sessionId,
-        x: payload.x,
-        y: payload.y,
+        offerType: payload.offerType,
+        resource: payload.resource,
+        quantity: payload.quantity,
+        pricePerUnit: payload.pricePerUnit,
     };
 }
 
-type CollectBuildingPayload = {
-    sessionId: string;
-    x: number;
-    y: number;
-};
-
-function parseCollectBuildingPayload(payload: unknown): CollectBuildingPayload | null {
+function parseAcceptMarketOfferPayload(payload: unknown): AcceptMarketOfferPayload | null {
     if (!isRecord(payload)) {
         return null;
     }
 
     if (
         typeof payload.sessionId !== "string" ||
-        typeof payload.x !== "number" ||
-        typeof payload.y !== "number"
+        typeof payload.offerId !== "string" ||
+        typeof payload.quantity !== "number"
     ) {
         return null;
     }
 
-    if (!Number.isInteger(payload.x) || !Number.isInteger(payload.y)) {
+    if (!Number.isInteger(payload.quantity) || payload.quantity <= 0) {
         return null;
     }
 
     return {
         sessionId: payload.sessionId,
-        x: payload.x,
-        y: payload.y,
+        offerId: payload.offerId,
+        quantity: payload.quantity,
     };
+}
+
+async function buildBuilding(user: AuthenticatedUser, rawPayload: unknown) {
+    const payload = parseTileActionPayload(rawPayload);
+
+    if (!payload) {
+        throw new Error("Payload invalid pentru BUILD_BUILDING.");
+    }
+
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const participant = await getHumanParticipantForSession(
+            client,
+            user,
+            payload.sessionId
+        );
+
+        const tileResult = await client.query(
+            `
+            SELECT tile
+            FROM player_map_tiles
+            WHERE participant_id = $1
+              AND tile_x = $2
+              AND tile_y = $3
+            `,
+            [participant.id, payload.x, payload.y]
+        );
+
+        if (tileResult.rows.length === 0) {
+            throw new Error("Lotul selectat nu există.");
+        }
+
+        const tile = tileResult.rows[0].tile as TileType;
+        const building = BUILDING_BY_TILE[tile];
+
+        const existingBuildingResult = await client.query(
+            `
+            SELECT id
+            FROM player_buildings
+            WHERE participant_id = $1
+              AND tile_x = $2
+              AND tile_y = $3
+            `,
+            [participant.id, payload.x, payload.y]
+        );
+
+        if (existingBuildingResult.rows.length > 0) {
+            throw new Error("Pe acest lot există deja o clădire.");
+        }
+
+        const cost = BUILD_COSTS[building];
+        const costEntries = Object.entries(cost) as Array<[ResourceType, number]>;
+
+        const resourceResult = await client.query(
+            `
+            SELECT resource, amount
+            FROM player_resources
+            WHERE participant_id = $1
+            FOR UPDATE
+            `,
+            [participant.id]
+        );
+
+        const available: Record<ResourceType, number> = {
+            wood: 0,
+            stone: 0,
+            grain: 0,
+        };
+
+        for (const row of resourceResult.rows) {
+            const resource = row.resource as ResourceType;
+
+            if (resource === "wood" || resource === "stone" || resource === "grain") {
+                available[resource] = Number(row.amount);
+            }
+        }
+
+        for (const [resource, amount] of costEntries) {
+            if (available[resource] < amount) {
+                throw new Error(`Resurse insuficiente pentru construire. Lipsește: ${resource}.`);
+            }
+        }
+
+        for (const [resource, amount] of costEntries) {
+            await client.query(
+                `
+                UPDATE player_resources
+                SET amount = amount - $3,
+                    updated_at = now()
+                WHERE participant_id = $1
+                  AND resource = $2
+                `,
+                [participant.id, resource, amount]
+            );
+        }
+
+        await client.query(
+            `
+            INSERT INTO player_buildings (
+                session_id,
+                participant_id,
+                tile_x,
+                tile_y,
+                tile,
+                building,
+                level,
+                stored_amount
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, 1, 0)
+            `,
+            [
+                payload.sessionId,
+                participant.id,
+                payload.x,
+                payload.y,
+                tile,
+                building,
+            ]
+        );
+
+        await client.query("COMMIT");
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+    } finally {
+        client.release();
+    }
+
+    return getSessionStateForUser(user, payload.sessionId);
 }
 
 async function collectBuilding(user: AuthenticatedUser, rawPayload: unknown) {
-    const payload = parseCollectBuildingPayload(rawPayload);
+    const payload = parseTileActionPayload(rawPayload);
 
     if (!payload) {
         throw new Error("Payload invalid pentru COLLECT_BUILDING.");
@@ -307,22 +618,11 @@ async function collectBuilding(user: AuthenticatedUser, rawPayload: unknown) {
     try {
         await client.query("BEGIN");
 
-        const participantResult = await client.query(
-            `
-            SELECT id
-            FROM session_participants
-            WHERE session_id = $1
-              AND user_id = $2
-            LIMIT 1
-            `,
-            [payload.sessionId, user.id]
+        const participant = await getHumanParticipantForSession(
+            client,
+            user,
+            payload.sessionId
         );
-
-        if (participantResult.rows.length === 0) {
-            throw new Error("Jucătorul nu aparține acestei sesiuni.");
-        }
-
-        const participant = participantResult.rows[0];
 
         const buildingResult = await client.query(
             `
@@ -383,7 +683,7 @@ async function collectBuilding(user: AuthenticatedUser, rawPayload: unknown) {
 }
 
 async function upgradeBuilding(user: AuthenticatedUser, rawPayload: unknown) {
-    const payload = parseUpgradeBuildingPayload(rawPayload);
+    const payload = parseTileActionPayload(rawPayload);
 
     if (!payload) {
         throw new Error("Payload invalid pentru UPGRADE_BUILDING.");
@@ -394,22 +694,11 @@ async function upgradeBuilding(user: AuthenticatedUser, rawPayload: unknown) {
     try {
         await client.query("BEGIN");
 
-        const participantResult = await client.query(
-            `
-            SELECT id
-            FROM session_participants
-            WHERE session_id = $1
-              AND user_id = $2
-            LIMIT 1
-            `,
-            [payload.sessionId, user.id]
+        const participant = await getHumanParticipantForSession(
+            client,
+            user,
+            payload.sessionId
         );
-
-        if (participantResult.rows.length === 0) {
-            throw new Error("Jucătorul nu aparține acestei sesiuni.");
-        }
-
-        const participant = participantResult.rows[0];
 
         const buildingResult = await client.query(
             `
@@ -557,9 +846,9 @@ async function createDemoSession(user: AuthenticatedUser) {
                 economic_score,
                 total_recycled_amount
             )
-            VALUES ($1, $2, 100, 0, 0)
+            VALUES ($1, $2, $3, 0, 0)
             `,
-            [session.id, participant.id]
+            [session.id, participant.id, INITIAL_GALBENI]
         );
 
         for (const resource of ["wood", "stone", "grain"]) {
@@ -570,9 +859,9 @@ async function createDemoSession(user: AuthenticatedUser) {
                     resource,
                     amount
                 )
-                VALUES ($1, $2, 200)
+                VALUES ($1, $2, $3)
                 `,
-                [participant.id, resource]
+                [participant.id, resource, INITIAL_RESOURCE_AMOUNT]
             );
         }
 
@@ -595,16 +884,16 @@ async function createDemoSession(user: AuthenticatedUser) {
 
         await client.query(
             `
-            INSERT INTO session_economy_state (
-                session_id,
-                inflation,
-                wood_avg_price,
-                stone_avg_price,
-                grain_avg_price
-            )
-            VALUES ($1, 20, 1.00, 1.00, 1.00)
+                INSERT INTO session_economy_state (
+                    session_id,
+                    inflation,
+                    wood_avg_price,
+                    stone_avg_price,
+                    grain_avg_price
+                )
+                VALUES ($1, $2, $3, $3, $3)
             `,
-            [session.id]
+            [session.id, INITIAL_INFLATION, INITIAL_AVERAGE_PRICE]
         );
 
         await client.query("COMMIT");
@@ -621,17 +910,17 @@ async function createDemoSession(user: AuthenticatedUser) {
                 role: participant.role,
             },
             resources: {
-                wood: 200,
-                stone: 200,
-                grain: 200,
-                galbeni: 100,
+                wood: INITIAL_RESOURCE_AMOUNT,
+                stone: INITIAL_RESOURCE_AMOUNT,
+                grain: INITIAL_RESOURCE_AMOUNT,
+                galbeni: INITIAL_GALBENI,
             },
             economy: {
-                inflation: 20,
+                inflation: INITIAL_INFLATION,
                 averagePrices: {
-                    wood: 1,
-                    stone: 1,
-                    grain: 1,
+                    wood: INITIAL_AVERAGE_PRICE,
+                    stone: INITIAL_AVERAGE_PRICE,
+                    grain: INITIAL_AVERAGE_PRICE,
                 },
             },
             map: demoMap,
@@ -783,9 +1072,9 @@ async function getSessionStateForUser(user: AuthenticatedUser, sessionId: string
         economy: {
             inflation: Number(economyRow?.inflation ?? 20),
             averagePrices: {
-                wood: Number(economyRow?.wood_avg_price ?? 1),
-                stone: Number(economyRow?.stone_avg_price ?? 1),
-                grain: Number(economyRow?.grain_avg_price ?? 1),
+                wood: Number(economyRow?.wood_avg_price ?? INITIAL_AVERAGE_PRICE),
+                stone: Number(economyRow?.stone_avg_price ?? INITIAL_AVERAGE_PRICE),
+                grain: Number(economyRow?.grain_avg_price ?? INITIAL_AVERAGE_PRICE),
             },
         },
         map: {
@@ -800,7 +1089,7 @@ async function getSessionStateForUser(user: AuthenticatedUser, sessionId: string
 async function advanceSessionTime(
     sessionId: string,
     gameMinutesToAdvance: number
-): Promise<void> {
+): Promise<boolean> {
     const client = await pool.connect();
 
     try {
@@ -808,10 +1097,10 @@ async function advanceSessionTime(
 
         const sessionResult = await client.query(
             `
-            SELECT current_day, current_minute, status
-            FROM game_sessions
-            WHERE id = $1
-            FOR UPDATE
+                SELECT current_day, current_minute, status
+                FROM game_sessions
+                WHERE id = $1
+                    FOR UPDATE
             `,
             [sessionId]
         );
@@ -824,54 +1113,78 @@ async function advanceSessionTime(
 
         if (session.status !== "active") {
             await client.query("COMMIT");
-            return;
+            return false;
         }
 
         const currentDay = Number(session.current_day);
         const currentMinute = Number(session.current_minute);
 
         let nextDay = currentDay;
-        let nextMinute = currentMinute + gameMinutesToAdvance;
+        let nextMinute = currentMinute;
         let nextStatus = "active";
+        let productionMinutes = 0;
 
-        if (nextMinute > 1200) {
-            if (currentDay >= 5) {
-                nextDay = 5;
-                nextMinute = 1200;
+        if (currentMinute >= DAY_END_MINUTE) {
+            if (currentDay >= FINAL_DAY) {
+                nextDay = FINAL_DAY;
+                nextMinute = DAY_END_MINUTE;
                 nextStatus = "finished";
             } else {
                 nextDay = currentDay + 1;
-                nextMinute = 480;
+                nextMinute = DAY_START_MINUTE;
+            }
+        } else {
+            productionMinutes = Math.min(
+                gameMinutesToAdvance,
+                DAY_END_MINUTE - currentMinute
+            );
+
+            nextMinute = currentMinute + productionMinutes;
+
+            if (nextMinute >= DAY_END_MINUTE) {
+                nextMinute = DAY_END_MINUTE;
+
+                if (currentDay >= FINAL_DAY) {
+                    nextStatus = "finished";
+                }
             }
         }
 
         await client.query(
             `
-            UPDATE game_sessions
-            SET current_day = $2,
-                current_minute = $3,
-                status = $4,
-                updated_at = now()
-            WHERE id = $1
+                UPDATE game_sessions
+                SET current_day = $2,
+                    current_minute = $3,
+                    status = $4::session_status,
+                    ended_at = CASE
+                                   WHEN $4::session_status = 'finished'::session_status
+                                       THEN COALESCE(ended_at, now())
+                                   ELSE ended_at
+                        END,
+                    updated_at = now()
+                WHERE id = $1
             `,
             [sessionId, nextDay, nextMinute, nextStatus]
         );
 
-        await client.query(
-            `
+        if (productionMinutes > 0) {
+            await client.query(
+                `
                 UPDATE player_buildings
                 SET stored_amount = LEAST(
                         stored_amount + (level * $2),
                         level * 60
-                                    ),
+                    ),
                     updated_at = now()
                 WHERE session_id = $1
                   AND stored_amount < level * 60
-            `,
-            [sessionId, gameMinutesToAdvance]
-        );
+                `,
+                [sessionId, productionMinutes]
+            );
+        }
 
         await client.query("COMMIT");
+        return true;
     } catch (error) {
         await client.query("ROLLBACK");
         throw error;
@@ -880,11 +1193,91 @@ async function advanceSessionTime(
     }
 }
 
-async function buildBuilding(user: AuthenticatedUser, rawPayload: unknown) {
-    const payload = parseBuildBuildingPayload(rawPayload);
+async function expireOldOffers(sessionId: string): Promise<void> {
+    await pool.query(
+        `
+        UPDATE market_offers
+        SET status = 'expired',
+            updated_at = now()
+        WHERE session_id = $1
+          AND status = 'active'
+          AND expires_at <= now()
+        `,
+        [sessionId]
+    );
+}
+
+async function getMarketStateForUser(user: AuthenticatedUser, sessionId: string) {
+    await expireOldOffers(sessionId);
+
+    const participant = await getHumanParticipantForSession(pool, user, sessionId);
+
+    const offersResult = await pool.query(
+        `
+        SELECT
+            mo.id,
+            mo.offer_type,
+            mo.resource,
+            mo.min_quantity,
+            mo.max_quantity,
+            mo.remaining_quantity,
+            mo.price_per_unit,
+            mo.expires_at,
+            mo.creator_participant_id,
+            sp.display_name AS creator_name
+        FROM market_offers mo
+        JOIN session_participants sp
+          ON sp.id = mo.creator_participant_id
+        WHERE mo.session_id = $1
+          AND mo.status = 'active'
+          AND mo.expires_at > now()
+        ORDER BY mo.created_at DESC
+        `,
+        [sessionId]
+    );
+
+    const economyResult = await pool.query(
+        `
+        SELECT inflation, wood_avg_price, stone_avg_price, grain_avg_price
+        FROM session_economy_state
+        WHERE session_id = $1
+        `,
+        [sessionId]
+    );
+
+    const economyRow = economyResult.rows[0];
+
+    return {
+        sessionId,
+        economy: {
+            inflation: Number(economyRow?.inflation ?? 20),
+            averagePrices: {
+                wood: Number(economyRow?.wood_avg_price ?? INITIAL_AVERAGE_PRICE),
+                stone: Number(economyRow?.stone_avg_price ?? INITIAL_AVERAGE_PRICE),
+                grain: Number(economyRow?.grain_avg_price ?? INITIAL_AVERAGE_PRICE),
+            },
+        },
+        offers: offersResult.rows.map((row) => ({
+            id: row.id,
+            offerType: row.offer_type,
+            resource: row.resource,
+            minQuantity: Number(row.min_quantity),
+            maxQuantity: Number(row.max_quantity),
+            remainingQuantity: Number(row.remaining_quantity),
+            pricePerUnit: Number(row.price_per_unit),
+            expiresAt: row.expires_at,
+            creatorName: row.creator_name,
+            creatorParticipantId: row.creator_participant_id,
+            isOwnOffer: row.creator_participant_id === participant.id,
+        })),
+    };
+}
+
+async function createMarketOffer(user: AuthenticatedUser, rawPayload: unknown) {
+    const payload = parseCreateMarketOfferPayload(rawPayload);
 
     if (!payload) {
-        throw new Error("Payload invalid pentru BUILD_BUILDING.");
+        throw new Error("Payload invalid pentru CREATE_MARKET_OFFER.");
     }
 
     const client = await pool.connect();
@@ -892,135 +1285,810 @@ async function buildBuilding(user: AuthenticatedUser, rawPayload: unknown) {
     try {
         await client.query("BEGIN");
 
-        const participantResult = await client.query(
-            `
-            SELECT id
-            FROM session_participants
-            WHERE session_id = $1
-              AND user_id = $2
-            LIMIT 1
-            `,
-            [payload.sessionId, user.id]
+        const participant = await getHumanParticipantForSession(
+            client,
+            user,
+            payload.sessionId
         );
 
-        if (participantResult.rows.length === 0) {
-            throw new Error("Jucătorul nu aparține acestei sesiuni.");
-        }
-
-        const participant = participantResult.rows[0];
-
-        const tileResult = await client.query(
+        const sessionResult = await client.query(
             `
-            SELECT tile
-            FROM player_map_tiles
-            WHERE participant_id = $1
-              AND tile_x = $2
-              AND tile_y = $3
-            `,
-            [participant.id, payload.x, payload.y]
-        );
-
-        if (tileResult.rows.length === 0) {
-            throw new Error("Lotul selectat nu există.");
-        }
-
-        const tile = tileResult.rows[0].tile as TileType;
-        const building = BUILDING_BY_TILE[tile];
-
-        const existingBuildingResult = await client.query(
-            `
-            SELECT id
-            FROM player_buildings
-            WHERE participant_id = $1
-              AND tile_x = $2
-              AND tile_y = $3
-            `,
-            [participant.id, payload.x, payload.y]
-        );
-
-        if (existingBuildingResult.rows.length > 0) {
-            throw new Error("Pe acest lot există deja o clădire.");
-        }
-
-        const cost = BUILD_COSTS[building];
-        const costEntries = Object.entries(cost) as Array<[ResourceType, number]>;
-
-        const resourceResult = await client.query(
-            `
-            SELECT resource, amount
-            FROM player_resources
-            WHERE participant_id = $1
+            SELECT status, current_minute
+            FROM game_sessions
+            WHERE id = $1
             FOR UPDATE
             `,
-            [participant.id]
+            [payload.sessionId]
         );
 
-        const available: Record<ResourceType, number> = {
-            wood: 0,
-            stone: 0,
-            grain: 0,
-        };
-
-        for (const row of resourceResult.rows) {
-            const resource = row.resource as ResourceType;
-
-            if (resource === "wood" || resource === "stone" || resource === "grain") {
-                available[resource] = Number(row.amount);
-            }
+        if (sessionResult.rows.length === 0) {
+            throw new Error("Sesiunea nu există.");
         }
 
-        for (const [resource, amount] of costEntries) {
-            if (available[resource] < amount) {
-                throw new Error(`Resurse insuficiente pentru construire. Lipsește: ${resource}.`);
-            }
+        const session = sessionResult.rows[0];
+        const currentMinute = Number(session.current_minute);
+
+        if (session.status !== "active") {
+            throw new Error("Piața este disponibilă doar într-o sesiune activă.");
         }
 
-        for (const [resource, amount] of costEntries) {
-            await client.query(
-                `
-                UPDATE player_resources
-                SET amount = amount - $3,
-                    updated_at = now()
-                WHERE participant_id = $1
-                  AND resource = $2
-                `,
-                [participant.id, resource, amount]
-            );
+        if (currentMinute < MARKET_OPEN_MINUTE || currentMinute >= MARKET_CLOSE_MINUTE) {
+            throw new Error("Piața este închisă. Program: 09:00–17:00.");
         }
 
-        await client.query(
+        const offerResult = await client.query(
             `
-            INSERT INTO player_buildings (
+            INSERT INTO market_offers (
                 session_id,
-                participant_id,
-                tile_x,
-                tile_y,
-                tile,
-                building,
-                level,
-                stored_amount
+                creator_participant_id,
+                offer_type,
+                resource,
+                min_quantity,
+                max_quantity,
+                remaining_quantity,
+                price_per_unit,
+                status,
+                expires_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, 1, 0)
+            VALUES (
+                $1,
+                $2,
+                $3::offer_type,
+                $4::resource_type,
+                $5,
+                $5,
+                $5,
+                $6,
+                'active',
+                now() + ($7::text || ' minutes')::interval
+            )
+            RETURNING id, offer_type, resource, remaining_quantity, price_per_unit, expires_at
             `,
             [
                 payload.sessionId,
                 participant.id,
-                payload.x,
-                payload.y,
-                tile,
-                building,
+                payload.offerType,
+                payload.resource,
+                payload.quantity,
+                payload.pricePerUnit,
+                OFFER_DURATION_MINUTES,
             ]
         );
 
         await client.query("COMMIT");
+
+        return {
+            sessionId: payload.sessionId,
+            offer: offerResult.rows[0],
+        };
     } catch (error) {
         await client.query("ROLLBACK");
         throw error;
     } finally {
         client.release();
     }
+}
 
-    return getSessionStateForUser(user, payload.sessionId);
+type DevSeedBotOfferPayload = {
+    sessionId: string;
+    offerType?: OfferType;
+    resource?: ResourceType;
+    quantity?: number;
+    pricePerUnit?: number;
+};
+
+function parseDevSeedBotOfferPayload(payload: unknown): DevSeedBotOfferPayload | null {
+    if (!isRecord(payload)) {
+        return null;
+    }
+
+    if (typeof payload.sessionId !== "string") {
+        return null;
+    }
+
+    const offerType = payload.offerType === undefined ? "sell" : payload.offerType;
+    const resource = payload.resource === undefined ? "wood" : payload.resource;
+    const quantity = payload.quantity === undefined ? 100 : payload.quantity;
+    const pricePerUnit = payload.pricePerUnit === undefined ? 5 : payload.pricePerUnit;
+
+    if (!isOfferType(offerType) || !isResourceType(resource)) {
+        return null;
+    }
+
+    if (
+        typeof quantity !== "number" ||
+        typeof pricePerUnit !== "number" ||
+        !Number.isInteger(quantity) ||
+        !Number.isInteger(pricePerUnit) ||
+        quantity <= 0 ||
+        pricePerUnit <= 0
+    ) {
+        return null;
+    }
+
+    return {
+        sessionId: payload.sessionId,
+        offerType,
+        resource,
+        quantity,
+        pricePerUnit,
+    };
+}
+
+async function seedBotOfferForTesting(user: AuthenticatedUser, rawPayload: unknown) {
+    const payload = parseDevSeedBotOfferPayload(rawPayload);
+
+    if (!payload) {
+        throw new Error("Payload invalid pentru DEV_SEED_BOT_OFFER.");
+    }
+
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        await getHumanParticipantForSession(client, user, payload.sessionId);
+
+        const sessionResult = await client.query(
+            `
+            SELECT id, status, current_minute
+            FROM game_sessions
+            WHERE id = $1
+            FOR UPDATE
+            `,
+            [payload.sessionId]
+        );
+
+        if (sessionResult.rows.length === 0) {
+            throw new Error("Sesiunea nu există.");
+        }
+
+        const session = sessionResult.rows[0];
+
+        if (session.status !== "active") {
+            throw new Error("Seed-ul de ofertă merge doar într-o sesiune activă.");
+        }
+
+        const currentMinute = Number(session.current_minute);
+
+        if (currentMinute < MARKET_OPEN_MINUTE || currentMinute >= MARKET_CLOSE_MINUTE) {
+            await client.query(
+                `
+                UPDATE game_sessions
+                SET current_minute = $2
+                WHERE id = $1
+                `,
+                [payload.sessionId, MARKET_OPEN_MINUTE]
+            );
+        }
+
+        const existingBotResult = await client.query(
+            `
+            SELECT id
+            FROM session_participants
+            WHERE session_id = $1
+              AND participant_type = 'bot'
+              AND display_name = 'Bot Test'
+            LIMIT 1
+            `,
+            [payload.sessionId]
+        );
+
+        let botParticipantId: string;
+
+        if (existingBotResult.rows.length > 0) {
+            botParticipantId = existingBotResult.rows[0].id;
+        } else {
+            const botResult = await client.query(
+                `
+                INSERT INTO session_participants (
+                    session_id,
+                    user_id,
+                    participant_type,
+                    role,
+                    display_name,
+                    is_ready,
+                    is_connected
+                )
+                VALUES (
+                    $1,
+                    NULL,
+                    'bot',
+                    'bot',
+                    'Bot Test',
+                    true,
+                    true
+                )
+                RETURNING id
+                `,
+                [payload.sessionId]
+            );
+
+            botParticipantId = botResult.rows[0].id;
+        }
+
+        await client.query(
+            `
+            INSERT INTO player_states (
+                session_id,
+                participant_id,
+                galbeni,
+                economic_score,
+                total_recycled_amount
+            )
+            VALUES ($1, $2, 10000, 0, 0)
+            ON CONFLICT (participant_id)
+            DO UPDATE SET
+                galbeni = GREATEST(player_states.galbeni, 10000),
+                updated_at = now()
+            `,
+            [payload.sessionId, botParticipantId]
+        );
+
+        for (const resource of ["wood", "stone", "grain"] as ResourceType[]) {
+            await client.query(
+                `
+                INSERT INTO player_resources (participant_id, resource, amount)
+                VALUES ($1, $2::resource_type, 2000)
+                ON CONFLICT (participant_id, resource)
+                DO UPDATE SET
+                    amount = GREATEST(player_resources.amount, 2000),
+                    updated_at = now()
+                `,
+                [botParticipantId, resource]
+            );
+        }
+
+        await client.query(
+            `
+            UPDATE market_offers
+            SET status = 'cancelled',
+                updated_at = now()
+            WHERE creator_participant_id = $1
+              AND status = 'active'
+            `,
+            [botParticipantId]
+        );
+
+        const offerResult = await client.query(
+            `
+            INSERT INTO market_offers (
+                session_id,
+                creator_participant_id,
+                offer_type,
+                resource,
+                min_quantity,
+                max_quantity,
+                remaining_quantity,
+                price_per_unit,
+                status,
+                expires_at
+            )
+            VALUES (
+                $1,
+                $2,
+                $3::offer_type,
+                $4::resource_type,
+                1,
+                $5,
+                $5,
+                $6,
+                'active',
+                now() + interval '30 minutes'
+            )
+            RETURNING id, offer_type, resource, remaining_quantity, price_per_unit, expires_at
+            `,
+            [
+                payload.sessionId,
+                botParticipantId,
+                payload.offerType,
+                payload.resource,
+                payload.quantity,
+                payload.pricePerUnit,
+            ]
+        );
+
+        await client.query("COMMIT");
+
+        return {
+            sessionId: payload.sessionId,
+            botParticipantId,
+            offer: offerResult.rows[0],
+        };
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
+async function updateAveragePricesAfterTrade(
+    queryable: Pick<typeof pool, "query">,
+    sessionId: string
+): Promise<void> {
+    await queryable.query(
+        `
+            WITH ranked_trades AS (
+                SELECT
+                    resource,
+                    LEAST(quantity, $2::integer) AS capped_quantity,
+                    price_per_unit,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY resource
+                        ORDER BY created_at DESC
+                        ) AS rn
+                FROM trade_transactions
+                WHERE session_id = $1
+            ),
+                 recent_trades AS (
+                     SELECT resource, capped_quantity, price_per_unit
+                     FROM ranked_trades
+                     WHERE rn <= 20
+                 ),
+                 averages AS (
+                     SELECT
+                         resource,
+                         ROUND(
+                                 SUM(capped_quantity * price_per_unit)::numeric
+                                     / NULLIF(SUM(capped_quantity), 0),
+                                 2
+                         ) AS avg_price
+                     FROM recent_trades
+                     GROUP BY resource
+                 )
+            UPDATE session_economy_state
+            SET
+                wood_avg_price = COALESCE(
+                        (SELECT avg_price FROM averages WHERE resource = 'wood'),
+                        wood_avg_price
+                                 ),
+                stone_avg_price = COALESCE(
+                        (SELECT avg_price FROM averages WHERE resource = 'stone'),
+                        stone_avg_price
+                                  ),
+                grain_avg_price = COALESCE(
+                        (SELECT avg_price FROM averages WHERE resource = 'grain'),
+                        grain_avg_price
+                                  ),
+                last_calculated_at = now()
+            WHERE session_id = $1
+        `,
+        [sessionId, AVG_PRICE_TRADE_QUANTITY_CAP]
+    );
+}
+
+async function applyEconomyPressuresAndSaveSnapshot(
+    queryable: Pick<typeof pool, "query">,
+    sessionId: string,
+    reason: EconomySnapshotReason,
+    pressures: EconomyPressures = {}
+): Promise<void> {
+    const demandSupplyPressure = pressures.demandSupplyPressure ?? 0;
+    const overpricePressure = pressures.overpricePressure ?? 0;
+    const recyclePressure = pressures.recyclePressure ?? 0;
+
+    const totalPositivePressure =
+        demandSupplyPressure + overpricePressure + recyclePressure;
+
+    const currentEconomyResult = await queryable.query(
+        `
+        SELECT
+            inflation,
+            wood_avg_price,
+            stone_avg_price,
+            grain_avg_price
+        FROM session_economy_state
+        WHERE session_id = $1
+        FOR UPDATE
+        `,
+        [sessionId]
+    );
+
+    if (currentEconomyResult.rows.length === 0) {
+        throw new Error("Starea economiei nu există pentru această sesiune.");
+    }
+
+    const economy = currentEconomyResult.rows[0];
+
+    const currentInflation = Number(economy.inflation);
+    const inflationDelta = Math.round(totalPositivePressure);
+    const nextInflation = clampNumber(currentInflation + inflationDelta, 0, 100);
+
+    await queryable.query(
+        `
+        UPDATE session_economy_state
+        SET inflation = $2,
+            last_calculated_at = now()
+        WHERE session_id = $1
+        `,
+        [sessionId, nextInflation]
+    );
+
+    const updatedEconomyResult = await queryable.query(
+        `
+        SELECT
+            inflation,
+            wood_avg_price,
+            stone_avg_price,
+            grain_avg_price
+        FROM session_economy_state
+        WHERE session_id = $1
+        `,
+        [sessionId]
+    );
+
+    const updatedEconomy = updatedEconomyResult.rows[0];
+
+    await queryable.query(
+        `
+        INSERT INTO economy_snapshots (
+            session_id,
+            inflation,
+            wood_avg_price,
+            stone_avg_price,
+            grain_avg_price,
+            demand_supply_pressure,
+            overprice_pressure,
+            recycle_pressure,
+            reason
+        )
+        VALUES (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9::economy_snapshot_reason
+        )
+        `,
+        [
+            sessionId,
+            Number(updatedEconomy.inflation),
+            Number(updatedEconomy.wood_avg_price),
+            Number(updatedEconomy.stone_avg_price),
+            Number(updatedEconomy.grain_avg_price),
+            demandSupplyPressure,
+            overpricePressure,
+            recyclePressure,
+            reason,
+        ]
+    );
+}
+
+async function acceptMarketOffer(user: AuthenticatedUser, rawPayload: unknown) {
+    const payload = parseAcceptMarketOfferPayload(rawPayload);
+
+    if (!payload) {
+        throw new Error("Payload invalid pentru ACCEPT_MARKET_OFFER.");
+    }
+
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const acceptor = await getHumanParticipantForSession(
+            client,
+            user,
+            payload.sessionId
+        );
+
+        const sessionResult = await client.query(
+            `
+            SELECT status, current_minute
+            FROM game_sessions
+            WHERE id = $1
+            FOR UPDATE
+            `,
+            [payload.sessionId]
+        );
+
+        if (sessionResult.rows.length === 0) {
+            throw new Error("Sesiunea nu există.");
+        }
+
+        const session = sessionResult.rows[0];
+        const currentMinute = Number(session.current_minute);
+
+        if (session.status !== "active") {
+            throw new Error("Tranzacțiile sunt disponibile doar într-o sesiune activă.");
+        }
+
+        if (currentMinute < MARKET_OPEN_MINUTE || currentMinute >= MARKET_CLOSE_MINUTE) {
+            throw new Error("Piața este închisă. Program: 09:00–17:00.");
+        }
+
+        const offerResult = await client.query(
+            `
+            SELECT
+                id,
+                creator_participant_id,
+                offer_type,
+                resource,
+                min_quantity,
+                remaining_quantity,
+                price_per_unit,
+                status,
+                expires_at
+            FROM market_offers
+            WHERE id = $1
+              AND session_id = $2
+            FOR UPDATE
+            `,
+            [payload.offerId, payload.sessionId]
+        );
+
+        if (offerResult.rows.length === 0) {
+            throw new Error("Oferta nu există.");
+        }
+
+        const offer = offerResult.rows[0];
+
+        if (offer.status !== "active") {
+            throw new Error("Oferta nu mai este activă.");
+        }
+
+        if (new Date(offer.expires_at).getTime() <= Date.now()) {
+            await client.query(
+                `
+                UPDATE market_offers
+                SET status = 'expired',
+                    updated_at = now()
+                WHERE id = $1
+                `,
+                [offer.id]
+            );
+
+            throw new Error("Oferta a expirat.");
+        }
+
+        const creatorParticipantId = String(offer.creator_participant_id);
+        const acceptorParticipantId = String(acceptor.id);
+
+        if (creatorParticipantId === acceptorParticipantId) {
+            throw new Error("Nu poți accepta propria ofertă.");
+        }
+
+        const minQuantity = Number(offer.min_quantity);
+        const remainingQuantity = Number(offer.remaining_quantity);
+        const quantity = payload.quantity;
+        const pricePerUnit = Number(offer.price_per_unit);
+        const totalPrice = quantity * pricePerUnit;
+        const resource = offer.resource as ResourceType;
+        const offerType = offer.offer_type as OfferType;
+        const averagePriceColumn = getAveragePriceColumn(resource);
+
+        const economyBeforeTradeResult = await client.query(
+            `
+            SELECT ${averagePriceColumn} AS average_price
+            FROM session_economy_state
+            WHERE session_id = $1
+            FOR UPDATE
+            `,
+            [payload.sessionId]
+        );
+
+        const averagePriceBeforeTrade = Number(
+            economyBeforeTradeResult.rows[0]?.average_price ?? 1
+        );
+
+        const overpricePressure = calculateOverpricePressure(
+            pricePerUnit,
+            averagePriceBeforeTrade
+        );
+
+        if (quantity < minQuantity) {
+            throw new Error(`Cantitatea minimă acceptată este ${minQuantity}.`);
+        }
+
+        if (quantity > remainingQuantity) {
+            throw new Error("Cantitatea cerută depășește cantitatea disponibilă.");
+        }
+
+        const sellerParticipantId =
+            offerType === "sell" ? creatorParticipantId : acceptorParticipantId;
+
+        const buyerParticipantId =
+            offerType === "sell" ? acceptorParticipantId : creatorParticipantId;
+
+        const sellerResourceResult = await client.query(
+            `
+            SELECT amount
+            FROM player_resources
+            WHERE participant_id = $1
+              AND resource = $2
+            FOR UPDATE
+            `,
+            [sellerParticipantId, resource]
+        );
+
+        const sellerResourceAmount = Number(sellerResourceResult.rows[0]?.amount ?? 0);
+
+        if (sellerResourceAmount < quantity) {
+            throw new Error("Vânzătorul nu mai are suficiente resurse pentru tranzacție.");
+        }
+
+        const buyerStateResult = await client.query(
+            `
+            SELECT galbeni
+            FROM player_states
+            WHERE participant_id = $1
+            FOR UPDATE
+            `,
+            [buyerParticipantId]
+        );
+
+        const buyerGalbeni = Number(buyerStateResult.rows[0]?.galbeni ?? 0);
+
+        if (buyerGalbeni < totalPrice) {
+            throw new Error("Cumpărătorul nu are suficienți galbeni.");
+        }
+
+        await client.query(
+            `
+            UPDATE player_resources
+            SET amount = amount - $3,
+                updated_at = now()
+            WHERE participant_id = $1
+              AND resource = $2
+            `,
+            [sellerParticipantId, resource, quantity]
+        );
+
+        await client.query(
+            `
+            UPDATE player_resources
+            SET amount = amount + $3,
+                updated_at = now()
+            WHERE participant_id = $1
+              AND resource = $2
+            `,
+            [buyerParticipantId, resource, quantity]
+        );
+
+        await client.query(
+            `
+            UPDATE player_states
+            SET galbeni = galbeni - $2,
+                updated_at = now()
+            WHERE participant_id = $1
+            `,
+            [buyerParticipantId, totalPrice]
+        );
+
+        await client.query(
+            `
+            UPDATE player_states
+            SET galbeni = galbeni + $2,
+                updated_at = now()
+            WHERE participant_id = $1
+            `,
+            [sellerParticipantId, totalPrice]
+        );
+
+        const transactionResult = await client.query(
+            `
+            INSERT INTO trade_transactions (
+                session_id,
+                offer_id,
+                seller_participant_id,
+                buyer_participant_id,
+                resource,
+                quantity,
+                price_per_unit
+            )
+            VALUES (
+                $1,
+                $2,
+                $3,
+                $4,
+                $5::resource_type,
+                $6,
+                $7
+            )
+            RETURNING id, resource, quantity, price_per_unit, total_price, created_at
+            `,
+            [
+                payload.sessionId,
+                offer.id,
+                sellerParticipantId,
+                buyerParticipantId,
+                resource,
+                quantity,
+                pricePerUnit,
+            ]
+        );
+
+        const newRemainingQuantity = remainingQuantity - quantity;
+
+        await client.query(
+            `
+            UPDATE market_offers
+            SET remaining_quantity = $2,
+                status = CASE
+                    WHEN $2 = 0 THEN 'completed'::offer_status
+                    ELSE 'active'::offer_status
+                END,
+                updated_at = now()
+            WHERE id = $1
+            `,
+            [offer.id, newRemainingQuantity]
+        );
+
+        await updateAveragePricesAfterTrade(client, payload.sessionId);
+
+        const demandSupplyPressure = await calculateDemandSupplyPressure(
+            client,
+            payload.sessionId
+        );
+
+        await applyEconomyPressuresAndSaveSnapshot(
+            client,
+            payload.sessionId,
+            "trade",
+            {
+                demandSupplyPressure,
+                overpricePressure,
+            }
+        );
+
+        await client.query("COMMIT");
+
+        return {
+            sessionId: payload.sessionId,
+            transaction: transactionResult.rows[0],
+        };
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
+function requireWsUser(ws: AuthenticatedWebSocket): AuthenticatedUser | null {
+    if (!ws.user) {
+        sendJson(ws, "ERROR", {
+            message: "User not authenticated.",
+        });
+        return null;
+    }
+
+    return ws.user;
+}
+
+async function broadcastMarketStateToSession(sessionId: string): Promise<void> {
+    for (const client of connectedClients) {
+        if (
+            client.readyState !== WebSocket.OPEN ||
+            !client.user ||
+            client.currentSessionId !== sessionId
+        ) {
+            continue;
+        }
+
+        const marketState = await getMarketStateForUser(client.user, sessionId);
+        sendJson(client, "MARKET_STATE", marketState);
+    }
+}
+
+async function broadcastSessionStateToSession(sessionId: string): Promise<void> {
+    for (const client of connectedClients) {
+        if (
+            client.readyState !== WebSocket.OPEN ||
+            !client.user ||
+            client.currentSessionId !== sessionId
+        ) {
+            continue;
+        }
+
+        const sessionState = await getSessionStateForUser(client.user, sessionId);
+        sendJson(client, "SESSION_STATE", sessionState);
+    }
 }
 
 async function handleClientMessage(ws: AuthenticatedWebSocket, message: ClientMessage) {
@@ -1034,15 +2102,14 @@ async function handleClientMessage(ws: AuthenticatedWebSocket, message: ClientMe
         }
 
         case "CREATE_DEMO_SESSION": {
-            if (!ws.user) {
-                sendJson(ws, "ERROR", {
-                    message: "User not authenticated.",
-                });
+            const user = requireWsUser(ws);
+
+            if (!user) {
                 return;
             }
 
             try {
-                const sessionState = await createDemoSession(ws.user);
+                const sessionState = await createDemoSession(user);
                 ws.currentSessionId = sessionState.sessionId;
 
                 sendJson(ws, "SESSION_STATE", sessionState);
@@ -1058,15 +2125,14 @@ async function handleClientMessage(ws: AuthenticatedWebSocket, message: ClientMe
         }
 
         case "BUILD_BUILDING": {
-            if (!ws.user) {
-                sendJson(ws, "ERROR", {
-                    message: "User not authenticated.",
-                });
+            const user = requireWsUser(ws);
+
+            if (!user) {
                 return;
             }
 
             try {
-                const sessionState = await buildBuilding(ws.user, message.payload);
+                const sessionState = await buildBuilding(user, message.payload);
                 sendJson(ws, "SESSION_STATE", sessionState);
             } catch (error) {
                 sendJson(ws, "ERROR", {
@@ -1078,15 +2144,14 @@ async function handleClientMessage(ws: AuthenticatedWebSocket, message: ClientMe
         }
 
         case "UPGRADE_BUILDING": {
-            if (!ws.user) {
-                sendJson(ws, "ERROR", {
-                    message: "User not authenticated.",
-                });
+            const user = requireWsUser(ws);
+
+            if (!user) {
                 return;
             }
 
             try {
-                const sessionState = await upgradeBuilding(ws.user, message.payload);
+                const sessionState = await upgradeBuilding(user, message.payload);
                 sendJson(ws, "SESSION_STATE", sessionState);
             } catch (error) {
                 sendJson(ws, "ERROR", {
@@ -1098,19 +2163,137 @@ async function handleClientMessage(ws: AuthenticatedWebSocket, message: ClientMe
         }
 
         case "COLLECT_BUILDING": {
-            if (!ws.user) {
+            const user = requireWsUser(ws);
+
+            if (!user) {
+                return;
+            }
+
+            try {
+                const sessionState = await collectBuilding(user, message.payload);
+                sendJson(ws, "SESSION_STATE", sessionState);
+            } catch (error) {
                 sendJson(ws, "ERROR", {
-                    message: "User not authenticated.",
+                    message: error instanceof Error ? error.message : "Colectarea a eșuat.",
+                });
+            }
+
+            break;
+        }
+
+        case "GET_MARKET_STATE": {
+            const user = requireWsUser(ws);
+
+            if (!user) {
+                return;
+            }
+
+            const payload = message.payload;
+
+            if (!isRecord(payload) || typeof payload.sessionId !== "string") {
+                sendJson(ws, "ERROR", {
+                    message: "Payload invalid pentru GET_MARKET_STATE.",
                 });
                 return;
             }
 
             try {
-                const sessionState = await collectBuilding(ws.user, message.payload);
-                sendJson(ws, "SESSION_STATE", sessionState);
+                ws.currentSessionId = payload.sessionId;
+
+                const marketState = await getMarketStateForUser(
+                    user,
+                    payload.sessionId
+                );
+
+                sendJson(ws, "MARKET_STATE", marketState);
             } catch (error) {
                 sendJson(ws, "ERROR", {
-                    message: error instanceof Error ? error.message : "Colectarea a eșuat.",
+                    message: error instanceof Error
+                        ? error.message
+                        : "Nu s-a putut încărca piața.",
+                });
+            }
+
+            break;
+        }
+
+        case "CREATE_MARKET_OFFER": {
+            const user = requireWsUser(ws);
+
+            if (!user) {
+                return;
+            }
+
+            try {
+                const result = await createMarketOffer(user, message.payload);
+                ws.currentSessionId = result.sessionId;
+
+                sendJson(ws, "OFFER_CREATED", result.offer);
+                await broadcastMarketStateToSession(result.sessionId);
+            } catch (error) {
+                sendJson(ws, "ERROR", {
+                    message: error instanceof Error
+                        ? error.message
+                        : "Crearea ofertei a eșuat.",
+                });
+            }
+
+            break;
+        }
+
+        case "ACCEPT_MARKET_OFFER": {
+            const user = requireWsUser(ws);
+
+            if (!user) {
+                return;
+            }
+
+            try {
+                const result = await acceptMarketOffer(user, message.payload);
+                ws.currentSessionId = result.sessionId;
+
+                sendJson(ws, "TRADE_COMPLETED", result.transaction);
+
+                await broadcastSessionStateToSession(result.sessionId);
+                await broadcastMarketStateToSession(result.sessionId);
+            } catch (error) {
+                sendJson(ws, "ERROR", {
+                    message: error instanceof Error
+                        ? error.message
+                        : "Acceptarea ofertei a eșuat.",
+                });
+            }
+
+            break;
+        }
+
+        case "DEV_SEED_BOT_OFFER": {
+            const user = requireWsUser(ws);
+
+            if (!user) {
+                return;
+            }
+
+            if (process.env.NODE_ENV === "production") {
+                sendJson(ws, "ERROR", {
+                    message: "Comenzile DEV nu sunt disponibile în production.",
+                });
+                return;
+            }
+
+            try {
+                const result = await seedBotOfferForTesting(user, message.payload);
+                ws.currentSessionId = result.sessionId;
+
+                sendJson(ws, "DEV_BOT_OFFER_CREATED", result.offer);
+
+                await broadcastSessionStateToSession(result.sessionId);
+                await broadcastMarketStateToSession(result.sessionId);
+            } catch (error) {
+                sendJson(ws, "ERROR", {
+                    message: error instanceof Error
+                        ? error.message
+                        : "Nu s-a putut crea oferta de test.",
                 });
             }
 
