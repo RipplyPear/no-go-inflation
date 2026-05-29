@@ -5,12 +5,16 @@
 [node name="AuthScreen" type="Control" unique_id=1647636251]
 layout_mode = 3
 anchors_preset = 0
+offset_left = 452.0
+offset_top = 172.0
+offset_right = 452.0
+offset_bottom = 172.0
 script = ExtResource("1_vkgmr")
 
 [node name="PanelContainer" type="PanelContainer" parent="." unique_id=229316317]
 layout_mode = 0
-offset_right = 68.0
-offset_bottom = 179.0
+offset_right = 280.0
+offset_bottom = 225.0
 
 [node name="MarginContainer" type="MarginContainer" parent="PanelContainer" unique_id=12540238]
 layout_mode = 2

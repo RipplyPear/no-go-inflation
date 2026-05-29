@@ -33,6 +33,11 @@ func _ready() -> void:
 		dev_seed_button.text = "DEV: ofertă bot (%d galbeni)" % DEV_SEED_PRICES[dev_seed_price_index]
 		dev_seed_button.pressed.connect(_on_dev_seed_bot_offer_pressed)
 		$HUD/TopPanel/MarginContainer/VBoxContainer.add_child(dev_seed_button)
+		
+		var dev_finish_button := Button.new()
+		dev_finish_button.text = "DEV: finalizează sesiunea"
+		dev_finish_button.pressed.connect(_on_dev_force_finish_pressed)
+		$HUD/TopPanel/MarginContainer/VBoxContainer.add_child(dev_finish_button)
 	
 	_update_hud_from_game_state()
 
@@ -73,6 +78,17 @@ func _on_accept_offer_requested(offer_id: String, quantity: int) -> void:
 		offer_id,
 		quantity
 	])
+
+func _on_dev_force_finish_pressed() -> void:
+	if GameState.session_id.is_empty():
+		print("Nu există sesiune activă pentru finalizare.")
+		return
+
+	GameSocket.send_message("DEV_FORCE_FINISH_SESSION", {
+		"sessionId": GameState.session_id
+	})
+
+	print("DEV_FORCE_FINISH_SESSION trimis.")
 
 func _update_hud_from_game_state() -> void:
 	time_label.text = _format_time_label(
@@ -167,6 +183,15 @@ func _on_ws_message_received(message: Dictionary) -> void:
 				"sessionId": GameState.session_id
 			})
 	
+	elif message_type == "GAME_FINISHED":
+		var payload = message.get("payload", {})
+
+		if typeof(payload) != TYPE_DICTIONARY:
+			print("GAME_FINISHED invalid primit în GameScreen.")
+			return
+
+		_show_game_finished(payload)
+	
 	elif message_type == "ERROR":
 		var payload: Dictionary = message.get("payload", {})
 		print("Server error: ", payload.get("message", "Eroare necunoscută."))
@@ -220,3 +245,36 @@ func _on_create_offer_requested(
 		resource,
 		price
 	])
+	
+	
+func _show_game_finished(final_result: Dictionary) -> void:
+	var collective_result := str(final_result.get("collectiveResult", "loss"))
+	var final_inflation := int(final_result.get("finalInflation", 0))
+	var average_score := int(final_result.get("averageEconomicScore", 0))
+	var results = final_result.get("results", [])
+
+	var result_label := "VICTORIE" if collective_result == "win" else "ÎNFRÂNGERE"
+
+	var text := "Final de joc: %s\n" % result_label
+	text += "Inflație finală: %d\n" % final_inflation
+	text += "Scor economic mediu: %d\n\n" % average_score
+	text += "Rezultate jucători:\n"
+
+	if typeof(results) == TYPE_ARRAY:
+		for result in results:
+			if typeof(result) != TYPE_DICTIONARY:
+				continue
+
+			text += "- %s | scor: %d | rang: %s | tranzacții: %d | valoare: %d\n" % [
+				str(result.get("displayName", "Jucător")),
+				int(result.get("economicScore", 0)),
+				str(result.get("rank", "D")),
+				int(result.get("tradesCount", 0)),
+				int(result.get("totalTradedValue", 0))
+			]
+
+	var dialog := AcceptDialog.new()
+	dialog.title = "Rezultatul sesiunii"
+	dialog.dialog_text = text
+	add_child(dialog)
+	dialog.popup_centered()

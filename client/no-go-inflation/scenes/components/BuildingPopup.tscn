@@ -6,7 +6,6 @@
 script = ExtResource("1_ji3a8")
 
 [node name="PanelContainer" type="PanelContainer" parent="." unique_id=254046705]
-visible = false
 offset_right = 40.0
 offset_bottom = 40.0
 

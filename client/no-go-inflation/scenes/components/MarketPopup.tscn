@@ -6,9 +6,10 @@
 script = ExtResource("1_v6sqn")
 
 [node name="PanelContainer" type="PanelContainer" parent="." unique_id=1663390383]
-visible = false
-offset_right = 40.0
-offset_bottom = 40.0
+offset_left = 53.0
+offset_top = 187.0
+offset_right = 207.0
+offset_bottom = 420.0
 
 [node name="MarginContainer" type="MarginContainer" parent="PanelContainer" unique_id=531228679]
 layout_mode = 2
