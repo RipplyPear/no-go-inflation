@@ -1,0 +1,71 @@
+class_name GameDomain
+extends RefCounted
+
+# Resources
+const RESOURCE_WOOD := "wood"
+const RESOURCE_STONE := "stone"
+const RESOURCE_GRAIN := "grain"
+const RESOURCE_GALBENI := "galbeni"
+
+const BASIC_RESOURCES := [
+	RESOURCE_WOOD,
+	RESOURCE_STONE,
+	RESOURCE_GRAIN,
+]
+
+const PLAYER_RESOURCES := [
+	RESOURCE_WOOD,
+	RESOURCE_STONE,
+	RESOURCE_GRAIN,
+	RESOURCE_GALBENI,
+]
+
+# Tiles
+const TILE_FOREST := "forest"
+const TILE_FIELD := "field"
+const TILE_QUARRY := "quarry"
+
+# Buildings
+const BUILDING_FARM := "farm"
+const BUILDING_MINE := "mine"
+const BUILDING_LUMBERYARD := "lumberyard"
+
+# Offers
+const OFFER_BUY := "buy"
+const OFFER_SELL := "sell"
+
+const OFFER_TYPES := [
+	OFFER_BUY,
+	OFFER_SELL,
+]
+
+const TILE_LABELS := {
+	TILE_FIELD: "Câmp",
+	TILE_QUARRY: "Carieră",
+	TILE_FOREST: "Pădure",
+}
+
+const RESOURCE_LABELS := {
+	RESOURCE_WOOD: "Lemn",
+	RESOURCE_STONE: "Piatră",
+	RESOURCE_GRAIN: "Grâne",
+	RESOURCE_GALBENI: "Galbeni",
+}
+
+const BUILDING_LABELS := {
+	BUILDING_FARM: "Fermă",
+	BUILDING_MINE: "Mină",
+	BUILDING_LUMBERYARD: "Lemnărie",
+}
+
+const BUILDING_BY_TILE := {
+	TILE_FIELD: BUILDING_FARM,
+	TILE_QUARRY: BUILDING_MINE,
+	TILE_FOREST: BUILDING_LUMBERYARD,
+}
+
+const RESOURCE_BY_BUILDING := {
+	BUILDING_FARM: RESOURCE_GRAIN,
+	BUILDING_MINE: RESOURCE_STONE,
+	BUILDING_LUMBERYARD: RESOURCE_WOOD,
+}

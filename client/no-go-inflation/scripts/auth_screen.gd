@@ -8,17 +8,46 @@ extends Control
 @onready var login_button: Button = $PanelContainer/MarginContainer/VBoxContainer/LoginButton
 @onready var status_label: Label = $PanelContainer/MarginContainer/VBoxContainer/StatusLabel
 
+var demo_bootstrap: DemoSessionBootstrap
+
 
 func _ready() -> void:
 	password_input.secret = true
 
+	_setup_demo_bootstrap()
+	_connect_ui_signals()
+	_connect_auth_signals()
+	_connect_socket_signals()
+
+	status_label.text = ""
+
+
+func _setup_demo_bootstrap() -> void:
+	demo_bootstrap = DemoSessionBootstrap.new()
+	add_child(demo_bootstrap)
+
+	demo_bootstrap.status_changed.connect(_set_status)
+	demo_bootstrap.failed.connect(_on_demo_bootstrap_failed)
+	demo_bootstrap.session_ready.connect(_on_demo_session_ready)
+
+
+func _connect_ui_signals() -> void:
 	register_button.pressed.connect(_on_register_pressed)
 	login_button.pressed.connect(_on_login_pressed)
 
-	AuthClient.register_succeeded.connect(_on_register_succeeded)
-	AuthClient.login_succeeded.connect(_on_login_succeeded)
-	AuthClient.auth_failed.connect(_on_auth_failed)
-	
+
+func _connect_auth_signals() -> void:
+	if not AuthClient.register_succeeded.is_connected(_on_register_succeeded):
+		AuthClient.register_succeeded.connect(_on_register_succeeded)
+
+	if not AuthClient.login_succeeded.is_connected(_on_login_succeeded):
+		AuthClient.login_succeeded.connect(_on_login_succeeded)
+
+	if not AuthClient.auth_failed.is_connected(_on_auth_failed):
+		AuthClient.auth_failed.connect(_on_auth_failed)
+
+
+func _connect_socket_signals() -> void:
 	if not GameSocket.connected.is_connected(_on_ws_connected):
 		GameSocket.connected.connect(_on_ws_connected)
 
@@ -28,8 +57,6 @@ func _ready() -> void:
 	if not GameSocket.message_received.is_connected(_on_ws_message_received):
 		GameSocket.message_received.connect(_on_ws_message_received)
 
-	status_label.text = ""
-
 
 func _on_register_pressed() -> void:
 	var username := username_input.text.strip_edges()
@@ -37,12 +64,11 @@ func _on_register_pressed() -> void:
 	var password := password_input.text
 
 	if username.is_empty() or email.is_empty() or password.is_empty():
-		status_label.text = "Completează username, email și parolă."
+		_set_status("Completează username, email și parolă.")
 		return
 
-	status_label.text = "Se creează contul..."
-	register_button.disabled = true
-	login_button.disabled = true
+	_set_status("Se creează contul...")
+	_set_auth_buttons_disabled(true)
 
 	AuthClient.register_user(username, email, password)
 
@@ -52,72 +78,77 @@ func _on_login_pressed() -> void:
 	var password := password_input.text
 
 	if email.is_empty() or password.is_empty():
-		status_label.text = "Completează email și parolă."
+		_set_status("Completează email și parolă.")
 		return
 
-	status_label.text = "Autentificare..."
-	register_button.disabled = true
-	login_button.disabled = true
+	_set_status("Autentificare...")
+	_set_auth_buttons_disabled(true)
 
 	AuthClient.login_user(email, password)
 
 
 func _on_register_succeeded(_user: Dictionary) -> void:
-	register_button.disabled = false
-	login_button.disabled = false
-
-	status_label.text = "Cont creat cu succes. Te poți autentifica."
+	_set_auth_buttons_disabled(false)
+	_set_status("Cont creat cu succes. Te poți autentifica.")
 
 
 func _on_login_succeeded(user: Dictionary, token: String) -> void:
-	register_button.disabled = false
-	login_button.disabled = false
+	_set_auth_buttons_disabled(false)
+	_set_status("Login reușit. Bun venit, %s!" % str(user.get("username", "jucător")))
 
-	status_label.text = "Login reușit. Bun venit, %s!" % str(user.get("username", "jucător"))
-
-	# Pentru test, după login intrăm direct în joc.
-	# get_tree().change_scene_to_file("res://scenes/Main.tscn")
 	GameSocket.connect_to_server(token)
 
-func _on_auth_failed(message: String) -> void:
-	register_button.disabled = false
-	login_button.disabled = false
 
-	status_label.text = message
-	
+func _on_auth_failed(message: String) -> void:
+	_set_auth_buttons_disabled(false)
+	_set_status(message)
 
 
 func _on_ws_connected() -> void:
-	status_label.text = "WebSocket conectat. Aștept autentificarea..."
+	_set_status("WebSocket conectat. Aștept autentificarea...")
 
 
 func _on_ws_connection_failed(message: String) -> void:
-	status_label.text = message
+	_set_status(message)
 
 
 func _on_ws_message_received(message: Dictionary) -> void:
 	var message_type := str(message.get("type", ""))
 
-	if message_type == "AUTHENTICATED":
+	if message_type == WsMessageType.AUTHENTICATED:
 		print("WebSocket authenticated: ", message)
-		status_label.text = "WebSocket autentificat. Creez sesiune demo..."
-		GameSocket.create_demo_session()
+		demo_bootstrap.start()
+		return
 
-	elif message_type == "SESSION_STATE":
-		print("SESSION_STATE primit.")
+	if demo_bootstrap.handle_ws_message(message):
+		return
 
-		var payload = message.get("payload", {})
+	if message_type == WsMessageType.ERROR:
+		_handle_socket_error(message)
 
-		if typeof(payload) != TYPE_DICTIONARY:
-			status_label.text = "SESSION_STATE invalid primit de la server."
-			return
 
-		GameState.load_session_state(payload)
+func _handle_socket_error(message: Dictionary) -> void:
+	var payload = message.get("payload", {})
 
-		status_label.text = "Sesiune demo creată: %s" % GameState.session_id
+	if typeof(payload) != TYPE_DICTIONARY:
+		_set_status("Eroare necunoscută.")
+		return
 
-		get_tree().change_scene_to_file("res://scenes/Main.tscn")
+	_set_status(str(payload.get("message", "Eroare necunoscută.")))
 
-	elif message_type == "ERROR":
-		var payload: Dictionary = message.get("payload", {})
-		status_label.text = str(payload.get("message", "Eroare necunoscută."))
+
+func _on_demo_bootstrap_failed(message: String) -> void:
+	_set_status(message)
+
+
+func _on_demo_session_ready() -> void:
+	get_tree().change_scene_to_file("res://scenes/Main.tscn")
+
+
+func _set_auth_buttons_disabled(disabled: bool) -> void:
+	register_button.disabled = disabled
+	login_button.disabled = disabled
+
+
+func _set_status(message: String) -> void:
+	status_label.text = message

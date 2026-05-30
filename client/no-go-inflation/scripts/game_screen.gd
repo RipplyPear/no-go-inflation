@@ -9,10 +9,8 @@ extends Node2D
 @onready var market_popup: MarketPopup = $MarketPopup
 @onready var open_market_button: Button = $HUD/TopPanel/MarginContainer/VBoxContainer/OpenMarketButton
 
-const DEV_SEED_PRICES := [5, 7, 9, 12]
-
-var dev_seed_price_index := 0
-var dev_seed_button: Button
+var dev_panel: GameDevPanel
+var end_game_dialog: EndGameDialog
 
 func _ready() -> void:
 	map_root.tile_clicked.connect(_on_tile_clicked)
@@ -23,52 +21,52 @@ func _ready() -> void:
 	
 	if not GameSocket.message_received.is_connected(_on_ws_message_received):
 		GameSocket.message_received.connect(_on_ws_message_received)
+	
+	if not GameState.state_changed.is_connected(_on_game_state_changed):
+		GameState.state_changed.connect(_on_game_state_changed)
 		
 	open_market_button.pressed.connect(_on_open_market_pressed)
 	market_popup.create_offer_requested.connect(_on_create_offer_requested)
 	market_popup.accept_offer_requested.connect(_on_accept_offer_requested)
 	
-	if OS.is_debug_build():
-		dev_seed_button = Button.new()
-		dev_seed_button.text = "DEV: ofertă bot (%d galbeni)" % DEV_SEED_PRICES[dev_seed_price_index]
-		dev_seed_button.pressed.connect(_on_dev_seed_bot_offer_pressed)
-		$HUD/TopPanel/MarginContainer/VBoxContainer.add_child(dev_seed_button)
-		
-		var dev_finish_button := Button.new()
-		dev_finish_button.text = "DEV: finalizează sesiunea"
-		dev_finish_button.pressed.connect(_on_dev_force_finish_pressed)
-		$HUD/TopPanel/MarginContainer/VBoxContainer.add_child(dev_finish_button)
-	
-	_update_hud_from_game_state()
+	_setup_debug_buttons()
+	_setup_end_game_dialog()
 
-func _on_dev_seed_bot_offer_pressed() -> void:
-	if GameState.session_id.is_empty():
+	_on_game_state_changed()
+
+func _setup_end_game_dialog() -> void:
+	end_game_dialog = EndGameDialog.new()
+	add_child(end_game_dialog)
+
+func _on_game_state_changed() -> void:
+	_update_hud_from_game_state()
+	map_root.apply_server_state(GameState.map_data, GameState.buildings)
+	market_popup.refresh_player_state()
+
+func _on_dev_seed_bot_offer_requested(price: int) -> void:
+	if not GameState.has_active_session():
 		print("Nu există sesiune activă pentru oferta de test.")
 		return
 
-	var price: int = DEV_SEED_PRICES[dev_seed_price_index]
-
-	GameSocket.send_message("DEV_SEED_BOT_OFFER", {
+	GameSocket.send_message(WsMessageType.DEV_SEED_BOT_OFFER, {
 		"sessionId": GameState.session_id,
-		"offerType": "sell",
-		"resource": "wood",
+		"offerType": GameDomain.OFFER_SELL,
+		"resource": GameDomain.RESOURCE_WOOD,
 		"quantity": 100,
 		"pricePerUnit": price
 	})
 
 	print("DEV_SEED_BOT_OFFER trimis cu preț %d." % price)
 
-	dev_seed_price_index = (dev_seed_price_index + 1) % DEV_SEED_PRICES.size()
-
-	if dev_seed_button != null:
-		dev_seed_button.text = "DEV: ofertă bot (%d galbeni)" % DEV_SEED_PRICES[dev_seed_price_index]
+	if dev_panel != null:
+		dev_panel.advance_seed_price()
 
 func _on_accept_offer_requested(offer_id: String, quantity: int) -> void:
-	if GameState.session_id.is_empty():
+	if not GameState.has_active_session():
 		print("Nu există sesiune activă pentru acceptarea ofertei.")
 		return
 
-	GameSocket.send_message("ACCEPT_MARKET_OFFER", {
+	GameSocket.send_message(WsMessageType.ACCEPT_MARKET_OFFER, {
 		"sessionId": GameState.session_id,
 		"offerId": offer_id,
 		"quantity": quantity
@@ -79,12 +77,12 @@ func _on_accept_offer_requested(offer_id: String, quantity: int) -> void:
 		quantity
 	])
 
-func _on_dev_force_finish_pressed() -> void:
-	if GameState.session_id.is_empty():
+func _on_dev_force_finish_requested() -> void:
+	if not GameState.has_active_session():
 		print("Nu există sesiune activă pentru finalizare.")
 		return
 
-	GameSocket.send_message("DEV_FORCE_FINISH_SESSION", {
+	GameSocket.send_message(WsMessageType.DEV_FORCE_FINISH_SESSION, {
 		"sessionId": GameState.session_id
 	})
 
@@ -96,14 +94,11 @@ func _update_hud_from_game_state() -> void:
 		GameState.current_minute
 	)
 
-	var resources := GameState.resources
-	var economy := GameState.economy
-
-	var wood := int(resources.get("wood", 0))
-	var stone := int(resources.get("stone", 0))
-	var grain := int(resources.get("grain", 0))
-	var galbeni := int(resources.get("galbeni", 0))
-	var inflation := int(economy.get("inflation", 20))
+	var wood := GameState.get_resource_amount(GameDomain.RESOURCE_WOOD)
+	var stone := GameState.get_resource_amount(GameDomain.RESOURCE_STONE)
+	var grain := GameState.get_resource_amount(GameDomain.RESOURCE_GRAIN)
+	var galbeni := GameState.get_resource_amount(GameDomain.RESOURCE_GALBENI)
+	var inflation := GameState.get_inflation()
 
 	resource_label.text = "Lemn: %d | Piatră: %d | Grâne: %d | Galbeni: %d | Inflație: %d" % [
 		wood,
@@ -129,6 +124,14 @@ func _format_time_label(day: int, minute: int) -> String:
 
 	return "%s - %02d:%02d" % [day_label, hour, min_part]
 
+func _request_market_state() -> void:
+	if not GameState.has_active_session():
+		print("Nu există sesiune activă pentru piață.")
+		return
+
+	GameSocket.send_message(WsMessageType.GET_MARKET_STATE, {
+		"sessionId": GameState.session_id
+	})
 
 func _on_tile_clicked(x: int, y: int, tile_type: String) -> void:
 	var building: Dictionary = map_root.get_building_at(x, y)
@@ -136,69 +139,109 @@ func _on_tile_clicked(x: int, y: int, tile_type: String) -> void:
 
 
 func _on_build_requested(x: int, y: int, _tile_type: String) -> void:
-	_send_tile_action("BUILD_BUILDING", x, y)
+	_send_tile_action(WsMessageType.BUILD_BUILDING, x, y)
 
 
 func _on_upgrade_requested(x: int, y: int) -> void:
-	_send_tile_action("UPGRADE_BUILDING", x, y)
+	_send_tile_action(WsMessageType.UPGRADE_BUILDING, x, y)
 
 
 func _on_collect_requested(x: int, y: int) -> void:
-	_send_tile_action("COLLECT_BUILDING", x, y)
+	_send_tile_action(WsMessageType.COLLECT_BUILDING, x, y)
 
 func _on_ws_message_received(message: Dictionary) -> void:
 	var message_type := str(message.get("type", ""))
 
-	if message_type == "SESSION_STATE":
-		var payload = message.get("payload", {})
+	match message_type:
+		WsMessageType.SESSION_STATE:
+			_handle_session_state_message(message)
 
-		if typeof(payload) != TYPE_DICTIONARY:
-			print("SESSION_STATE invalid primit în GameScreen.")
-			return
+		WsMessageType.MARKET_STATE:
+			_handle_market_state_message(message)
 
-		GameState.load_session_state(payload)
-		map_root.apply_server_state(GameState.map_data, GameState.buildings)
-		_update_hud_from_game_state()
+		WsMessageType.OFFER_CREATED:
+			_handle_offer_created_message()
 
-	elif message_type == "MARKET_STATE":
-		var payload = message.get("payload", {})
+		WsMessageType.TRADE_COMPLETED:
+			_handle_trade_completed_message()
 
-		if typeof(payload) != TYPE_DICTIONARY:
-			print("MARKET_STATE invalid primit în GameScreen.")
-			return
+		WsMessageType.DEV_BOT_OFFER_CREATED:
+			_handle_dev_bot_offer_created_message()
 
-		market_popup.set_market_state(payload)
+		WsMessageType.GAME_FINISHED:
+			_handle_game_finished_message(message)
 
-	elif message_type == "OFFER_CREATED":
-		print("Oferta a fost creată.")
+		WsMessageType.ERROR:
+			_handle_error_message(message)
 
-	elif message_type == "TRADE_COMPLETED":
-		print("Tranzacție finalizată.")
+		_:
+			print("Mesaj WebSocket netratat în GameScreen: ", message_type)
+
+func _handle_session_state_message(message: Dictionary) -> void:
+	var payload = _get_payload_dictionary(message, WsMessageType.SESSION_STATE)
+
+	if payload.is_empty():
+		return
+
+	GameState.load_session_state(payload)
+
+
+func _handle_market_state_message(message: Dictionary) -> void:
+	var payload = _get_payload_dictionary(message, WsMessageType.MARKET_STATE)
+
+	if payload.is_empty():
+		return
+
+	market_popup.set_market_state(payload)
+
+
+func _handle_offer_created_message() -> void:
+	print("Oferta a fost creată.")
+	_request_market_state()
+
+
+func _handle_trade_completed_message() -> void:
+	print("Tranzacție finalizată.")
+	_request_market_state()
+
+
+func _handle_dev_bot_offer_created_message() -> void:
+	print("Oferta botului de test a fost creată.")
+	_request_market_state()
+
+
+func _handle_game_finished_message(message: Dictionary) -> void:
+	var payload = _get_payload_dictionary(message, WsMessageType.GAME_FINISHED)
+
+	if payload.is_empty():
+		return
+
+	_show_game_finished(payload)
+
+
+func _handle_error_message(message: Dictionary) -> void:
+	var payload = message.get("payload", {})
+
+	if typeof(payload) != TYPE_DICTIONARY:
+		print("Server error: Eroare necunoscută.")
+		return
+
+	print("Server error: ", payload.get("message", "Eroare necunoscută."))
 	
-	elif message_type == "DEV_BOT_OFFER_CREATED":
-		print("Oferta botului de test a fost creată.")
+func _get_payload_dictionary(message: Dictionary, message_type: String) -> Dictionary:
+	var payload = message.get("payload", {})
 
-		if not GameState.session_id.is_empty():
-			GameSocket.send_message("GET_MARKET_STATE", {
-				"sessionId": GameState.session_id
-			})
-	
-	elif message_type == "GAME_FINISHED":
-		var payload = message.get("payload", {})
+	if typeof(payload) != TYPE_DICTIONARY:
+		print("%s invalid primit în GameScreen." % message_type)
+		return {}
 
-		if typeof(payload) != TYPE_DICTIONARY:
-			print("GAME_FINISHED invalid primit în GameScreen.")
-			return
+	return payload
 
-		_show_game_finished(payload)
-	
-	elif message_type == "ERROR":
-		var payload: Dictionary = message.get("payload", {})
-		print("Server error: ", payload.get("message", "Eroare necunoscută."))
-		
+
+
 func _send_tile_action(message_type: String, x: int, y: int) -> void:
-	if GameState.session_id.is_empty():
-		print("Nu există sesiune activă pentru acțiunea: ", message_type)
+	if not GameState.has_active_session():
+		print("Nu există sesiune activă pentru acțiunea pe hartă.")
 		return
 
 	GameSocket.send_message(message_type, {
@@ -206,19 +249,10 @@ func _send_tile_action(message_type: String, x: int, y: int) -> void:
 		"x": x,
 		"y": y
 	})
-
-	print("%s trimis către server pentru (%d, %d)" % [message_type, x, y])
 	
 func _on_open_market_pressed() -> void:
 	market_popup.show_popup()
-
-	if GameState.session_id.is_empty():
-		print("Nu există sesiune activă pentru piață.")
-		return
-
-	GameSocket.send_message("GET_MARKET_STATE", {
-		"sessionId": GameState.session_id
-	})
+	_request_market_state()
 
 
 func _on_create_offer_requested(
@@ -227,11 +261,11 @@ func _on_create_offer_requested(
 	amount: int,
 	price: int
 ) -> void:
-	if GameState.session_id.is_empty():
+	if not GameState.has_active_session():
 		print("Nu există sesiune activă pentru crearea ofertei.")
 		return
 
-	GameSocket.send_message("CREATE_MARKET_OFFER", {
+	GameSocket.send_message(WsMessageType.CREATE_MARKET_OFFER, {
 		"sessionId": GameState.session_id,
 		"offerType": offer_type,
 		"resource": resource,
@@ -239,7 +273,8 @@ func _on_create_offer_requested(
 		"pricePerUnit": price
 	})
 
-	print("CREATE_MARKET_OFFER trimis: %s %d %s la %d galbeni/unitate" % [
+	print("%s trimis: %s %d %s la %d galbeni/unitate" % [
+		WsMessageType.CREATE_MARKET_OFFER,
 		offer_type,
 		amount,
 		resource,
@@ -248,33 +283,15 @@ func _on_create_offer_requested(
 	
 	
 func _show_game_finished(final_result: Dictionary) -> void:
-	var collective_result := str(final_result.get("collectiveResult", "loss"))
-	var final_inflation := int(final_result.get("finalInflation", 0))
-	var average_score := int(final_result.get("averageEconomicScore", 0))
-	var results = final_result.get("results", [])
+	end_game_dialog.show_results(final_result)
 
-	var result_label := "VICTORIE" if collective_result == "win" else "ÎNFRÂNGERE"
 
-	var text := "Final de joc: %s\n" % result_label
-	text += "Inflație finală: %d\n" % final_inflation
-	text += "Scor economic mediu: %d\n\n" % average_score
-	text += "Rezultate jucători:\n"
+func _setup_debug_buttons() -> void:
+	if not OS.is_debug_build():
+		return
 
-	if typeof(results) == TYPE_ARRAY:
-		for result in results:
-			if typeof(result) != TYPE_DICTIONARY:
-				continue
+	dev_panel = GameDevPanel.new()
+	dev_panel.seed_bot_offer_requested.connect(_on_dev_seed_bot_offer_requested)
+	dev_panel.force_finish_requested.connect(_on_dev_force_finish_requested)
 
-			text += "- %s | scor: %d | rang: %s | tranzacții: %d | valoare: %d\n" % [
-				str(result.get("displayName", "Jucător")),
-				int(result.get("economicScore", 0)),
-				str(result.get("rank", "D")),
-				int(result.get("tradesCount", 0)),
-				int(result.get("totalTradedValue", 0))
-			]
-
-	var dialog := AcceptDialog.new()
-	dialog.title = "Rezultatul sesiunii"
-	dialog.dialog_text = text
-	add_child(dialog)
-	dialog.popup_centered()
+	$HUD/TopPanel/MarginContainer/VBoxContainer.add_child(dev_panel)

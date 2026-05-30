@@ -7,30 +7,6 @@ signal collect_requested(x: int, y: int)
 
 const TILE_SIZE := Vector2(64, 64)
 
-const TILE_LABELS := {
-	"field": "Câmp",
-	"quarry": "Carieră",
-	"forest": "Pădure"
-}
-
-const BUILDING_BY_TILE := {
-	"field": "Fermă",
-	"quarry": "Mină",
-	"forest": "Lemnărie"
-}
-
-const BUILDING_LABELS := {
-	"farm": "Fermă",
-	"mine": "Mină",
-	"lumberyard": "Lemnărie"
-}
-
-const RESOURCE_BY_BUILDING := {
-	"farm": "Grâne",
-	"mine": "Piatră",
-	"lumberyard": "Lemn"
-}
-
 var selected_x: int = -1
 var selected_y: int = -1
 var selected_tile_type: String = ""
@@ -69,8 +45,9 @@ func hide_popup() -> void:
 	panel.visible = false
 
 func _show_empty_lot(tile_type: String) -> void:
-	var tile_label : String = str(TILE_LABELS.get(tile_type, tile_type))
-	var building_label : String = str(BUILDING_BY_TILE.get(tile_type, "clădire"))
+	var tile_label: String = str(GameDomain.TILE_LABELS.get(tile_type, tile_type))
+	var building_type: String = str(GameDomain.BUILDING_BY_TILE.get(tile_type, ""))
+	var building_label: String = str(GameDomain.BUILDING_LABELS.get(building_type, "clădire"))
 
 	title_label.text = "Lot (%d, %d)" % [selected_x, selected_y]
 	info_label.text = "Tip lot: %s\nSe poate construi: %s" % [tile_label, building_label]
@@ -86,8 +63,9 @@ func _show_existing_building(building: Dictionary) -> void:
 	var level := int(building.get("level", 1))
 	var stored := int(building.get("stored", 0))
 
-	var building_label: String = str(BUILDING_LABELS.get(building_type, building_type))
-	var produced_resource: String = str(RESOURCE_BY_BUILDING.get(building_type, "resursă"))
+	var building_label: String = str(GameDomain.BUILDING_LABELS.get(building_type, building_type))
+	var produced_resource_key: String = str(GameDomain.RESOURCE_BY_BUILDING.get(building_type, ""))
+	var produced_resource: String = str(GameDomain.RESOURCE_LABELS.get(produced_resource_key, "resursă"))
 
 	title_label.text = "%s - Nivel %d" % [building_label, level]
 	info_label.text = "Produce: %s\nStocare internă: %d" % [produced_resource, stored]
