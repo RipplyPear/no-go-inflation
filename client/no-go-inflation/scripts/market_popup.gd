@@ -122,75 +122,13 @@ func _add_empty_offer_label() -> void:
 
 
 func _add_offer_row(offer: Dictionary) -> void:
-	var row := HBoxContainer.new()
-
-	var label := _create_offer_label(offer)
-	var quantity_spin := _create_quantity_spin(offer)
-	var accept_button := _create_accept_button(offer, quantity_spin)
-
-	row.add_child(label)
-	row.add_child(quantity_spin)
-	row.add_child(accept_button)
-
+	var row := MarketOfferRow.new()
+	row.setup(offer)
+	row.accept_requested.connect(_on_offer_row_accept_requested)
 	offer_list.add_child(row)
-
-
-func _create_offer_label(offer: Dictionary) -> Label:
-	var offer_type := str(offer.get("offerType", ""))
-	var resource := str(offer.get("resource", ""))
-	var remaining := int(offer.get("remainingQuantity", 0))
-	var price := int(offer.get("pricePerUnit", 0))
-	var creator := str(offer.get("creatorName", "unknown"))
-
-	var offer_type_label := _get_offer_type_label(offer_type)
-	var resource_label := _get_resource_label(resource)
-
-	var label := Label.new()
-	label.text = "%s %s | rămas: %d | preț: %d | de la: %s" % [
-		offer_type_label,
-		resource_label,
-		remaining,
-		price,
-		creator
-	]
-
-	return label
-
-
-func _create_quantity_spin(offer: Dictionary) -> SpinBox:
-	var remaining := int(offer.get("remainingQuantity", 0))
-	var min_quantity := int(offer.get("minQuantity", 1))
-
-	var quantity_spin := SpinBox.new()
-	quantity_spin.min_value = max(1, min_quantity)
-	quantity_spin.max_value = max(quantity_spin.min_value, remaining)
-	quantity_spin.value = quantity_spin.min_value
-	quantity_spin.step = 1
-
-	return quantity_spin
-
-
-func _create_accept_button(offer: Dictionary, quantity_spin: SpinBox) -> Button:
-	var offer_id := str(offer.get("id", ""))
-	var remaining := int(offer.get("remainingQuantity", 0))
-	var min_quantity := int(offer.get("minQuantity", 1))
-	var is_own_offer := bool(offer.get("isOwnOffer", false))
-
-	var accept_button := Button.new()
-	accept_button.text = "Acceptă"
-	accept_button.disabled = (
-		is_own_offer
-		or offer_id.is_empty()
-		or remaining <= 0
-		or remaining < min_quantity
-	)
-
-	accept_button.pressed.connect(func() -> void:
-		accept_offer_requested.emit(offer_id, int(quantity_spin.value))
-	)
-
-	return accept_button
-
+	
+func _on_offer_row_accept_requested(offer_id: String, quantity: int) -> void:
+	accept_offer_requested.emit(offer_id, quantity)
 
 func _update_side_panel(market_state: Dictionary) -> void:
 	var economy := _get_economy_for_display(market_state)
@@ -238,17 +176,3 @@ func _get_resource_amount(resource: String) -> int:
 
 func _get_average_price(average_prices: Dictionary, resource: String) -> float:
 	return float(average_prices.get(resource, GameState.get_average_price(resource)))
-
-
-func _get_offer_type_label(offer_type: String) -> String:
-	match offer_type:
-		GameDomain.OFFER_BUY:
-			return "Cumpără"
-		GameDomain.OFFER_SELL:
-			return "Vinde"
-		_:
-			return offer_type
-
-
-func _get_resource_label(resource: String) -> String:
-	return str(GameDomain.RESOURCE_LABELS.get(resource, resource))

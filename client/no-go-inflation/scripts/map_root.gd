@@ -14,9 +14,9 @@ var map_data: Dictionary = {}
 var buildings: Dictionary = {}
 
 const TILE_TEXTURES := {
-	GameDomain.TILE_FOREST: preload("res://assets/tiles/forrest.png"),
+	GameDomain.TILE_FOREST: preload("res://assets/tiles/forest.png"),
 	GameDomain.TILE_FIELD: preload("res://assets/tiles/soil.png"),
-	GameDomain.TILE_QUARRY: preload("res://assets/tiles/stone.png")
+	GameDomain.TILE_QUARRY: preload("res://assets/tiles/stone.png") 
 }
 
 const BUILDING_TEXTURES := {
