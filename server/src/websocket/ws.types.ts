@@ -44,3 +44,11 @@ export type DevSeedBotOfferPayload = {
     quantity?: number;
     pricePerUnit?: number;
 };
+
+export type JoinLobbyPayload = {
+    lobbyCode: string;
+};
+
+export type StartSessionPayload = {
+    sessionId: string;
+};

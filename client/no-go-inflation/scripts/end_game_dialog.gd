@@ -13,24 +13,24 @@ func _build_result_text(final_result: Dictionary) -> String:
 	var final_inflation := int(final_result.get("finalInflation", 0))
 	var average_score := int(final_result.get("averageEconomicScore", 0))
 	var results = final_result.get("results", [])
-
+	
 	var result_label := "VICTORIE" if collective_result == "win" else "ÎNFRÂNGERE"
-
+	
 	var text := "Final de joc: %s\n" % result_label
 	text += "Inflație finală: %d\n" % final_inflation
 	text += "Scor economic mediu: %d\n\n" % average_score
 	text += "Rezultate jucători:\n"
-
+	
 	if typeof(results) != TYPE_ARRAY or results.is_empty():
 		text += "- Nu există rezultate individuale disponibile.\n"
 		return text
-
+	
 	for result in results:
 		if typeof(result) != TYPE_DICTIONARY:
 			continue
-
+		
 		text += _build_player_result_line(result)
-
+	
 	return text
 
 

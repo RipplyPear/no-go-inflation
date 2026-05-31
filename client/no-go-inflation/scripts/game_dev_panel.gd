@@ -1,6 +1,10 @@
 class_name GameDevPanel
 extends VBoxContainer
 
+# Debug-only panel used for local testing and project demonstration.
+# It allows quickly seeding bot offers and forcing the session to finish.
+# Not part of the normal gameplay flow.
+
 signal seed_bot_offer_requested(price_per_unit: int)
 signal force_finish_requested
 
@@ -24,7 +28,7 @@ func _build_ui() -> void:
 	_update_seed_button_text()
 	_seed_button.pressed.connect(_on_seed_bot_offer_pressed)
 	add_child(_seed_button)
-
+	
 	var force_finish_button := Button.new()
 	force_finish_button.text = "DEV: finalizează sesiunea"
 	force_finish_button.pressed.connect(_on_force_finish_pressed)
@@ -38,7 +42,7 @@ func _get_current_seed_price() -> int:
 func _update_seed_button_text() -> void:
 	if _seed_button == null:
 		return
-
+	
 	_seed_button.text = "DEV: ofertă bot (%d galbeni)" % _get_current_seed_price()
 
 

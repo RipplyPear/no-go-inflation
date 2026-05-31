@@ -9,12 +9,12 @@ var _quantity_spin: SpinBox
 
 func setup(offer: Dictionary) -> void:
 	_offer_id = str(offer.get("id", ""))
-
+	
 	add_child(_create_offer_label(offer))
-
+	
 	_quantity_spin = _create_quantity_spin(offer)
 	add_child(_quantity_spin)
-
+	
 	add_child(_create_accept_button(offer))
 
 
@@ -24,7 +24,7 @@ func _create_offer_label(offer: Dictionary) -> Label:
 	var remaining := int(offer.get("remainingQuantity", 0))
 	var price := int(offer.get("pricePerUnit", 0))
 	var creator := str(offer.get("creatorName", "unknown"))
-
+	
 	var label := Label.new()
 	label.text = "%s %s | rămas: %d | preț: %d | de la: %s" % [
 		_get_offer_type_label(offer_type),
@@ -33,20 +33,20 @@ func _create_offer_label(offer: Dictionary) -> Label:
 		price,
 		creator
 	]
-
+	
 	return label
 
 
 func _create_quantity_spin(offer: Dictionary) -> SpinBox:
 	var remaining := int(offer.get("remainingQuantity", 0))
 	var min_quantity := int(offer.get("minQuantity", 1))
-
+	
 	var quantity_spin := SpinBox.new()
 	quantity_spin.min_value = max(1, min_quantity)
 	quantity_spin.max_value = max(quantity_spin.min_value, remaining)
 	quantity_spin.value = quantity_spin.min_value
 	quantity_spin.step = 1
-
+	
 	return quantity_spin
 
 
@@ -54,7 +54,7 @@ func _create_accept_button(offer: Dictionary) -> Button:
 	var remaining := int(offer.get("remainingQuantity", 0))
 	var min_quantity := int(offer.get("minQuantity", 1))
 	var is_own_offer := bool(offer.get("isOwnOffer", false))
-
+	
 	var accept_button := Button.new()
 	accept_button.text = "Acceptă"
 	accept_button.disabled = (
@@ -63,16 +63,16 @@ func _create_accept_button(offer: Dictionary) -> Button:
 		or remaining <= 0
 		or remaining < min_quantity
 	)
-
+	
 	accept_button.pressed.connect(_on_accept_pressed)
-
+	
 	return accept_button
 
 
 func _on_accept_pressed() -> void:
 	if _quantity_spin == null:
 		return
-
+	
 	accept_requested.emit(_offer_id, int(_quantity_spin.value))
 
 

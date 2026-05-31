@@ -1,0 +1,29 @@
+### Create lobby - user 1 / host
+WEBSOCKET {{wsUrl}}?token={{token}}
+Content-Type: application/json
+
+{
+  "type": "CREATE_LOBBY"
+}
+
+### Join lobby - user 2
+WEBSOCKET {{wsUrl}}?token={{token2}}
+Content-Type: application/json
+
+{
+  "type": "JOIN_LOBBY",
+  "payload": {
+    "lobbyCode": "{{lobbyCode}}"
+  }
+}
+
+### Start session - user 1 / host
+WEBSOCKET {{wsUrl}}?token={{token}}
+Content-Type: application/json
+
+{
+  "type": "START_SESSION",
+  "payload": {
+    "sessionId": "{{sessionId}}"
+  }
+}

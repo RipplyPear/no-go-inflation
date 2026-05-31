@@ -1,0 +1,73 @@
+[gd_scene format=3 uid="uid://dniosjov3th4e"]
+
+[ext_resource type="Script" uid="uid://cvwhrvi3bd0sd" path="res://scripts/lobby_screen.gd" id="1_mx6st"]
+
+[node name="LobbyScreen" type="Control" unique_id=919663237]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 369.0
+offset_top = 105.0
+offset_right = 409.0
+offset_bottom = 145.0
+script = ExtResource("1_mx6st")
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=638947712]
+layout_mode = 0
+offset_right = 68.0
+offset_bottom = 179.0
+
+[node name="PanelContainer" type="PanelContainer" parent="CenterContainer" unique_id=302554164]
+custom_minimum_size = Vector2(420, 360)
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="CenterContainer/PanelContainer" unique_id=1087652170]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer" unique_id=665373717]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=281321621]
+layout_mode = 2
+text = "Lobby"
+horizontal_alignment = 1
+
+[node name="LobbyCodeLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1714901730]
+layout_mode = 2
+text = "Cod Lobby:"
+horizontal_alignment = 1
+
+[node name="ParticipantsLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1003802219]
+custom_minimum_size = Vector2(360, 80)
+layout_mode = 2
+text = "Participanți:"
+autowrap_mode = 3
+
+[node name="CreateLobbyButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1090317721]
+layout_mode = 2
+text = "Creează Lobby"
+
+[node name="JoinRow" type="HBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=886559659]
+layout_mode = 2
+
+[node name="JoinCodeInput" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/JoinRow" unique_id=1315785939]
+layout_mode = 2
+placeholder_text = "Cod Lobby"
+
+[node name="JoinLobbyButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/JoinRow" unique_id=460369409]
+layout_mode = 2
+text = "Alătură-te"
+
+[node name="StartSessionButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=35852102]
+layout_mode = 2
+disabled = true
+text = "Pornește o sesiune"
+
+[node name="StatusLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=601103735]
+custom_minimum_size = Vector2(360, 50)
+layout_mode = 2
+autowrap_mode = 3

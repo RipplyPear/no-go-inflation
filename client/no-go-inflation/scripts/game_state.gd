@@ -40,32 +40,32 @@ func reset() -> void:
 	session_id = ""
 	lobby_code = ""
 	participant_id = ""
-
+	
 	current_day = 1
 	current_minute = 480
-
+	
 	resources = DEFAULT_RESOURCES.duplicate(true)
 	economy = DEFAULT_ECONOMY.duplicate(true)
-
+	
 	map_data = {}
 	buildings = []
-
+	
 	state_changed.emit()
 
 
 func load_session_state(payload: Dictionary) -> void:
 	session_id = str(payload.get("sessionId", session_id))
 	lobby_code = str(payload.get("lobbyCode", lobby_code))
-
+	
 	current_day = int(payload.get("currentDay", current_day))
 	current_minute = int(payload.get("currentMinute", current_minute))
-
+	
 	_load_participant(payload)
 	_load_resources(payload)
 	_load_economy(payload)
 	_load_map(payload)
 	_load_buildings(payload)
-
+	
 	print("GameState loaded session: ", session_id)
 	state_changed.emit()
 
@@ -84,62 +84,63 @@ func get_average_price(resource_name: String) -> float:
 
 
 func _load_participant(payload: Dictionary) -> void:
-	var participant = payload.get("participant", {})
-
+	var participant = payload.get("participant", null)
+	
 	if typeof(participant) != TYPE_DICTIONARY:
-		participant_id = ""
 		return
-
+	
 	participant_id = str(participant.get("id", participant_id))
 
 
 func _load_resources(payload: Dictionary) -> void:
 	var payload_resources = payload.get("resources", {})
-
+	
 	if typeof(payload_resources) != TYPE_DICTIONARY:
 		return
-
+	
 	var next_resources := DEFAULT_RESOURCES.duplicate(true)
-
+	
 	for resource_name in DEFAULT_RESOURCES.keys():
 		next_resources[resource_name] = int(payload_resources.get(resource_name, DEFAULT_RESOURCES[resource_name]))
-
+	
 	resources = next_resources
 
 
 func _load_economy(payload: Dictionary) -> void:
 	var payload_economy = payload.get("economy", {})
-
+	
 	if typeof(payload_economy) != TYPE_DICTIONARY:
 		return
-
+	
 	var next_economy := DEFAULT_ECONOMY.duplicate(true)
-
+	
 	next_economy["inflation"] = int(payload_economy.get("inflation", DEFAULT_ECONOMY["inflation"]))
-
+	
 	var payload_average_prices = payload_economy.get("averagePrices", {})
 	var next_average_prices: Dictionary = next_economy["averagePrices"]
-
+	
 	if typeof(payload_average_prices) == TYPE_DICTIONARY:
 		for resource_name in next_average_prices.keys():
 			next_average_prices[resource_name] = float(payload_average_prices.get(resource_name, next_average_prices[resource_name]))
-
+	
 	economy = next_economy
 
 
 func _load_map(payload: Dictionary) -> void:
-	var payload_map = payload.get("map", {})
-
+	var payload_map = payload.get("map", null)
+	
 	if typeof(payload_map) == TYPE_DICTIONARY:
 		map_data = payload_map
-	else:
-		map_data = {}
 
 
 func _load_buildings(payload: Dictionary) -> void:
-	var payload_buildings = payload.get("buildings", [])
-
-	if typeof(payload_buildings) == TYPE_ARRAY:
-		buildings = payload_buildings
-	else:
-		buildings = []
+	var payload_buildings = payload.get("buildings", null)
+	
+	if typeof(payload_buildings) != TYPE_ARRAY:
+		return
+	
+	buildings = []
+	
+	for building in payload_buildings:
+		if typeof(building) == TYPE_DICTIONARY:
+			buildings.append(building)

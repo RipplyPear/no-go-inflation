@@ -20,11 +20,11 @@ signal accept_offer_requested(offer_id: String, quantity: int)
 
 func _ready() -> void:
 	panel.visible = false
-
+	
 	_setup_offer_options()
 	_setup_spin_boxes()
 	_connect_signals()
-
+	
 	player_state_title.text = "Starea jucătorului"
 	refresh_player_state()
 
@@ -51,7 +51,7 @@ func _setup_offer_options() -> void:
 	type_option.clear()
 	type_option.add_item("Cumpărare")
 	type_option.add_item("Vânzare")
-
+	
 	resource_option.clear()
 	resource_option.add_item(GameDomain.RESOURCE_LABELS.get(GameDomain.RESOURCE_WOOD, "Lemn"))
 	resource_option.add_item(GameDomain.RESOURCE_LABELS.get(GameDomain.RESOURCE_STONE, "Piatră"))
@@ -80,7 +80,7 @@ func _on_create_pressed() -> void:
 	var resource := _get_selected_resource()
 	var amount := int(amount_spin.value)
 	var price := int(price_spin.value)
-
+	
 	create_offer_requested.emit(offer_type, resource, amount, price)
 
 
@@ -96,17 +96,17 @@ func _get_selected_resource() -> String:
 
 func _render_offer_list(market_state: Dictionary) -> void:
 	_clear_offer_list()
-
+	
 	var offers = market_state.get("offers", [])
-
+	
 	if typeof(offers) != TYPE_ARRAY or offers.is_empty():
 		_add_empty_offer_label()
 		return
-
+	
 	for offer in offers:
 		if typeof(offer) != TYPE_DICTIONARY:
 			continue
-
+	
 		_add_offer_row(offer)
 
 
@@ -126,18 +126,20 @@ func _add_offer_row(offer: Dictionary) -> void:
 	row.setup(offer)
 	row.accept_requested.connect(_on_offer_row_accept_requested)
 	offer_list.add_child(row)
-	
+
+
 func _on_offer_row_accept_requested(offer_id: String, quantity: int) -> void:
 	accept_offer_requested.emit(offer_id, quantity)
+
 
 func _update_side_panel(market_state: Dictionary) -> void:
 	var economy := _get_economy_for_display(market_state)
 	var average_prices: Dictionary = economy.get("averagePrices", {})
-
+	
 	var inflation := int(economy.get("inflation", 20))
-
+	
 	player_state_title.text = "Stare jucător / piață"
-
+	
 	player_state_label.text = (
 		"Resurse:\n" +
 		"Lemn: %d\n" +
@@ -163,10 +165,10 @@ func _update_side_panel(market_state: Dictionary) -> void:
 
 func _get_economy_for_display(market_state: Dictionary) -> Dictionary:
 	var economy = market_state.get("economy", GameState.economy)
-
+	
 	if typeof(economy) != TYPE_DICTIONARY:
 		return GameState.economy
-
+	
 	return economy
 
 

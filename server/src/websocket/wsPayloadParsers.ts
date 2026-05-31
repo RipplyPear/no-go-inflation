@@ -2,7 +2,9 @@ import {
     AcceptMarketOfferPayload,
     CreateMarketOfferPayload,
     DevSeedBotOfferPayload,
-    TileActionPayload
+    TileActionPayload,
+    JoinLobbyPayload,
+    StartSessionPayload
 } from "./ws.types";
 import {isRecord} from "./wsProtocol";
 import {OfferType, ResourceType} from "../game/game.types";
@@ -131,5 +133,39 @@ export function parseDevSeedBotOfferPayload(payload: unknown): DevSeedBotOfferPa
         resource,
         quantity,
         pricePerUnit,
+    };
+}
+
+export function parseJoinLobbyPayload(payload: unknown): JoinLobbyPayload | null {
+    if (!isRecord(payload)) {
+        return null;
+    }
+
+    if (typeof payload.lobbyCode !== "string") {
+        return null;
+    }
+
+    const lobbyCode = payload.lobbyCode.trim().toUpperCase();
+
+    if (lobbyCode.length === 0) {
+        return null;
+    }
+
+    return {
+        lobbyCode,
+    };
+}
+
+export function parseStartSessionPayload(payload: unknown): StartSessionPayload | null {
+    if (!isRecord(payload)) {
+        return null;
+    }
+
+    if (typeof payload.sessionId !== "string" || payload.sessionId.trim().length === 0) {
+        return null;
+    }
+
+    return {
+        sessionId: payload.sessionId,
     };
 }

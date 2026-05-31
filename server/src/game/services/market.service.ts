@@ -174,16 +174,16 @@ export async function createMarketOffer(user: AuthenticatedUser, rawPayload: unk
                 expires_at
             )
             VALUES (
-                $1,
-                $2,
-                $3::offer_type,
-                $4::resource_type,
-                $5,
-                $5,
-                $5,
-                $6,
-                'active',
-                now() + ($7::text || ' minutes')::interval
+                   $1,
+                   $2,
+                   $3::offer_type,
+                   $4::resource_type,
+                   1,
+                   $5,
+                   $5,
+                   $6,
+                   'active',
+                   now() + ($7::text || ' minutes')::interval
             )
             RETURNING id, offer_type, resource, remaining_quantity, price_per_unit, expires_at
             `,

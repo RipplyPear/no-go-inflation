@@ -1,10 +1,10 @@
 import {AuthenticatedWebSocket, ClientMessage} from "./ws.types";
 import {isRecord, sendJson} from "./wsProtocol";
 import {requireWsUser} from "./wsAuth";
-import {createDemoSession} from "../game/services/session.service";
+import {createDemoSession, createLobby, joinLobby, startLobbySession} from "../game/services/session.service";
 import {buildBuilding, collectBuilding, upgradeBuilding} from "../game/services/building.service";
 import {acceptMarketOffer, createMarketOffer, getMarketStateForUser} from "../game/services/market.service";
-import {broadcastMarketStateToSession, broadcastSessionStateToSession} from "./wsBroadcast";
+import {broadcastLobbyStateToSession, broadcastMarketStateToSession, broadcastSessionStateToSession} from "./wsBroadcast";
 import {forceFinishSessionForTesting, seedBotOfferForTesting} from "../game/services/dev.service";
 import {getConnectedClients} from "./wsClients";
 import {WebSocket} from "ws";
@@ -16,6 +16,75 @@ export async function handleClientMessage(ws: AuthenticatedWebSocket, message: C
                 receivedAt: new Date().toISOString(),
                 user: ws.user,
             });
+            break;
+        }
+
+        case "CREATE_LOBBY": {
+            const user = requireWsUser(ws);
+
+            if (!user) {
+                return;
+            }
+
+            try {
+                const lobbyState = await createLobby(user);
+                ws.currentSessionId = lobbyState.sessionId;
+
+                sendJson(ws, "LOBBY_STATE", lobbyState);
+            } catch (error) {
+                sendJson(ws, "ERROR", {
+                    message: error instanceof Error
+                        ? error.message
+                        : "Nu s-a putut crea lobby-ul.",
+                });
+            }
+
+            break;
+        }
+
+        case "JOIN_LOBBY": {
+            const user = requireWsUser(ws);
+
+            if (!user) {
+                return;
+            }
+
+            try {
+                const lobbyState = await joinLobby(user, message.payload);
+                ws.currentSessionId = lobbyState.sessionId;
+
+                await broadcastLobbyStateToSession(lobbyState.sessionId);
+            } catch (error) {
+                sendJson(ws, "ERROR", {
+                    message: error instanceof Error
+                        ? error.message
+                        : "Nu s-a putut realiza alăturarea la lobby.",
+                });
+            }
+
+            break;
+        }
+
+        case "START_SESSION": {
+            const user = requireWsUser(ws);
+
+            if (!user) {
+                return;
+            }
+
+            try {
+                const result = await startLobbySession(user, message.payload);
+                ws.currentSessionId = result.sessionId;
+
+                await broadcastSessionStateToSession(result.sessionId);
+            } catch (error) {
+                sendJson(ws, "ERROR", {
+                    message: error instanceof Error
+                        ? error.message
+                        : "Nu s-a putut porni sesiunea.",
+                });
+            }
+
             break;
         }
 
