@@ -14,9 +14,3 @@ export interface SafeUser {
     created_at: Date;
     updated_at: Date;
 }
-
-export interface RegisterUserInput {
-    username: string;
-    email: string;
-    password: string;
-}

@@ -1,0 +1,64 @@
+### Get market state
+WEBSOCKET {{wsUrl}}?token={{token}}
+Content-Type: application/json
+
+{
+  "type": "GET_MARKET_STATE",
+  "payload": {
+    "sessionId": "{{sessionId}}"
+  }
+}
+
+### Create market offer as current user
+WEBSOCKET {{wsUrl}}?token={{token}}
+Content-Type: application/json
+
+{
+  "type": "CREATE_MARKET_OFFER",
+  "payload": {
+    "sessionId": "{{sessionId}}",
+    "offerType": "{{offerType}}",
+    "resource": "{{resource}}",
+    "quantity": {{quantity}},
+    "pricePerUnit": {{pricePerUnit}}
+  }
+}
+
+### Seed bot offer for testing
+WEBSOCKET {{wsUrl}}?token={{token}}
+Content-Type: application/json
+
+{
+  "type": "DEV_SEED_BOT_OFFER",
+  "payload": {
+    "sessionId": "{{sessionId}}",
+    "offerType": "sell",
+    "resource": "wood",
+    "quantity": 100,
+    "pricePerUnit": 5
+  }
+}
+
+### Accept market offer
+WEBSOCKET {{wsUrl}}?token={{token}}
+Content-Type: application/json
+
+{
+  "type": "ACCEPT_MARKET_OFFER",
+  "payload": {
+    "sessionId": "{{sessionId}}",
+    "offerId": "{{offerId}}",
+    "quantity": {{quantity}}
+  }
+}
+
+### Force finish session for testing
+WEBSOCKET {{wsUrl}}?token={{token}}
+Content-Type: application/json
+
+{
+  "type": "DEV_FORCE_FINISH_SESSION",
+  "payload": {
+    "sessionId": "{{sessionId}}"
+  }
+}

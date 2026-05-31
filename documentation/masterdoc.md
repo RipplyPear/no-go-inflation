@@ -31,36 +31,59 @@ Obiectivul principal al jocului are atât o componentă individuală, prin dezvo
 - Eșec = economia nu mai rămâne într-o stare suficient de stabilă până la finalul sesiunii.
 
 ## 4. Scope-ul proiectului de licență
+
 ### 4.1 In scope
-- Sistem de autentificare pentru jucători;
-- Creare și alăturare la lobby-uri;
-- Lansarea unei sesiuni multiplayer;
-- Hartă individuală pentru fiecare jucător;
-- Hartă generată dinamic;
-- Producția a 3 resurse de bază;
-- Construire și upgrade de clădiri;
-- Colectarea resurselor;
-- Piață pentru tranzacții;
-- Calcul și afișare a inflației;
-- Final de joc și evaluare pe ranguri;
-- Server autoritativ și persistență de bază;
-- Boți pentru completarea sesiunilor sau susținerea activității economice minime (poate deveni out of scope în funcție de timp).
+
+Versiunea de licență a proiectului urmărește implementarea unui MVP funcțional al jocului No-go Inflation, cu accent pe mecanicile principale de multiplayer, producție, tranzacționare și stabilitate economică.
+
+În scope intră:
+
+* sistem de autentificare pentru jucători;
+* creare și alăturare la lobby-uri prin cod;
+* lansarea unei sesiuni multiplayer de către host;
+* hartă individuală pentru fiecare jucător;
+* hartă generată dinamic la începutul sesiunii;
+* producția a 3 resurse de bază: lemn, piatră și grâne;
+* construire și upgrade de clădiri;
+* colectarea resurselor produse;
+* piață comună pentru tranzacții, bazată pe oferte;
+* tranzacții între jucători;
+* calcul și afișare a indicatorilor economici, inclusiv inflația;
+* final de joc și evaluare individuală pe ranguri;
+* server autoritativ pentru validarea acțiunilor;
+* persistență de bază în baza de date pentru utilizatori, sesiuni, participanți, clădiri, oferte, tranzacții și rezultate.
 
 ### 4.2 Out of scope
-- Matchmaking automat;
-- Suport pentru sesiuni cu mai mult de 8 jucători;
-- Export pe mobil;
-- Scalare orizontală reală;
-- Sisteme economice foarte avansate;
-- Variante alternative complexe de reguli.
+
+Pentru a menține proiectul într-un scope realist pentru o lucrare de licență, următoarele funcționalități nu intră în versiunea curentă:
+
+* matchmaking automat;
+* listă publică de lobby-uri;
+* suport pentru sesiuni cu mai mult de 8 jucători;
+* export pe mobil;
+* chat între jucători;
+* sistem de prieteni sau invitații;
+* reconectare avansată la sesiuni întrerupte;
+* ranking global între sesiuni;
+* scalare orizontală reală;
+* sisteme economice foarte avansate;
+* variante alternative complexe de reguli;
+* interfață grafică la nivel de produs comercial.
 
 ### 4.3 Nice to have / extensii ulterioare
-- "Bilet spre Bahamas" - final greedy, individual;
-- Comportamente complexe pentru boți;
-- Piață mai sofisticată;
-- Statistici și istorice detaliate (grafice);
-- Mod solo extins;
-- Evenimente economice speciale ("wildcard").
+
+Următoarele funcționalități pot fi dezvoltate ulterior, dar nu sunt necesare pentru validarea MVP-ului:
+
+* boți pentru completarea sesiunilor sau susținerea activității economice minime;
+* comportamente complexe pentru boți;
+* „Bilet spre Bahamas” - final greedy, individual;
+* contraoferte și negociere mai avansată;
+* piață mai sofisticată;
+* statistici și istorice detaliate, inclusiv grafice;
+* mod solo extins;
+* evenimente economice speciale de tip „wildcard”;
+* îmbunătățiri vizuale și animații suplimentare.
+
 
 ## 5. Principii canonice de design
 - **Server autoritativ**  

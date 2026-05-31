@@ -56,7 +56,7 @@ function ensureMinimumTileCounts(
     tiles: TileType[][],
     centers: MapCenter[],
     minCount: number
-): void {
+) {
     const height = tiles.length;
     const width = tiles[0]?.length ?? 0;
 

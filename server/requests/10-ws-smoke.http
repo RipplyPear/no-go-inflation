@@ -1,0 +1,7 @@
+### WebSocket smoke test: auth + ping
+WEBSOCKET {{wsUrl}}?token={{token}}
+Content-Type: application/json
+
+{
+  "type": "PING"
+}

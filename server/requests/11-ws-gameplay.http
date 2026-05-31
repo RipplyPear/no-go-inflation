@@ -1,0 +1,42 @@
+### Create demo session
+WEBSOCKET {{wsUrl}}?token={{token}}
+Content-Type: application/json
+
+{
+  "type": "CREATE_DEMO_SESSION"
+}
+
+### Basic gameplay actions for an existing session
+WEBSOCKET {{wsUrl}}?token={{token}}
+Content-Type: application/json
+
+{
+  "type": "BUILD_BUILDING",
+  "payload": {
+    "sessionId": "{{sessionId}}",
+    "x": {{tileX}},
+    "y": {{tileY}}
+  }
+}
+
+=== wait-for-server
+
+{
+  "type": "UPGRADE_BUILDING",
+  "payload": {
+    "sessionId": "{{sessionId}}",
+    "x": {{tileX}},
+    "y": {{tileY}}
+  }
+}
+
+=== wait-for-server
+
+{
+  "type": "COLLECT_BUILDING",
+  "payload": {
+    "sessionId": "{{sessionId}}",
+    "x": {{tileX}},
+    "y": {{tileY}}
+  }
+}

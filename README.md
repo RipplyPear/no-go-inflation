@@ -88,14 +88,17 @@ Proiectul urmează un model cu **server autoritativ**:
 
 În scope:
 - autentificare;
-- creare și alăturare la lobby-uri;
-- lansare sesiune multiplayer;
-- hartă individuală pentru fiecare jucător;
-- producție de resurse;
-- construire și upgrade de clădiri;
-- piață pentru tranzacții;
-- calcul și afișare a inflației;
-- final de joc și evaluare pe ranguri.
+- creare joc/lobby;
+- alăturare prin cod;
+- pornire sesiune;
+- hartă generată dinamic;
+- clădiri: construire, upgrade, colectare;
+- piață cu oferte;
+- tranzacții între participanți;
+- indicatori economici;
+- final de joc;
+- persistență PostgreSQL;
+- comunicare realtime prin WebSocket.
 
 În afara scope-ului:
 - matchmaking automat;

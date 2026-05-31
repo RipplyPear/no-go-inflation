@@ -1,0 +1,4 @@
+### Get authenticated user
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+Accept: application/json

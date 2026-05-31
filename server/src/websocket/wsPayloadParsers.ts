@@ -1,0 +1,135 @@
+import {
+    AcceptMarketOfferPayload,
+    CreateMarketOfferPayload,
+    DevSeedBotOfferPayload,
+    TileActionPayload
+} from "./ws.types";
+import {isRecord} from "./wsProtocol";
+import {OfferType, ResourceType} from "../game/game.types";
+
+export function parseTileActionPayload(payload: unknown): TileActionPayload | null {
+    if (!isRecord(payload)) {
+        return null;
+    }
+
+    if (
+        typeof payload.sessionId !== "string" ||
+        typeof payload.x !== "number" ||
+        typeof payload.y !== "number"
+    ) {
+        return null;
+    }
+
+    if (!Number.isInteger(payload.x) || !Number.isInteger(payload.y)) {
+        return null;
+    }
+
+    return {
+        sessionId: payload.sessionId,
+        x: payload.x,
+        y: payload.y,
+    };
+}
+
+function isResourceType(value: unknown): value is ResourceType {
+    return value === "wood" || value === "stone" || value === "grain";
+}
+
+function isOfferType(value: unknown): value is OfferType {
+    return value === "buy" || value === "sell";
+}
+
+export function parseCreateMarketOfferPayload(payload: unknown): CreateMarketOfferPayload | null {
+    if (!isRecord(payload)) {
+        return null;
+    }
+
+    if (
+        typeof payload.sessionId !== "string" ||
+        !isOfferType(payload.offerType) ||
+        !isResourceType(payload.resource) ||
+        typeof payload.quantity !== "number" ||
+        typeof payload.pricePerUnit !== "number"
+    ) {
+        return null;
+    }
+
+    if (
+        !Number.isInteger(payload.quantity) ||
+        !Number.isInteger(payload.pricePerUnit) ||
+        payload.quantity <= 0 ||
+        payload.pricePerUnit <= 0
+    ) {
+        return null;
+    }
+
+    return {
+        sessionId: payload.sessionId,
+        offerType: payload.offerType,
+        resource: payload.resource,
+        quantity: payload.quantity,
+        pricePerUnit: payload.pricePerUnit,
+    };
+}
+
+export function parseAcceptMarketOfferPayload(payload: unknown): AcceptMarketOfferPayload | null {
+    if (!isRecord(payload)) {
+        return null;
+    }
+
+    if (
+        typeof payload.sessionId !== "string" ||
+        typeof payload.offerId !== "string" ||
+        typeof payload.quantity !== "number"
+    ) {
+        return null;
+    }
+
+    if (!Number.isInteger(payload.quantity) || payload.quantity <= 0) {
+        return null;
+    }
+
+    return {
+        sessionId: payload.sessionId,
+        offerId: payload.offerId,
+        quantity: payload.quantity,
+    };
+}
+
+export function parseDevSeedBotOfferPayload(payload: unknown): DevSeedBotOfferPayload | null {
+    if (!isRecord(payload)) {
+        return null;
+    }
+
+    if (typeof payload.sessionId !== "string") {
+        return null;
+    }
+
+    const offerType = payload.offerType === undefined ? "sell" : payload.offerType;
+    const resource = payload.resource === undefined ? "wood" : payload.resource;
+    const quantity = payload.quantity === undefined ? 100 : payload.quantity;
+    const pricePerUnit = payload.pricePerUnit === undefined ? 5 : payload.pricePerUnit;
+
+    if (!isOfferType(offerType) || !isResourceType(resource)) {
+        return null;
+    }
+
+    if (
+        typeof quantity !== "number" ||
+        typeof pricePerUnit !== "number" ||
+        !Number.isInteger(quantity) ||
+        !Number.isInteger(pricePerUnit) ||
+        quantity <= 0 ||
+        pricePerUnit <= 0
+    ) {
+        return null;
+    }
+
+    return {
+        sessionId: payload.sessionId,
+        offerType,
+        resource,
+        quantity,
+        pricePerUnit,
+    };
+}

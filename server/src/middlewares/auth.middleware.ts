@@ -1,6 +1,8 @@
 import {NextFunction, Request, Response} from "express";
 import jwt from "jsonwebtoken";
 
+import { env } from "../config/env";
+
 export interface AuthRequest extends Request {
     user?: {
         userId: number;
@@ -23,20 +25,33 @@ export function authMiddleware(
     }
 
     const token = authHeader.split(" ")[1];
-    const secret = process.env.JWT_SECRET;
-
-    if (!secret) {
-        return res.status(500).json({
-            message: "Internal server error",
-        });
-    }
+    const secret = env.jwtSecret;
 
     try {
-        req.user = jwt.verify(token, secret) as {
-            userId: number;
-            username: string;
-            email: string;
+        const decoded = jwt.verify(token, secret);
+
+        if (typeof decoded === "string") {
+            return res.status(401).json({
+                message: "Invalid token payload",
+            });
+        }
+
+        if (
+            typeof decoded.userId !== "number" ||
+            typeof decoded.username !== "string" ||
+            typeof decoded.email !== "string"
+        ) {
+            return res.status(401).json({
+                message: "Invalid token payload",
+            });
+        }
+
+        req.user = {
+            userId: decoded.userId,
+            username: decoded.username,
+            email: decoded.email,
         };
+
         next();
     } catch (error) {
         return res.status(401).json({

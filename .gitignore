@@ -1,6 +1,4 @@
-# =========================
 # OS / editor
-# =========================
 .DS_Store
 Thumbs.db
 .nomedia
@@ -17,16 +15,14 @@ Thumbs.db
 /dataSources.local.xml
 /httpRequests/
 
-# =========================
 # Environment / secrets
-# =========================
 .env
 .env.*
 !.env.example
+http-client.private.env.json
 
-# =========================
+
 # Node / TypeScript backend
-# =========================
 node_modules/
 server/node_modules/
 dist/
@@ -45,9 +41,7 @@ pnpm-debug.log*
 .pnpm-store/
 .yarn/
 
-# =========================
 # Database local artifacts
-# =========================
 *.sql.gz
 *.dump
 *.backup
@@ -55,9 +49,8 @@ pnpm-debug.log*
 *.sqlite
 *.sqlite3
 
-# =========================
+
 # Godot 4
-# =========================
 .godot/
 .import/
 .mono/
@@ -70,19 +63,12 @@ mono_crash.*.json
 client/no-go-inflation/.godot/
 client/no-go-inflation/.mono/
 
-# =========================
+
 # Generated docs / exports
-# =========================
 documentation/exports/
 
 # Local fonts for PDF export
 documentation/styles/fonts/
 
-# Keep archive tracked unless you decide otherwise
-# documentation/archive/*.pdf
-# documentation/archive/*.odt
-
-# =========================
 # Misc
-# =========================
 others/

@@ -4,8 +4,9 @@ import { createServer } from "node:http";
 import app from "./app";
 import { pool } from "./config/db";
 import { setupWebSocketServer } from "./websocket/wsServer";
+import { env } from "./config/env";
 
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = env.port;
 
 async function startServer() {
     try{
@@ -20,9 +21,9 @@ async function startServer() {
             console.log(`Server started on port: ${PORT}`);
         });
     } catch (error) {
-        console.error("Failed to start server:" + error);
+        console.error("Failed to start server:", error);
         process.exit(1);
     }
 }
 
-startServer();
+void startServer();
