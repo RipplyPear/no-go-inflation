@@ -12,7 +12,7 @@ const MAX_LOBBY_PARTICIPANTS = 8;
 
 // Pentru test rapid poate rămâne 1.
 // Dacă vrei regulă strict multiplayer, îl schimbăm ulterior la 2.
-const MIN_PARTICIPANTS_TO_START = 1;
+const MIN_PARTICIPANTS_TO_START = 2;
 
 type Queryable = Pick<typeof pool, "query">;
 

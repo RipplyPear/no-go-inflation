@@ -19,12 +19,53 @@ Scopul jocului este:
 
 ## Gameplay de bază
 
-În timpul unei sesiuni, jucătorii:
-- colectează resurse produse automat;
-- construiesc și îmbunătățesc clădiri;
-- lansează și acceptă oferte pe piață;
-- urmăresc indicatorii economici;
-- își adaptează strategia în funcție de evoluția economiei.
+Fluxul principal al aplicației este:
+
+1. jucătorul își creează cont sau se autentifică;
+2. host-ul creează un lobby;
+3. al doilea jucător se alătură lobby-ului folosind codul generat;
+4. host-ul pornește sesiunea;
+5. fiecare jucător primește o hartă proprie generată dinamic;
+6. jucătorii construiesc și îmbunătățesc clădiri;
+7. clădirile produc resurse în timp;
+8. jucătorii colectează resursele produse;
+9. jucătorii creează și acceptă oferte pe piață;
+10. tranzacțiile influențează economia sesiunii și indicatorii de inflație;
+11. la finalul sesiunii sunt afișate rezultatele.
+
+## Scenariu demonstrativ
+
+Pentru demonstrarea aplicației se poate rula jocul în două instanțe Godot conectate la același server local.
+
+Pași:
+
+1. se pornește serverul Node.js;
+2. se pornesc două instanțe ale clientului Godot;
+3. în prima instanță se autentifică utilizatorul `user1`;
+4. în a doua instanță se autentifică utilizatorul `user2`;
+5. `user1` creează un lobby;
+6. `user2` se alătură lobby-ului folosind codul generat;
+7. `user1`, ca host, pornește sesiunea;
+8. fiecare jucător primește o hartă proprie;
+9. jucătorii pot construi clădiri, colecta resurse și interacționa cu piața;
+10. un jucător creează o ofertă de vânzare/cumpărare;
+11. celălalt jucător acceptă oferta;
+12. serverul procesează tranzacția și actualizează starea jocului pentru ambii participanți.
+
+## Rulare locală
+
+### Server
+```bash
+npm install
+npm run dev
+```
+Serverul pornește pe portul 3000.
+
+### Client
+Se lanseaza proiectul din Godot Editor cu opțiunea de instanțe multiple.
+
+### Bază de date
+Aplicația folosește PostgreSQL. Înainte de rulare trebuie configurat fișierul `.env` al serverului pe baza fișierului `.env.example`.
 
 ### Resurse
 - Grâne
@@ -114,3 +155,22 @@ Proiectul urmează un model cu **server autoritativ**:
 /server           # backend Node.js + TypeScript
 /documentation    # documentație tehnică și funcțională
 ```
+
+## Status implementare
+
+Funcționalități implementate în versiunea curentă:
+
+- autentificare utilizatori;
+- creare lobby;
+- alăturare la lobby prin cod;
+- pornire sesiune multiplayer de către host;
+- generare hartă individuală pentru fiecare participant;
+- construire clădiri;
+- upgrade clădiri;
+- producție și colectare resurse;
+- piață cu oferte;
+- acceptare oferte între jucători;
+- tranzacții procesate server-side;
+- actualizare stare joc prin WebSocket;
+- calcul și afișare indicatori economici;
+- final de joc și afișare rezultate.

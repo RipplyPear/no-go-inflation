@@ -12,6 +12,8 @@ extends Node2D
 var dev_panel: GameDevPanel
 var end_game_dialog: EndGameDialog
 
+const SHOW_DEV_CONTROLS := false
+
 func _ready() -> void:
 	map_root.tile_clicked.connect(_on_tile_clicked)
 	
@@ -302,7 +304,10 @@ func _send_session_message(
 
 func _setup_debug_buttons() -> void:
 	# Debug-only controls used for local testing and demos.
-	# They are not created in non-debug builds.
+	# Keep disabled for normal gameplay / presentation.
+	if not SHOW_DEV_CONTROLS:
+		return
+	
 	if not OS.is_debug_build():
 		return
 	
