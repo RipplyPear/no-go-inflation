@@ -4,7 +4,8 @@ import {
     DevSeedBotOfferPayload,
     TileActionPayload,
     JoinLobbyPayload,
-    StartSessionPayload
+    StartSessionPayload,
+    RecycleResourcePayload
 } from "./ws.types";
 import {isRecord} from "./wsProtocol";
 import {OfferType, ResourceType} from "../game/game.types";
@@ -167,5 +168,29 @@ export function parseStartSessionPayload(payload: unknown): StartSessionPayload 
 
     return {
         sessionId: payload.sessionId,
+    };
+}
+
+export function parseRecycleResourcePayload(payload: unknown): RecycleResourcePayload | null {
+    if (!isRecord(payload)) {
+        return null;
+    }
+
+    if (
+        typeof payload.sessionId !== "string" ||
+        !isResourceType(payload.resource) ||
+        typeof payload.quantity !== "number"
+    ) {
+        return null;
+    }
+
+    if (!Number.isInteger(payload.quantity) || payload.quantity <= 0) {
+        return null;
+    }
+
+    return {
+        sessionId: payload.sessionId,
+        resource: payload.resource,
+        quantity: payload.quantity,
     };
 }

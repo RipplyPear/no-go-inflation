@@ -45,6 +45,12 @@ export type DevSeedBotOfferPayload = {
     pricePerUnit?: number;
 };
 
+export type RecycleResourcePayload = {
+    sessionId: string;
+    resource: ResourceType;
+    quantity: number;
+};
+
 export type JoinLobbyPayload = {
     lobbyCode: string;
 };

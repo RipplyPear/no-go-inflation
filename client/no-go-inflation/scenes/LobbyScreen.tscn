@@ -1,6 +1,27 @@
 [gd_scene format=3 uid="uid://dniosjov3th4e"]
 
 [ext_resource type="Script" uid="uid://cvwhrvi3bd0sd" path="res://scripts/lobby_screen.gd" id="1_mx6st"]
+[ext_resource type="PackedScene" uid="uid://ddr2lxijmba3y" path="res://scenes/ui/Background.tscn" id="2_0mota"]
+[ext_resource type="PackedScene" uid="uid://cluetmvru28w5" path="res://scenes/ui/Logo.tscn" id="3_ov801"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7wxpg"]
+bg_color = Color(0, 0, 0, 0.81960785)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.9416754, 0.78174174, 0.32988554, 1)
+corner_detail = 16
+
+[sub_resource type="SystemFont" id="SystemFont_0mota"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ov801"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9411765, 0.78039217, 0.32941177, 1)
 
 [node name="LobbyScreen" type="Control" unique_id=919663237]
 layout_mode = 3
@@ -11,14 +32,31 @@ offset_right = 409.0
 offset_bottom = 145.0
 script = ExtResource("1_mx6st")
 
+[node name="Background" parent="." unique_id=1990703398 instance=ExtResource("2_0mota")]
+layout_mode = 0
+offset_left = -369.0
+offset_top = -105.0
+offset_right = 911.0
+offset_bottom = 615.0
+
+[node name="Logo" parent="." unique_id=1592901580 instance=ExtResource("3_ov801")]
+layout_mode = 0
+offset_left = 158.0
+offset_top = -78.0
+offset_right = 368.0
+offset_bottom = 132.0
+
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=638947712]
 layout_mode = 0
-offset_right = 68.0
-offset_bottom = 179.0
+offset_left = 57.0
+offset_top = 128.0
+offset_right = 477.0
+offset_bottom = 489.0
 
 [node name="PanelContainer" type="PanelContainer" parent="CenterContainer" unique_id=302554164]
 custom_minimum_size = Vector2(420, 360)
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_7wxpg")
 
 [node name="MarginContainer" type="MarginContainer" parent="CenterContainer/PanelContainer" unique_id=1087652170]
 layout_mode = 2
@@ -33,6 +71,9 @@ theme_override_constants/separation = 10
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=281321621]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.73333335, 0.5019608, 0.26666668, 1)
+theme_override_fonts/font = SubResource("SystemFont_0mota")
+theme_override_styles/normal = SubResource("StyleBoxFlat_ov801")
 text = "Lobby"
 horizontal_alignment = 1
 
@@ -40,6 +81,10 @@ horizontal_alignment = 1
 layout_mode = 2
 text = "Cod Lobby:"
 horizontal_alignment = 1
+
+[node name="CopyCodeButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1662887651]
+layout_mode = 2
+text = "Copiază cod"
 
 [node name="ParticipantsLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1003802219]
 custom_minimum_size = Vector2(360, 80)
@@ -51,21 +96,26 @@ autowrap_mode = 3
 layout_mode = 2
 text = "Creează Lobby"
 
-[node name="JoinRow" type="HBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=886559659]
-layout_mode = 2
-
-[node name="JoinCodeInput" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/JoinRow" unique_id=1315785939]
+[node name="JoinCodeInput" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1315785939]
 layout_mode = 2
 placeholder_text = "Cod Lobby"
 
-[node name="JoinLobbyButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/JoinRow" unique_id=460369409]
+[node name="JoinLobbyButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=460369409]
 layout_mode = 2
 text = "Alătură-te"
+
+[node name="JoinBackButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1363541509]
+layout_mode = 2
+text = "Înapoi"
 
 [node name="StartSessionButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=35852102]
 layout_mode = 2
 disabled = true
 text = "Pornește o sesiune"
+
+[node name="BackButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=4426173]
+layout_mode = 2
+text = "Înapoi"
 
 [node name="StatusLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=601103735]
 custom_minimum_size = Vector2(360, 50)

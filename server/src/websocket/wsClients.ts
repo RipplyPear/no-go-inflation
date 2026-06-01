@@ -23,3 +23,11 @@ export function getClientsInSession(sessionId: string): AuthenticatedWebSocket[]
             ws.currentSessionId === sessionId
     );
 }
+
+export function hasActiveClientForUser(userId: number): boolean {
+    return [...connectedClients].some(
+        (ws) =>
+            ws.readyState === WebSocket.OPEN &&
+            ws.user?.id === userId
+    );
+}

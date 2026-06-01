@@ -1,20 +1,38 @@
 [gd_scene format=3 uid="uid://bfq2wjuwovy5w"]
 
 [ext_resource type="Script" uid="uid://cidywgdaagyk1" path="res://scripts/auth_screen.gd" id="1_vkgmr"]
+[ext_resource type="PackedScene" uid="uid://ddr2lxijmba3y" path="res://scenes/ui/Background.tscn" id="2_extdq"]
+[ext_resource type="PackedScene" uid="uid://cluetmvru28w5" path="res://scenes/ui/Logo.tscn" id="3_e8a21"]
 
 [node name="AuthScreen" type="Control" unique_id=1647636251]
 layout_mode = 3
 anchors_preset = 0
-offset_left = 452.0
-offset_top = 172.0
-offset_right = 452.0
-offset_bottom = 172.0
+offset_left = 549.0
+offset_top = 171.0
+offset_right = 549.0
+offset_bottom = 171.0
 script = ExtResource("1_vkgmr")
+
+[node name="Background" parent="." unique_id=1990703398 instance=ExtResource("2_extdq")]
+layout_mode = 0
+offset_left = -549.0
+offset_top = -171.0
+offset_right = 731.0
+offset_bottom = 549.0
+
+[node name="Logo" parent="." unique_id=1592901580 instance=ExtResource("3_e8a21")]
+layout_mode = 0
+offset_left = -23.0
+offset_top = -99.0
+offset_right = 187.0
+offset_bottom = 111.0
 
 [node name="PanelContainer" type="PanelContainer" parent="." unique_id=229316317]
 layout_mode = 0
-offset_right = 280.0
-offset_bottom = 225.0
+offset_left = -54.0
+offset_top = 128.0
+offset_right = 229.0
+offset_bottom = 353.0
 
 [node name="MarginContainer" type="MarginContainer" parent="PanelContainer" unique_id=12540238]
 layout_mode = 2

@@ -3,20 +3,20 @@ import { z } from "zod";
 export const registerSchema = z.object({
     username: z
         .string()
-        .min(3, "Username must be at least 3 characters long")
-        .max(50, "Username must not be longer than 50 characters."),
-    email: z.email("Invalid email address"),
+        .min(3, "Username-ul trebuie să aibă cel puțin 3 caractere.")
+        .max(50, "Username-ul nu poate avea mai mult de 50 de caractere."),
+    email: z.email("Adresa de email nu este validă."),
     password: z
         .string()
-        .min(6, "Password must be at least 6 characters long")
-        .max(100, "Password must be at most 100 characters long"),
-})
+        .min(6, "Parola trebuie să aibă cel puțin 6 caractere.")
+        .max(100, "Parola nu poate avea mai mult de 100 de caractere."),
+});
 
 export const loginSchema = z.object({
-    email: z.email("Invalid email address"),
+    email: z.email("Adresa de email nu este validă."),
     password: z
         .string()
-        .min(1, "Password is required"),
+        .min(1, "Parola este obligatorie."),
 });
 
 export type RegisterSchemaType = z.infer<typeof registerSchema>;

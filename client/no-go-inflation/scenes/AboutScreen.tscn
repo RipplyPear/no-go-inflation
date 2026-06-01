@@ -1,0 +1,102 @@
+[gd_scene format=3 uid="uid://cafvsq1swby8k"]
+
+[ext_resource type="Script" uid="uid://dll5idacpjxp1" path="res://scripts/about_screen.gd" id="1_s5mr3"]
+[ext_resource type="PackedScene" uid="uid://ddr2lxijmba3y" path="res://scenes/ui/Background.tscn" id="2_s5mr3"]
+[ext_resource type="PackedScene" uid="uid://cluetmvru28w5" path="res://scenes/ui/Logo.tscn" id="3_xf8o7"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7wxpg"]
+bg_color = Color(0, 0, 0, 0.81960785)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.9416754, 0.78174174, 0.32988554, 1)
+corner_detail = 16
+
+[sub_resource type="SystemFont" id="SystemFont_0mota"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ov801"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9411765, 0.78039217, 0.32941177, 1)
+
+[node name="AboutScreen" type="Control" unique_id=919663237]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 369.0
+offset_top = 105.0
+offset_right = 409.0
+offset_bottom = 145.0
+script = ExtResource("1_s5mr3")
+
+[node name="Background" parent="." unique_id=1990703398 instance=ExtResource("2_s5mr3")]
+layout_mode = 0
+offset_left = -369.0
+offset_top = -105.0
+offset_right = 911.0
+offset_bottom = 615.0
+
+[node name="Logo" parent="." unique_id=1592901580 instance=ExtResource("3_xf8o7")]
+layout_mode = 0
+offset_left = 158.0
+offset_top = -78.0
+offset_right = 368.0
+offset_bottom = 132.0
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=638947712]
+layout_mode = 0
+offset_left = 57.0
+offset_top = 128.0
+offset_right = 477.0
+offset_bottom = 568.0
+
+[node name="PanelContainer" type="PanelContainer" parent="CenterContainer" unique_id=302554164]
+custom_minimum_size = Vector2(420, 360)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_7wxpg")
+
+[node name="MarginContainer" type="MarginContainer" parent="CenterContainer/PanelContainer" unique_id=1087652170]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer" unique_id=665373717]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=281321621]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.73333335, 0.5019608, 0.26666668, 1)
+theme_override_fonts/font = SubResource("SystemFont_0mota")
+theme_override_styles/normal = SubResource("StyleBoxFlat_ov801")
+text = "Despre"
+horizontal_alignment = 1
+
+[node name="RichTextLabel" type="RichTextLabel" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=480277089]
+layout_direction = 2
+layout_mode = 2
+text = "Academia de Studii Economice din București
+Facultatea de Cibernetică, Statistică și Informatică Economică
+Specializarea Informatică Economică
+
+Lucrare de licență
+JOC COLABORATIV 2D MULTIPLAYER
+
+Absolvent
+Mincinoiu Dragoș-Matei
+
+Coordonator științific
+Asist. univ. dr. Vîlcea Alexandru-Lucian
+
+București, iulie 2026"
+fit_content = true
+horizontal_alignment = 1
+
+[node name="BackButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=650730082]
+layout_mode = 2
+text = "Înapoi"

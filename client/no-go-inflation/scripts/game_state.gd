@@ -21,6 +21,7 @@ const DEFAULT_ECONOMY := {
 var session_id: String = ""
 var lobby_code: String = ""
 var participant_id: String = ""
+var lobby_entry_mode: String = ""
 
 var current_day: int = 1
 var current_minute: int = 480
@@ -40,6 +41,7 @@ func reset() -> void:
 	session_id = ""
 	lobby_code = ""
 	participant_id = ""
+	lobby_entry_mode = ""
 	
 	current_day = 1
 	current_minute = 480

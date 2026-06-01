@@ -25,7 +25,7 @@ export async function registerUser(input: RegisterSchemaType): Promise<SafeUser>
     );
 
     if (existingUser.rows.length > 0) {
-        throw new AppError("Username or email already in use", 409);
+        throw new AppError("Username-ul sau email-ul este deja folosit.", 409);
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -55,7 +55,7 @@ export async function loginUser(input: LoginSchemaType): Promise<LoginResult> {
     );
 
     if (result.rows.length === 0) {
-        throw new AppError("Invalid email or password", 401);
+        throw new AppError("Email sau parolă incorectă.", 401);
     }
 
     const user = result.rows[0] as User;
@@ -63,7 +63,7 @@ export async function loginUser(input: LoginSchemaType): Promise<LoginResult> {
     const passwordMatches = await bcrypt.compare(password, user.password_hash);
 
     if (!passwordMatches) {
-        throw new AppError("Invalid email or password", 401);
+        throw new AppError("Email sau parolă incorectă.", 401);
     }
 
     const secret = env.jwtSecret;

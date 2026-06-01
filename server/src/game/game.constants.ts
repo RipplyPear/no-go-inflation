@@ -8,6 +8,9 @@ export const MARKET_OPEN_MINUTE = 540;
 export const MARKET_CLOSE_MINUTE = 1020;
 export const OFFER_DURATION_MINUTES = 30;
 
+// Accelerare
+// export const GAME_TICK_REAL_SECONDS = 2;
+// export const GAME_MINUTES_PER_TICK = 15;
 export const GAME_TICK_REAL_SECONDS = 5;
 export const GAME_MINUTES_PER_TICK = 5;
 

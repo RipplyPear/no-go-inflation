@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="No Go Inflation"
-run/main_scene="uid://bfq2wjuwovy5w"
+run/main_scene="uid://bjd8vapvcgnrf"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -24,3 +24,10 @@ config/icon="res://icon.svg"
 AuthClient="*uid://c7lc7rnidacwd"
 GameSocket="*uid://c02x1mhod1y01"
 GameState="*uid://joqsh6qpfv4q"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="viewport"
+window/stretch/scale_mode="integer"

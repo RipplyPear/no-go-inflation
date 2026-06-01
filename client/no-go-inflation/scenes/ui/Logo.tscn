@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://cluetmvru28w5"]
+
+[ext_resource type="Texture2D" uid="uid://bst40jseffds4" path="res://assets/logo.png" id="1_ubpdn"]
+
+[node name="Logo" type="TextureRect" unique_id=1592901580]
+custom_minimum_size = Vector2(210, 210)
+offset_left = 513.0
+offset_top = 88.0
+offset_right = 723.0
+offset_bottom = 298.0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("1_ubpdn")
+expand_mode = 1
+stretch_mode = 5

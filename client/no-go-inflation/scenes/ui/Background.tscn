@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://ddr2lxijmba3y"]
+
+[ext_resource type="Texture2D" uid="uid://bmle5c17d3p26" path="res://assets/ui_background.png" id="1_kx87i"]
+
+[node name="Background" type="TextureRect" unique_id=1990703398]
+offset_right = 1280.0
+offset_bottom = 720.0
+texture = ExtResource("1_kx87i")

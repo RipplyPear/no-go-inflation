@@ -2,11 +2,18 @@ import {AuthenticatedWebSocket, ClientMessage} from "./ws.types";
 import {isRecord, sendJson} from "./wsProtocol";
 import {requireWsUser} from "./wsAuth";
 import {createDemoSession, createLobby, joinLobby, startLobbySession} from "../game/services/session.service";
+import { leaveLobby } from "../game/services/connection.service";
 import {buildBuilding, collectBuilding, upgradeBuilding} from "../game/services/building.service";
 import {acceptMarketOffer, createMarketOffer, getMarketStateForUser} from "../game/services/market.service";
-import {broadcastLobbyStateToSession, broadcastMarketStateToSession, broadcastSessionStateToSession} from "./wsBroadcast";
+import {
+    broadcastLobbyStateToSession,
+    broadcastMarketStateToSession,
+    broadcastSessionCancelled,
+    broadcastSessionStateToSession
+} from "./wsBroadcast";
 import {forceFinishSessionForTesting, seedBotOfferForTesting} from "../game/services/dev.service";
 import {getConnectedClients} from "./wsClients";
+import {recycleResource} from "../game/services/recycle.service";
 import {WebSocket} from "ws";
 
 export async function handleClientMessage(ws: AuthenticatedWebSocket, message: ClientMessage) {
@@ -59,6 +66,37 @@ export async function handleClientMessage(ws: AuthenticatedWebSocket, message: C
                     message: error instanceof Error
                         ? error.message
                         : "Nu s-a putut realiza alăturarea la lobby.",
+                });
+            }
+
+            break;
+        }
+
+        case "LEAVE_LOBBY": {
+            const user = requireWsUser(ws);
+
+            if (!user) {
+                return;
+            }
+
+            try {
+                const result = await leaveLobby(user, message.payload);
+
+                ws.currentSessionId = undefined;
+
+                if (result.cancelled) {
+                    broadcastSessionCancelled(
+                        result.sessionId,
+                        result.reason ?? "Lobby-ul a fost închis."
+                    );
+                } else if (result.shouldBroadcastLobby) {
+                    await broadcastLobbyStateToSession(result.sessionId);
+                }
+            } catch (error) {
+                sendJson(ws, "ERROR", {
+                    message: error instanceof Error
+                        ? error.message
+                        : "Nu s-a putut părăsi lobby-ul.",
                 });
             }
 
@@ -162,6 +200,37 @@ export async function handleClientMessage(ws: AuthenticatedWebSocket, message: C
             } catch (error) {
                 sendJson(ws, "ERROR", {
                     message: error instanceof Error ? error.message : "Colectarea a eșuat.",
+                });
+            }
+
+            break;
+        }
+
+        case "RECYCLE_RESOURCE": {
+            const user = requireWsUser(ws);
+
+            if (!user) {
+                return;
+            }
+
+            try {
+                const result = await recycleResource(user, message.payload);
+                ws.currentSessionId = result.sessionId;
+
+                sendJson(ws, "RESOURCE_RECYCLED", {
+                    resource: result.resource,
+                    quantity: result.quantity,
+                    galbeniGained: result.galbeniGained,
+                    inflationReduction: result.inflationReduction,
+                });
+
+                await broadcastSessionStateToSession(result.sessionId);
+                await broadcastMarketStateToSession(result.sessionId);
+            } catch (error) {
+                sendJson(ws, "ERROR", {
+                    message: error instanceof Error
+                        ? error.message
+                        : "Reciclarea a eșuat.",
                 });
             }
 

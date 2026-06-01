@@ -1,0 +1,103 @@
+[gd_scene format=3 uid="uid://v7rjh8ump3rr"]
+
+[ext_resource type="Script" uid="uid://2r2gfpegr40i" path="res://scripts/register_screen.gd" id="1_yi7yd"]
+[ext_resource type="PackedScene" uid="uid://ddr2lxijmba3y" path="res://scenes/ui/Background.tscn" id="2_yi7yd"]
+[ext_resource type="PackedScene" uid="uid://cluetmvru28w5" path="res://scenes/ui/Logo.tscn" id="3_gq25i"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7wxpg"]
+bg_color = Color(0, 0, 0, 0.81960785)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.9416754, 0.78174174, 0.32988554, 1)
+corner_detail = 16
+
+[sub_resource type="SystemFont" id="SystemFont_yi7yd"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gq25i"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9411765, 0.78039217, 0.32941177, 1)
+
+[node name="RegisterScreen" type="Control" unique_id=919663237]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 369.0
+offset_top = 105.0
+offset_right = 409.0
+offset_bottom = 145.0
+script = ExtResource("1_yi7yd")
+
+[node name="Background" parent="." unique_id=1990703398 instance=ExtResource("2_yi7yd")]
+layout_mode = 0
+offset_left = -369.0
+offset_top = -105.0
+offset_right = 911.0
+offset_bottom = 615.0
+
+[node name="Logo" parent="." unique_id=1592901580 instance=ExtResource("3_gq25i")]
+layout_mode = 0
+offset_left = 158.0
+offset_top = -78.0
+offset_right = 368.0
+offset_bottom = 132.0
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=638947712]
+layout_mode = 0
+offset_left = 57.0
+offset_top = 128.0
+offset_right = 477.0
+offset_bottom = 489.0
+
+[node name="PanelContainer" type="PanelContainer" parent="CenterContainer" unique_id=302554164]
+custom_minimum_size = Vector2(420, 360)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_7wxpg")
+
+[node name="MarginContainer" type="MarginContainer" parent="CenterContainer/PanelContainer" unique_id=1087652170]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer" unique_id=665373717]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=2134579007]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.73333335, 0.5019608, 0.26666668, 1)
+theme_override_fonts/font = SubResource("SystemFont_yi7yd")
+theme_override_styles/normal = SubResource("StyleBoxFlat_gq25i")
+text = "Creare cont"
+horizontal_alignment = 1
+
+[node name="UsernameLineEdit" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1870016182]
+layout_mode = 2
+placeholder_text = "Nume de uitilizator"
+
+[node name="EmailLineEdit" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1567318229]
+layout_mode = 2
+placeholder_text = "Email"
+
+[node name="PasswordLineEdit" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1778354011]
+layout_mode = 2
+placeholder_text = "Parolă"
+
+[node name="RegisterButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1155454923]
+layout_mode = 2
+text = "Înregistrare"
+
+[node name="BackButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1914861649]
+layout_mode = 2
+text = "Înapoi"
+
+[node name="StatusLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=601103735]
+custom_minimum_size = Vector2(360, 50)
+layout_mode = 2
+autowrap_mode = 3

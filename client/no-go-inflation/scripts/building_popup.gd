@@ -27,8 +27,17 @@ func _ready() -> void:
 	collect_button.pressed.connect(_on_collect_pressed)
 	close_button.pressed.connect(hide_popup)
 
-func show_for_selection(x: int, y: int, tile_type: String, building: Dictionary) -> void:
-	set_offset(Vector2(x * TILE_SIZE.x, (y + 1) * TILE_SIZE.y))
+func show_for_selection(
+	x: int,
+	y: int,
+	tile_type: String,
+	building: Dictionary,
+	map_screen_offset: Vector2 = Vector2.ZERO
+) -> void:
+	panel.position = map_screen_offset + Vector2(
+		x * TILE_SIZE.x,
+		(y + 1) * TILE_SIZE.y
+	)
 	
 	selected_x = x
 	selected_y = y

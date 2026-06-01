@@ -12,9 +12,12 @@ extends Node2D
 var dev_panel: GameDevPanel
 var end_game_dialog: EndGameDialog
 
-const SHOW_DEV_CONTROLS := false
+const SHOW_DEV_CONTROLS := true
+const MAP_MARGIN_TILES := 2
+const SCREEN_SIZE := Vector2(1280, 720)
 
 func _ready() -> void:
+	_position_map_root()
 	map_root.tile_clicked.connect(_on_tile_clicked)
 	
 	building_popup.build_requested.connect(_on_build_requested)
@@ -30,11 +33,59 @@ func _ready() -> void:
 	open_market_button.pressed.connect(_on_open_market_pressed)
 	market_popup.create_offer_requested.connect(_on_create_offer_requested)
 	market_popup.accept_offer_requested.connect(_on_accept_offer_requested)
+	market_popup.recycle_requested.connect(_on_recycle_requested)
 	
 	_setup_debug_buttons()
 	_setup_end_game_dialog()
 	
 	_on_game_state_changed()
+
+
+func _position_map_root() -> void:
+	var map_dimensions := _get_current_map_dimensions()
+
+	if map_dimensions.x <= 0 or map_dimensions.y <= 0:
+		return
+
+	var map_size := Vector2(
+		map_dimensions.x * MapRoot.TILE_SIZE.x,
+		map_dimensions.y * MapRoot.TILE_SIZE.y
+	)
+
+	var centered_position := (SCREEN_SIZE - map_size) / 2.0
+	var snapped_position := _snap_position_to_tile_grid(centered_position)
+
+	map_root.position = snapped_position
+
+
+func _get_current_map_dimensions() -> Vector2i:
+	var data: Dictionary = GameState.map_data
+
+	if data.is_empty():
+		data = map_root.map_data
+
+	var width := int(data.get("width", 0))
+	var height := int(data.get("height", 0))
+
+	if (width <= 0 or height <= 0) and data.has("tiles") and typeof(data["tiles"]) == TYPE_ARRAY:
+		var rows: Array = data["tiles"]
+		height = rows.size()
+		width = 0
+
+		for row in rows:
+			if typeof(row) == TYPE_ARRAY:
+				var row_size := int(row.size())
+				if row_size > width:
+					width = row_size
+
+	return Vector2i(width, height)
+
+
+func _snap_position_to_tile_grid(position: Vector2) -> Vector2:
+	return Vector2(
+		floor(position.x / MapRoot.TILE_SIZE.x) * MapRoot.TILE_SIZE.x,
+		round(position.y / MapRoot.TILE_SIZE.y) * MapRoot.TILE_SIZE.y
+	)
 
 
 func _setup_end_game_dialog() -> void:
@@ -43,6 +94,7 @@ func _setup_end_game_dialog() -> void:
 
 
 func _on_game_state_changed() -> void:
+	_position_map_root()
 	_update_hud_from_game_state()
 	map_root.apply_server_state(GameState.map_data, GameState.buildings)
 	market_popup.refresh_player_state()
@@ -124,7 +176,7 @@ func _request_market_state() -> void:
 
 func _on_tile_clicked(x: int, y: int, tile_type: String) -> void:
 	var building: Dictionary = map_root.get_building_at(x, y)
-	building_popup.show_for_selection(x, y, tile_type, building)
+	building_popup.show_for_selection(x, y, tile_type, building, map_root.position)
 
 
 func _on_build_requested(x: int, y: int, _tile_type: String) -> void:
@@ -137,6 +189,14 @@ func _on_upgrade_requested(x: int, y: int) -> void:
 
 func _on_collect_requested(x: int, y: int) -> void:
 	_send_tile_action(WsMessageType.COLLECT_BUILDING, x, y)
+
+
+func _on_recycle_requested(resource: String, quantity: int) -> void:
+	if _send_session_message(WsMessageType.RECYCLE_RESOURCE, {
+		"resource": resource,
+		"quantity": quantity
+	}, "reciclare"):
+		_show_status("Cerere de reciclare trimisă.")
 
 
 func _on_ws_message_received(message: Dictionary) -> void:
@@ -164,8 +224,39 @@ func _on_ws_message_received(message: Dictionary) -> void:
 		WsMessageType.ERROR:
 			_handle_error_message(message)
 		
+		WsMessageType.RESOURCE_RECYCLED:
+			_handle_resource_recycled_message(message)
+		
+		WsMessageType.SESSION_CANCELLED:
+			_handle_session_cancelled_message(message)
+		
 		_:
 			_show_status("Mesaj WebSocket netratat în GameScreen: %s" % message_type)
+
+
+func _handle_session_cancelled_message(message: Dictionary) -> void:
+	var payload = message.get("payload", {})
+	var reason := "Sesiunea a fost oprită."
+	
+	if typeof(payload) == TYPE_DICTIONARY:
+		reason = str(payload.get("reason", reason))
+	
+	_show_status(reason)
+	
+	GameState.reset()
+	get_tree().change_scene_to_file("res://scenes/PlayerMenuScreen.tscn")
+
+
+func _handle_resource_recycled_message(message: Dictionary) -> void:
+	var payload = _get_payload_dictionary(message, WsMessageType.RESOURCE_RECYCLED)
+	
+	if payload.is_empty():
+		return
+	
+	_show_status("Ai reciclat %d resurse și ai primit %d galbeni." % [
+		int(payload.get("quantity", 0)),
+		int(payload.get("galbeniGained", 0))
+	])
 
 
 func _handle_session_state_message(message: Dictionary) -> void:

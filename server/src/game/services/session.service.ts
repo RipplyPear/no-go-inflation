@@ -10,8 +10,6 @@ const LOBBY_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const LOBBY_CODE_LENGTH = 6;
 const MAX_LOBBY_PARTICIPANTS = 8;
 
-// Pentru test rapid poate rămâne 1.
-// Dacă vrei regulă strict multiplayer, îl schimbăm ulterior la 2.
 const MIN_PARTICIPANTS_TO_START = 2;
 
 type Queryable = Pick<typeof pool, "query">;
@@ -437,10 +435,12 @@ export async function startLobbySession(user: AuthenticatedUser, rawPayload: unk
 
         const participantsResult = await client.query(
             `
-            SELECT id
-            FROM session_participants
-            WHERE session_id = $1
-            ORDER BY joined_at
+                SELECT id
+                FROM session_participants
+                WHERE session_id = $1
+                  AND participant_type = 'human'
+                  AND is_connected = true
+                ORDER BY joined_at
             `,
             [payload.sessionId]
         );

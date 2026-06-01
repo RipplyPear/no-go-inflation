@@ -1,12 +1,18 @@
-import type {Server as HttpServer} from "node:http";
-import {WebSocketServer} from "ws";
+import type { Server as HttpServer } from "node:http";
+import { WebSocketServer } from "ws";
 
-import {AuthenticatedWebSocket} from "./ws.types";
-import {parseClientMessage, sendJson} from "./wsProtocol";
-import {authenticateRequest} from "./wsAuth";
-import {addClient, removeClient,} from "./wsClients";
-import {startGameLoop} from "./wsGameLoop";
-import {handleClientMessage} from "./wsMessageHandler";
+import { AuthenticatedWebSocket } from "./ws.types";
+import { parseClientMessage, sendJson } from "./wsProtocol";
+import { authenticateRequest } from "./wsAuth";
+import { addClient, hasActiveClientForUser, removeClient } from "./wsClients";
+import { startGameLoop } from "./wsGameLoop";
+import { handleClientMessage } from "./wsMessageHandler";
+import { handleSocketDisconnect } from "../game/services/connection.service";
+import {
+    broadcastLobbyStateToSession,
+    broadcastSessionCancelled,
+    broadcastSessionStateToSession,
+} from "./wsBroadcast";
 
 export function setupWebSocketServer(server: HttpServer) {
     const wss = new WebSocketServer({
@@ -22,7 +28,7 @@ export function setupWebSocketServer(server: HttpServer) {
 
         if (!user) {
             sendJson(ws, "ERROR", {
-                message: "Unauthorized WebSocket connection",
+                message: "Conexiune WebSocket neautorizată.",
             });
 
             ws.close(1008, "Unauthorized");
@@ -31,13 +37,28 @@ export function setupWebSocketServer(server: HttpServer) {
 
         ws.user = user;
 
+        if (hasActiveClientForUser(user.id)) {
+            console.log(`Rejected duplicate WebSocket connection for ${user.username} (${user.id})`);
+
+            sendJson(ws, "ERROR", {
+                code: "USER_ALREADY_CONNECTED",
+                message: "Acest utilizator este deja conectat.",
+            });
+
+            setTimeout(() => {
+                ws.close(1008, "USER_ALREADY_CONNECTED");
+            }, 50);
+
+            return;
+        }
+
         addClient(ws);
 
         console.log(`WebSocket connected: ${user.username} (${user.id})`);
 
         sendJson(ws, "AUTHENTICATED", {
             user,
-            message: "WebSocket connection established",
+            message: "Conexiune WebSocket stabilită.",
         });
 
         ws.on("message", (rawMessage) => {
@@ -45,7 +66,7 @@ export function setupWebSocketServer(server: HttpServer) {
 
             if (!message) {
                 sendJson(ws, "ERROR", {
-                    message: "Invalid JSON message",
+                    message: "Mesaj JSON invalid.",
                 });
                 return;
             }
@@ -54,14 +75,49 @@ export function setupWebSocketServer(server: HttpServer) {
                 console.error("WebSocket message handling failed:", error);
 
                 sendJson(ws, "ERROR", {
-                    message: "Server error while handling WebSocket message.",
+                    message: "Eroare server la procesarea mesajului WebSocket.",
                 });
             });
         });
 
-        ws.on("close", () => {
-            console.log(`WebSocket disconnected: ${user.username} (${user.id})`);
+        ws.on("close", (code, reasonBuffer) => {
+            const reason = reasonBuffer.toString();
+
+            console.log(
+                `WebSocket disconnected: ${user.username} (${user.id}) code=${code} reason=${reason}`
+            );
+
+            const sessionId = ws.currentSessionId;
             removeClient(ws);
+
+            if (!sessionId) {
+                return;
+            }
+
+            handleSocketDisconnect(user, sessionId)
+                .then(async (result) => {
+                    if (!result) {
+                        return;
+                    }
+
+                    if (result.cancelled) {
+                        broadcastSessionCancelled(
+                            result.sessionId,
+                            result.reason ?? "Sesiunea a fost anulată."
+                        );
+                        return;
+                    }
+
+                    if (result.shouldBroadcastLobby) {
+                        await broadcastLobbyStateToSession(result.sessionId);
+                        return;
+                    }
+
+                    await broadcastSessionStateToSession(result.sessionId);
+                })
+                .catch((error) => {
+                    console.error("Failed to handle WebSocket disconnect:", error);
+                });
         });
 
         ws.on("error", (error) => {

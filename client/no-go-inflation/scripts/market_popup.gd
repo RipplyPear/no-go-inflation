@@ -3,6 +3,7 @@ extends CanvasLayer
 
 signal create_offer_requested(offer_type: String, resource: String, amount: int, price: int)
 signal accept_offer_requested(offer_id: String, quantity: int)
+signal recycle_requested(resource: String, quantity: int)
 
 @onready var panel: PanelContainer = $PanelContainer
 
@@ -12,8 +13,12 @@ signal accept_offer_requested(offer_id: String, quantity: int)
 @onready var price_spin: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/CreatePanel/PriceSpin
 @onready var create_button: Button = $PanelContainer/MarginContainer/HBoxContainer/CreatePanel/CreateButton
 @onready var close_button: Button = $PanelContainer/MarginContainer/HBoxContainer/CreatePanel/CloseButton
+@onready var recycle_button: Button = $PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel/RecycleButton
+@onready var recycle_resource_option: OptionButton = $PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel/RecycleResourceOption
+@onready var recycle_amount_spin: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel/RecycleAmountSpin
 
 @onready var offer_list: VBoxContainer = $PanelContainer/MarginContainer/HBoxContainer/OffersPanel/OfferList
+@onready var player_state_panel: VBoxContainer = $PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel
 @onready var player_state_title: Label = $PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel/PlayerStateTitle
 @onready var player_state_label: Label = $PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel/PlayerStateLabel
 
@@ -24,6 +29,9 @@ func _ready() -> void:
 	_setup_offer_options()
 	_setup_spin_boxes()
 	_connect_signals()
+	
+	panel.position = Vector2(90, 120)
+	panel.custom_minimum_size = Vector2(1100, 500)
 	
 	player_state_title.text = "Starea jucătorului"
 	refresh_player_state()
@@ -73,6 +81,26 @@ func _configure_spin_box(spin_box: SpinBox, min_value: int, max_value: int, defa
 func _connect_signals() -> void:
 	create_button.pressed.connect(_on_create_pressed)
 	close_button.pressed.connect(hide_popup)
+	recycle_button.pressed.connect(_on_recycle_pressed)
+
+
+func _on_recycle_pressed() -> void:
+	var selected_index := recycle_resource_option.selected
+	var resource := ""
+	
+	match selected_index:
+		0:
+			resource = GameDomain.RESOURCE_WOOD
+		1:
+			resource = GameDomain.RESOURCE_STONE
+		2:
+			resource = GameDomain.RESOURCE_GRAIN
+		_:
+			resource = GameDomain.RESOURCE_WOOD
+		
+	var quantity := int(recycle_amount_spin.value)
+	
+	recycle_requested.emit(resource, quantity)
 
 
 func _on_create_pressed() -> void:
