@@ -71,13 +71,14 @@ func _show_existing_building(building: Dictionary) -> void:
 	var building_type := str(building.get("type", "unknown"))
 	var level := int(building.get("level", 1))
 	var stored := int(building.get("stored", 0))
+	var capacity := int(building.get(""))
 	
 	var building_label: String = str(GameDomain.BUILDING_LABELS.get(building_type, building_type))
 	var produced_resource_key: String = str(GameDomain.RESOURCE_BY_BUILDING.get(building_type, ""))
 	var produced_resource: String = str(GameDomain.RESOURCE_LABELS.get(produced_resource_key, "resursă"))
 	
 	title_label.text = "%s - Nivel %d" % [building_label, level]
-	info_label.text = "Produce: %s\nStocare internă: %d" % [produced_resource, stored]
+	info_label.text = "Produce: %s\nStoc de colectat: %d" % [produced_resource, stored]
 	
 	build_button.visible = false
 	

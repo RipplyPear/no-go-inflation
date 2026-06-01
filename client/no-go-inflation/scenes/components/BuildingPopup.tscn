@@ -1,16 +1,31 @@
 [gd_scene format=3 uid="uid://bnnqxkbwcbhbg"]
 
 [ext_resource type="Script" uid="uid://t61na8qyrr88" path="res://scripts/building_popup.gd" id="1_ji3a8"]
+[ext_resource type="Theme" uid="uid://b3klx57slj0l3" path="res://ui/themes/soft_retro/soft_retro.tres" id="2_3n4rc"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3n4rc"]
+bg_color = Color(0, 0, 0, 0.78431374)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.93333334, 0.8, 1)
 
 [node name="BuildingPopup" type="CanvasLayer" unique_id=663094514]
 script = ExtResource("1_ji3a8")
 
 [node name="PanelContainer" type="PanelContainer" parent="." unique_id=254046705]
-offset_right = 40.0
-offset_bottom = 40.0
+offset_right = 100.0
+offset_bottom = 162.0
+theme = ExtResource("2_3n4rc")
+theme_override_styles/panel = SubResource("StyleBoxFlat_3n4rc")
 
 [node name="MarginContainer" type="MarginContainer" parent="PanelContainer" unique_id=971977003]
 layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
 
 [node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer" unique_id=125861375]
 layout_mode = 2

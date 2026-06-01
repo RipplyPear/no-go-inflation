@@ -1,27 +1,17 @@
 [gd_scene format=3 uid="uid://bavhtxr6jsrtb"]
 
+[ext_resource type="Theme" uid="uid://b3klx57slj0l3" path="res://ui/themes/soft_retro/soft_retro.tres" id="1_5ynd0"]
 [ext_resource type="Script" uid="uid://dvp70m3lfwen0" path="res://scripts/player_menu_screen.gd" id="1_u7rmv"]
 [ext_resource type="PackedScene" uid="uid://ddr2lxijmba3y" path="res://scenes/ui/Background.tscn" id="2_u7rmv"]
 [ext_resource type="PackedScene" uid="uid://cluetmvru28w5" path="res://scenes/ui/Logo.tscn" id="3_5ynd0"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7wxpg"]
-bg_color = Color(0, 0, 0, 0.81960785)
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 4
-border_color = Color(0.9416754, 0.78174174, 0.32988554, 1)
-corner_detail = 16
-
-[sub_resource type="SystemFont" id="SystemFont_5bv6g"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_u7rmv"]
-bg_color = Color(0, 0, 0, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.9411765, 0.78039217, 0.32941177, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5ynd0"]
+bg_color = Color(0, 0, 0, 0.78431374)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.93333334, 0.8, 1)
 
 [node name="PlayerMenuScreen" type="Control" unique_id=919663237]
 layout_mode = 3
@@ -30,6 +20,7 @@ offset_left = 369.0
 offset_top = 105.0
 offset_right = 409.0
 offset_bottom = 145.0
+theme = ExtResource("1_5ynd0")
 script = ExtResource("1_u7rmv")
 
 [node name="Background" parent="." unique_id=1990703398 instance=ExtResource("2_u7rmv")]
@@ -38,6 +29,7 @@ offset_left = -369.0
 offset_top = -105.0
 offset_right = 911.0
 offset_bottom = 615.0
+theme = ExtResource("1_5ynd0")
 
 [node name="Logo" parent="." unique_id=1592901580 instance=ExtResource("3_5ynd0")]
 layout_mode = 0
@@ -45,6 +37,7 @@ offset_left = 158.0
 offset_top = -78.0
 offset_right = 368.0
 offset_bottom = 132.0
+theme = ExtResource("1_5ynd0")
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=638947712]
 layout_mode = 0
@@ -52,14 +45,17 @@ offset_left = 57.0
 offset_top = 128.0
 offset_right = 477.0
 offset_bottom = 489.0
+theme = ExtResource("1_5ynd0")
 
 [node name="PanelContainer" type="PanelContainer" parent="CenterContainer" unique_id=302554164]
 custom_minimum_size = Vector2(420, 360)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_7wxpg")
+theme = ExtResource("1_5ynd0")
+theme_override_styles/panel = SubResource("StyleBoxFlat_5ynd0")
 
 [node name="MarginContainer" type="MarginContainer" parent="CenterContainer/PanelContainer" unique_id=1087652170]
 layout_mode = 2
+theme = ExtResource("1_5ynd0")
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
@@ -67,36 +63,41 @@ theme_override_constants/margin_bottom = 16
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer" unique_id=665373717]
 layout_mode = 2
+theme = ExtResource("1_5ynd0")
 theme_override_constants/separation = 10
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=604902699]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.73333335, 0.5019608, 0.26666668, 1)
-theme_override_fonts/font = SubResource("SystemFont_5bv6g")
-theme_override_styles/normal = SubResource("StyleBoxFlat_u7rmv")
+theme = ExtResource("1_5ynd0")
 text = "Meniu Principal"
 horizontal_alignment = 1
 
 [node name="HostButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=905112970]
 layout_mode = 2
+theme = ExtResource("1_5ynd0")
 text = "Găzduiește un joc"
 
 [node name="JoinButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=2012874199]
 layout_mode = 2
+theme = ExtResource("1_5ynd0")
 text = "Alătură-te unui joc"
 
 [node name="HowToPlayButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=81180330]
 layout_mode = 2
+theme = ExtResource("1_5ynd0")
 text = "Cum se joacă?"
 
 [node name="AboutButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=2035586168]
 layout_mode = 2
+theme = ExtResource("1_5ynd0")
 text = "Despre"
 
 [node name="LogoutButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=428458262]
 layout_mode = 2
+theme = ExtResource("1_5ynd0")
 text = "Deconectare"
 
 [node name="ExitButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1379205631]
 layout_mode = 2
+theme = ExtResource("1_5ynd0")
 text = "Ieșire"

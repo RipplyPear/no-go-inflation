@@ -1,0 +1,13 @@
+Godot Theme: Soft Retro
+
+A downloadable Godot Theme
+
+https://intergenic.itch.io/godot-theme-soft-retro
+
+License:
+
+You’re free to use this for personal or commercial projects. Attribution is appreciated but not required. The theme includes the Righteous font, which is available under the SIL Open Font License.
+
+Made with Godot 4.  Based on the Curiosities color palette by sukinipan (https://lospec.com/palette-list/curiosities)
+
+Have a problem with the asset, or want additional themes? Let me know in the comments!

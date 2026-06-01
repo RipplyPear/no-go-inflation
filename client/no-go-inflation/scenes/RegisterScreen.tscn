@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://2r2gfpegr40i" path="res://scripts/register_screen.gd" id="1_yi7yd"]
 [ext_resource type="PackedScene" uid="uid://ddr2lxijmba3y" path="res://scenes/ui/Background.tscn" id="2_yi7yd"]
 [ext_resource type="PackedScene" uid="uid://cluetmvru28w5" path="res://scenes/ui/Logo.tscn" id="3_gq25i"]
+[ext_resource type="Theme" uid="uid://b3klx57slj0l3" path="res://ui/themes/soft_retro/soft_retro.tres" id="4_gq25i"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7wxpg"]
 bg_color = Color(0, 0, 0, 0.81960785)
@@ -10,18 +11,8 @@ border_width_left = 4
 border_width_top = 4
 border_width_right = 4
 border_width_bottom = 4
-border_color = Color(0.9416754, 0.78174174, 0.32988554, 1)
+border_color = Color(1, 0.93333334, 0.8, 1)
 corner_detail = 16
-
-[sub_resource type="SystemFont" id="SystemFont_yi7yd"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gq25i"]
-bg_color = Color(0, 0, 0, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.9411765, 0.78039217, 0.32941177, 1)
 
 [node name="RegisterScreen" type="Control" unique_id=919663237]
 layout_mode = 3
@@ -52,6 +43,7 @@ offset_left = 57.0
 offset_top = 128.0
 offset_right = 477.0
 offset_bottom = 489.0
+theme = ExtResource("4_gq25i")
 
 [node name="PanelContainer" type="PanelContainer" parent="CenterContainer" unique_id=302554164]
 custom_minimum_size = Vector2(420, 360)
@@ -71,9 +63,6 @@ theme_override_constants/separation = 10
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=2134579007]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.73333335, 0.5019608, 0.26666668, 1)
-theme_override_fonts/font = SubResource("SystemFont_yi7yd")
-theme_override_styles/normal = SubResource("StyleBoxFlat_gq25i")
 text = "Creare cont"
 horizontal_alignment = 1
 

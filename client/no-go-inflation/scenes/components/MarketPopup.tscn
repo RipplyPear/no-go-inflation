@@ -1,6 +1,15 @@
 [gd_scene format=3 uid="uid://blkhx4m6ckc5p"]
 
 [ext_resource type="Script" uid="uid://b8kgqgu5ivus2" path="res://scripts/market_popup.gd" id="1_v6sqn"]
+[ext_resource type="Theme" uid="uid://b3klx57slj0l3" path="res://ui/themes/soft_retro/soft_retro.tres" id="2_8rfo8"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8rfo8"]
+bg_color = Color(0, 0, 0, 0.78431374)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.93333334, 0.8, 1)
 
 [node name="MarketPopup" type="CanvasLayer" unique_id=746828363]
 script = ExtResource("1_v6sqn")
@@ -10,9 +19,15 @@ offset_left = 41.0
 offset_top = 166.0
 offset_right = 195.0
 offset_bottom = 399.0
+theme = ExtResource("2_8rfo8")
+theme_override_styles/panel = SubResource("StyleBoxFlat_8rfo8")
 
 [node name="MarginContainer" type="MarginContainer" parent="PanelContainer" unique_id=531228679]
 layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
 
 [node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer" unique_id=1225936957]
 layout_mode = 2
@@ -22,7 +37,7 @@ layout_mode = 2
 
 [node name="CreateTitle" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=1990946046]
 layout_mode = 2
-text = "Crează ofertă"
+text = "Creează ofertă"
 
 [node name="TypeOption" type="OptionButton" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=1878009874]
 layout_mode = 2
@@ -62,13 +77,17 @@ value = 1.0
 
 [node name="CreateButton" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=1709897023]
 layout_mode = 2
-text = "Crează"
+text = "Creează"
 
 [node name="CloseButton" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=1021925881]
 layout_mode = 2
 text = "Închide"
 
+[node name="VSeparator" type="VSeparator" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=580353512]
+layout_mode = 2
+
 [node name="OffersPanel" type="VBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=1782436429]
+custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 
 [node name="OffersTitle" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/OffersPanel" unique_id=2116967514]
@@ -76,6 +95,9 @@ layout_mode = 2
 text = "Oferte disponibile"
 
 [node name="OfferList" type="VBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer/OffersPanel" unique_id=1264095160]
+layout_mode = 2
+
+[node name="VSeparator2" type="VSeparator" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=1457320860]
 layout_mode = 2
 
 [node name="PlayerStatePanel" type="VBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=1079195078]
@@ -96,6 +118,7 @@ text = "Reciclare resurse"
 
 [node name="RecycleResourceOption" type="OptionButton" parent="PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel" unique_id=2105252042]
 layout_mode = 2
+selected = 0
 item_count = 3
 popup/item_0/text = "Lemn"
 popup/item_0/id = 0

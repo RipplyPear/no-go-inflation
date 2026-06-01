@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://sdc1tbp8cp53" path="res://scripts/how_to_play_screen.gd" id="1_7ny5d"]
 [ext_resource type="PackedScene" uid="uid://ddr2lxijmba3y" path="res://scenes/ui/Background.tscn" id="2_7ny5d"]
 [ext_resource type="PackedScene" uid="uid://cluetmvru28w5" path="res://scenes/ui/Logo.tscn" id="3_j5p4p"]
+[ext_resource type="Theme" uid="uid://b3klx57slj0l3" path="res://ui/themes/soft_retro/soft_retro.tres" id="4_j5p4p"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7wxpg"]
 bg_color = Color(0, 0, 0, 0.81960785)
@@ -10,18 +11,8 @@ border_width_left = 4
 border_width_top = 4
 border_width_right = 4
 border_width_bottom = 4
-border_color = Color(0.9416754, 0.78174174, 0.32988554, 1)
+border_color = Color(0.98039216, 0.91764706, 0.78431374, 1)
 corner_detail = 16
-
-[sub_resource type="SystemFont" id="SystemFont_0mota"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ov801"]
-bg_color = Color(0, 0, 0, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.9411765, 0.78039217, 0.32941177, 1)
 
 [node name="HowToPlayScreen" type="Control" unique_id=919663237]
 layout_mode = 3
@@ -52,14 +43,17 @@ offset_left = 57.0
 offset_top = 128.0
 offset_right = 477.0
 offset_bottom = 489.0
+theme = ExtResource("4_j5p4p")
 
 [node name="PanelContainer" type="PanelContainer" parent="CenterContainer" unique_id=302554164]
 custom_minimum_size = Vector2(420, 360)
 layout_mode = 2
+theme = ExtResource("4_j5p4p")
 theme_override_styles/panel = SubResource("StyleBoxFlat_7wxpg")
 
 [node name="MarginContainer" type="MarginContainer" parent="CenterContainer/PanelContainer" unique_id=1087652170]
 layout_mode = 2
+theme = ExtResource("4_j5p4p")
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
@@ -67,17 +61,17 @@ theme_override_constants/margin_bottom = 16
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer" unique_id=665373717]
 layout_mode = 2
+theme = ExtResource("4_j5p4p")
 theme_override_constants/separation = 10
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=281321621]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.73333335, 0.5019608, 0.26666668, 1)
-theme_override_fonts/font = SubResource("SystemFont_0mota")
-theme_override_styles/normal = SubResource("StyleBoxFlat_ov801")
+theme = ExtResource("4_j5p4p")
 text = "Cum se joacă"
 horizontal_alignment = 1
 
-[node name="RichTextLabel" type="RichTextLabel" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=172726285]
+[node name="Label" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1012313247]
+custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 text = "1. Host-ul creează un lobby și trimite codul celuilalt jucător.
 2. Fiecare jucător primește o hartă proprie.
@@ -86,9 +80,9 @@ text = "1. Host-ul creează un lobby și trimite codul celuilalt jucător.
 5. Colectează resursele și folosește-le pentru upgrade-uri sau tranzacții.
 6. Creează sau acceptă oferte în piață.
 7. Menține inflația sub control până la finalul sesiunii."
-fit_content = true
-horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="BackButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1959675158]
 layout_mode = 2
+theme = ExtResource("4_j5p4p")
 text = "Înapoi"
