@@ -9,8 +9,12 @@ extends Node2D
 @onready var market_popup: MarketPopup = $MarketPopup
 @onready var open_market_button: Button = $HUD/TopPanel/MarginContainer/VBoxContainer/OpenMarketButton
 
+@onready var leave_game_button: Button = $HUD/LeaveGameButton
+@onready var leave_game_dialog: ConfirmationDialog = $LeaveGameDialog
+
 var dev_panel: GameDevPanel
 var end_game_dialog: EndGameDialog
+var _returning_to_player_menu := false
 
 const SHOW_DEV_CONTROLS := true
 const MAP_MARGIN_TILES := 2
@@ -31,14 +35,25 @@ func _ready() -> void:
 		GameState.state_changed.connect(_on_game_state_changed)
 		
 	open_market_button.pressed.connect(_on_open_market_pressed)
+	leave_game_button.pressed.connect(_on_leave_game_pressed)
+	leave_game_dialog.confirmed.connect(_on_leave_game_confirmed)
 	market_popup.create_offer_requested.connect(_on_create_offer_requested)
 	market_popup.accept_offer_requested.connect(_on_accept_offer_requested)
+	market_popup.cancel_offer_requested.connect(_on_cancel_offer_requested)
 	market_popup.recycle_requested.connect(_on_recycle_requested)
 	
 	_setup_debug_buttons()
 	_setup_end_game_dialog()
 	
 	_on_game_state_changed()
+
+
+func _exit_tree() -> void:
+	if GameSocket.message_received.is_connected(_on_ws_message_received):
+		GameSocket.message_received.disconnect(_on_ws_message_received)
+	
+	if GameState.state_changed.is_connected(_on_game_state_changed):
+		GameState.state_changed.disconnect(_on_game_state_changed)
 
 
 func _position_map_root() -> void:
@@ -90,7 +105,12 @@ func _snap_position_to_tile_grid(position: Vector2) -> Vector2:
 
 func _setup_end_game_dialog() -> void:
 	end_game_dialog = EndGameDialog.new()
+	end_game_dialog.confirmed.connect(_on_end_game_dialog_confirmed)
 	add_child(end_game_dialog)
+
+
+func _on_end_game_dialog_confirmed() -> void:
+	_return_to_player_menu()
 
 
 func _on_game_state_changed() -> void:
@@ -126,6 +146,36 @@ func _on_accept_offer_requested(offer_id: String, quantity: int) -> void:
 			offer_id,
 			quantity
 		])
+
+
+func _on_cancel_offer_requested(offer_id: String) -> void:
+	if _send_session_message(WsMessageType.CANCEL_MARKET_OFFER, {
+		"offerId": offer_id
+	}, "retragerea ofertei"):
+		_show_status("Cerere de retragere ofertă trimisă.")
+
+
+func _on_leave_game_pressed() -> void:
+	if GameState.session_id.is_empty():
+		_return_to_player_menu()
+		return
+	
+	leave_game_dialog.popup_centered(Vector2i(420, 140))
+
+
+func _on_leave_game_confirmed() -> void:
+	if GameState.session_id.is_empty():
+		_return_to_player_menu()
+		return
+	
+	leave_game_button.disabled = true
+	
+	if _send_session_message(WsMessageType.LEAVE_SESSION, {}, "părăsirea sesiunii"):
+		_show_status("Părăsești sesiunea...")
+		await get_tree().process_frame
+		_return_to_player_menu()
+	else:
+		leave_game_button.disabled = false
 
 
 func _on_dev_force_finish_requested() -> void:
@@ -215,11 +265,17 @@ func _on_ws_message_received(message: Dictionary) -> void:
 		WsMessageType.TRADE_COMPLETED:
 			_handle_trade_completed_message()
 		
+		WsMessageType.OFFER_CANCELLED:
+			_handle_offer_cancelled_message()
+		
 		WsMessageType.DEV_BOT_OFFER_CREATED:
 			_handle_dev_bot_offer_created_message()
 		
 		WsMessageType.GAME_FINISHED:
 			_handle_game_finished_message(message)
+		
+		WsMessageType.SESSION_LEFT:
+			_return_to_player_menu()
 		
 		WsMessageType.ERROR:
 			_handle_error_message(message)
@@ -242,9 +298,7 @@ func _handle_session_cancelled_message(message: Dictionary) -> void:
 		reason = str(payload.get("reason", reason))
 	
 	_show_status(reason)
-	
-	GameState.reset()
-	get_tree().change_scene_to_file("res://scenes/PlayerMenuScreen.tscn")
+	_return_to_player_menu()
 
 
 func _handle_resource_recycled_message(message: Dictionary) -> void:
@@ -281,6 +335,10 @@ func _handle_offer_created_message() -> void:
 	_show_status("Oferta a fost creată.")
 	_request_market_state()
 
+func _handle_offer_cancelled_message() -> void:
+	_show_status("Oferta a fost retrasă.")
+	_request_market_state()
+
 
 func _handle_trade_completed_message() -> void:
 	_show_status("Tranzacție finalizată.")
@@ -308,7 +366,17 @@ func _handle_error_message(message: Dictionary) -> void:
 		_show_status("Server error: Eroare necunoscută.")
 		return
 	
-	_show_status("Server error: %s" % str(payload.get("message", "Eroare necunoscută.")))
+	var error_message := str(payload.get("message", "Eroare necunoscută."))
+	var context := str(payload.get("context", ""))
+	
+	if context == WsMessageType.ACCEPT_MARKET_OFFER:
+		var offer_id := str(payload.get("offerId", ""))
+		
+		if market_popup != null and not offer_id.is_empty():
+			market_popup.show_offer_error(offer_id, error_message)
+			return
+	
+	_show_status("Server error: %s" % error_message)
 
 
 func _get_payload_dictionary(message: Dictionary, message_type: String) -> Dictionary:
@@ -360,6 +428,28 @@ func _on_create_offer_requested(
 
 func _show_game_finished(final_result: Dictionary) -> void:
 	end_game_dialog.show_results(final_result)
+
+
+func _return_to_player_menu() -> void:
+	if _returning_to_player_menu:
+		return
+	
+	_returning_to_player_menu = true
+	
+	if GameSocket.message_received.is_connected(_on_ws_message_received):
+		GameSocket.message_received.disconnect(_on_ws_message_received)
+	
+	if GameState.state_changed.is_connected(_on_game_state_changed):
+		GameState.state_changed.disconnect(_on_game_state_changed)
+	
+	GameState.reset()
+	
+	var tree := get_tree()
+	if tree == null:
+		return
+	
+	tree.call_deferred("change_scene_to_file", "res://scenes/PlayerMenuScreen.tscn")
+
 
 func _has_active_session_or_warn(action_label: String) -> bool:
 	if GameState.has_active_session():

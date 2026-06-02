@@ -41,7 +41,14 @@ func _on_about_pressed() -> void:
 
 
 func _on_logout_pressed() -> void:
+	logout_button.disabled = true
 	GameSocket.disconnect_from_server()
+	
+	# WebSocketPeer mai face polling după close(),
+	# ca serverul să observe deconectarea imediat.
+	await get_tree().process_frame
+	await get_tree().process_frame
+	
 	AuthClient.logout()
 	GameState.reset()
 	get_tree().change_scene_to_file(START_MENU_SCENE)

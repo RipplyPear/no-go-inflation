@@ -12,6 +12,7 @@ import {
     broadcastLobbyStateToSession,
     broadcastSessionCancelled,
     broadcastSessionStateToSession,
+    broadcastMarketStateToSession
 } from "./wsBroadcast";
 
 export function setupWebSocketServer(server: HttpServer) {
@@ -114,6 +115,7 @@ export function setupWebSocketServer(server: HttpServer) {
                     }
 
                     await broadcastSessionStateToSession(result.sessionId);
+                    await broadcastMarketStateToSession(result.sessionId);
                 })
                 .catch((error) => {
                     console.error("Failed to handle WebSocket disconnect:", error);

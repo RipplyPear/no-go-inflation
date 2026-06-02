@@ -104,6 +104,28 @@ async function expireOldOffers(sessionId: string): Promise<void> {
     );
 }
 
+export async function cancelActiveMarketOffersForParticipant(
+    queryable: Pick<typeof pool, "query">,
+    sessionId: string,
+    participantId: string
+): Promise<number> {
+    const result = await queryable.query(
+        `
+        UPDATE market_offers
+        SET status = 'cancelled',
+            remaining_quantity = 0,
+            updated_at = now()
+        WHERE session_id = $1
+          AND creator_participant_id = $2
+          AND status = 'active'
+        RETURNING id
+        `,
+        [sessionId, participantId]
+    );
+
+    return result.rowCount ?? 0;
+}
+
 export async function getMarketStateForUser(user: AuthenticatedUser, sessionId: string) {
     await expireOldOffers(sessionId);
     await syncSellOffersWithSellerResources(pool, sessionId);
@@ -129,6 +151,7 @@ export async function getMarketStateForUser(user: AuthenticatedUser, sessionId: 
         WHERE mo.session_id = $1
           AND mo.status = 'active'
           AND mo.expires_at > now()
+          AND sp.is_connected = true
         ORDER BY mo.created_at DESC
         `,
         [sessionId]
@@ -359,20 +382,23 @@ export async function acceptMarketOffer(user: AuthenticatedUser, rawPayload: unk
 
         const offerResult = await client.query(
             `
-            SELECT
-                id,
-                creator_participant_id,
-                offer_type,
-                resource,
-                min_quantity,
-                remaining_quantity,
-                price_per_unit,
-                status,
-                expires_at
-            FROM market_offers
-            WHERE id = $1
-              AND session_id = $2
-            FOR UPDATE
+                SELECT
+                    mo.id,
+                    mo.creator_participant_id,
+                    mo.offer_type,
+                    mo.resource,
+                    mo.min_quantity,
+                    mo.remaining_quantity,
+                    mo.price_per_unit,
+                    mo.status,
+                    mo.expires_at,
+                    creator_sp.is_connected AS creator_is_connected
+                FROM market_offers mo
+                         JOIN session_participants creator_sp
+                              ON creator_sp.id = mo.creator_participant_id
+                WHERE mo.id = $1
+                  AND mo.session_id = $2
+                    FOR UPDATE
             `,
             [payload.offerId, payload.sessionId]
         );
@@ -385,6 +411,10 @@ export async function acceptMarketOffer(user: AuthenticatedUser, rawPayload: unk
 
         if (offer.status !== "active") {
             throw new Error("Oferta nu mai este activă.");
+        }
+
+        if (!offer.creator_is_connected) {
+            throw new Error("Creatorul ofertei nu mai este conectat.");
         }
 
         if (new Date(offer.expires_at).getTime() <= Date.now()) {

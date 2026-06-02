@@ -1,5 +1,6 @@
 import { pool } from "../../config/db";
 import { AuthenticatedUser } from "../../websocket/ws.types";
+import { cancelActiveMarketOffersForParticipant } from "./market.service";
 
 type ConnectionUpdateResult = {
     sessionId: string;
@@ -146,6 +147,95 @@ export async function leaveLobby(
             sessionId,
             cancelled: false,
             shouldBroadcastLobby: true,
+        };
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
+export async function leaveActiveSession(
+    user: AuthenticatedUser,
+    rawPayload: unknown
+): Promise<ConnectionUpdateResult> {
+    const sessionId = getSessionIdFromPayload(rawPayload);
+
+    if (!sessionId) {
+        throw new Error("Payload invalid pentru LEAVE_SESSION.");
+    }
+
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const sessionResult = await client.query(
+            `
+            SELECT id, status
+            FROM game_sessions
+            WHERE id = $1
+            FOR UPDATE
+            `,
+            [sessionId]
+        );
+
+        if (sessionResult.rows.length === 0) {
+            throw new Error("Sesiunea nu există.");
+        }
+
+        const session = sessionResult.rows[0];
+
+        if (session.status !== "active") {
+            throw new Error("Poți părăsi doar o sesiune activă.");
+        }
+
+        const updateResult = await client.query(
+            `
+            UPDATE session_participants
+            SET is_connected = false,
+                last_seen_at = now()
+            WHERE session_id = $1
+              AND user_id = $2
+            RETURNING id
+            `,
+            [sessionId, user.id]
+        );
+
+        if (updateResult.rows.length === 0) {
+            throw new Error("Jucătorul nu aparține acestei sesiuni.");
+        }
+
+        const participantId = String(updateResult.rows[0].id);
+
+        await cancelActiveMarketOffersForParticipant(
+            client,
+            sessionId,
+            participantId
+        );
+
+        const connectedHumans = await countConnectedHumans(client, sessionId);
+
+        if (connectedHumans < 2) {
+            await cancelSession(client, sessionId, true);
+            await client.query("COMMIT");
+
+            return {
+                sessionId,
+                cancelled: true,
+                shouldBroadcastLobby: false,
+                reason: "Sesiunea a fost oprită deoarece un jucător a părăsit jocul.",
+            };
+        }
+
+        await client.query("COMMIT");
+
+        return {
+            sessionId,
+            cancelled: false,
+            shouldBroadcastLobby: false,
+            reason: `${user.username} a părăsit sesiunea.`,
         };
     } catch (error) {
         await client.query("ROLLBACK");

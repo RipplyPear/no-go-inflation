@@ -15,6 +15,17 @@ border_width_right = 3
 border_width_bottom = 3
 border_color = Color(1, 0.93333334, 0.8, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5m38y"]
+bg_color = Color(0.4425011, 1.871083e-06, 1.2513996e-06, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.93333334, 0.8, 1)
+corner_radius_top_left = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
 [node name="GameScreen" type="Node2D" unique_id=728743057]
 script = ExtResource("1_o75v1")
 
@@ -27,10 +38,10 @@ script = ExtResource("2_gj13t")
 [node name="HUD" type="CanvasLayer" parent="." unique_id=708211123]
 
 [node name="TopPanel" type="PanelContainer" parent="HUD" unique_id=867604710]
-offset_left = 468.0
-offset_top = 9.0
-offset_right = 787.0
-offset_bottom = 94.0
+offset_left = 405.0
+offset_top = 6.0
+offset_right = 827.0
+offset_bottom = 91.0
 theme = ExtResource("4_yxycf")
 theme_override_styles/panel = SubResource("StyleBoxFlat_yxycf")
 
@@ -54,6 +65,31 @@ text = "Lemn: 0 | Piatră: 0 | Grâne: 0 | Galbeni: 0 | Inflație: 20"
 layout_mode = 2
 text = "Piață"
 
+[node name="LeaveGameButton" type="Button" parent="HUD" unique_id=492145907]
+layout_direction = 2
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -169.0
+offset_top = 4.0
+offset_right = -3.0
+offset_bottom = 35.0
+grow_horizontal = 0
+theme = ExtResource("4_yxycf")
+theme_override_styles/normal = SubResource("StyleBoxFlat_5m38y")
+text = "Părăsește jocul"
+metadata/_edit_use_anchors_ = true
+
 [node name="BuildingPopup" parent="." unique_id=663094514 instance=ExtResource("3_i1jb3")]
 
 [node name="MarketPopup" parent="." unique_id=746828363 instance=ExtResource("4_xpdqc")]
+
+[node name="LeaveGameDialog" type="ConfirmationDialog" parent="." unique_id=1946794229]
+oversampling_override = 1.0
+title = "Confirmare"
+initial_position = 2
+size = Vector2i(288, 100)
+theme = ExtResource("4_yxycf")
+ok_button_text = "Sunt sigur"
+dialog_text = "Ești sigur că vrei să părăsești jocul?"
+cancel_button_text = "Înapoi"

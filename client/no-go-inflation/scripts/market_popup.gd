@@ -3,6 +3,7 @@ extends CanvasLayer
 
 signal create_offer_requested(offer_type: String, resource: String, amount: int, price: int)
 signal accept_offer_requested(offer_id: String, quantity: int)
+signal cancel_offer_requested(offer_id: String)
 signal recycle_requested(resource: String, quantity: int)
 
 @onready var panel: PanelContainer = $PanelContainer
@@ -16,7 +17,7 @@ signal recycle_requested(resource: String, quantity: int)
 @onready var recycle_amount_spin: SpinBox = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel/RecycleAmountSpin
 @onready var recycle_button: Button = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel/RecycleButton
 
-@onready var offer_list: VBoxContainer = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/OffersPanel/OfferList
+@onready var offer_list: VBoxContainer = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/OffersPanel/OfferScroll/OfferList
 @onready var player_state_panel: VBoxContainer = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel
 @onready var player_state_title: Label = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel/PlayerStateTitle
 @onready var player_state_label: Label = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel/PlayerStateLabel
@@ -41,6 +42,7 @@ func _ready() -> void:
 
 func show_popup() -> void:
 	refresh_player_state()
+	_update_offer_amount_limit()
 	panel.visible = true
 
 
@@ -82,10 +84,11 @@ func _configure_spin_box(spin_box: SpinBox, min_value: int, max_value: int, defa
 
 func _connect_signals() -> void:
 	create_button.pressed.connect(_on_create_pressed)
-	close_button.pressed.connect(hide_popup)
 	recycle_button.pressed.connect(_on_recycle_pressed)
 	x_button.pressed.connect(hide_popup)
 	close_button.pressed.connect(hide_popup)
+	resource_option.item_selected.connect(_on_offer_inputs_changed)
+	type_option.item_selected.connect(_on_offer_inputs_changed)
 
 
 func _on_recycle_pressed() -> void:
@@ -110,6 +113,7 @@ func _on_recycle_pressed() -> void:
 func _on_create_pressed() -> void:
 	var offer_type := _get_selected_offer_type()
 	var resource := _get_selected_resource()
+	_update_offer_amount_limit()
 	var amount := int(amount_spin.value)
 	var price := int(price_spin.value)
 	
@@ -125,6 +129,22 @@ func _on_create_pressed() -> void:
 			amount_spin.value = owned
 	
 	create_offer_requested.emit(offer_type, resource, amount, price)
+
+
+func _on_offer_inputs_changed(_index: int) -> void:
+	_update_offer_amount_limit()
+
+
+func _update_offer_amount_limit() -> void:
+	var offer_type := _get_selected_offer_type()
+	var resource := _get_selected_resource()
+	
+	if offer_type == GameDomain.OFFER_SELL:
+		var owned := GameState.get_resource_amount(resource)
+		amount_spin.max_value = max(1, owned)
+		amount_spin.value = min(amount_spin.value, amount_spin.max_value)
+	else:
+		amount_spin.max_value = 999
 
 
 func _get_selected_offer_type() -> String:
@@ -168,11 +188,28 @@ func _add_offer_row(offer: Dictionary) -> void:
 	var row := MarketOfferRow.new()
 	row.setup(offer)
 	row.accept_requested.connect(_on_offer_row_accept_requested)
+	row.cancel_requested.connect(_on_offer_row_cancel_requested)
 	offer_list.add_child(row)
+
+
+func show_offer_error(offer_id: String, message: String) -> void:
+	if offer_id.is_empty():
+		return
+	
+	for child in offer_list.get_children():
+		if child is MarketOfferRow and child.matches_offer(offer_id):
+			child.show_error(message)
+			return
+	
+	push_warning(message)
 
 
 func _on_offer_row_accept_requested(offer_id: String, quantity: int) -> void:
 	accept_offer_requested.emit(offer_id, quantity)
+
+
+func _on_offer_row_cancel_requested(offer_id: String) -> void:
+	cancel_offer_requested.emit(offer_id)
 
 
 func _update_side_panel(market_state: Dictionary) -> void:

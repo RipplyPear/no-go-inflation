@@ -11,6 +11,7 @@ var _is_connecting := false
 var _last_connection_error := ""
 var _connection_failed_emitted := false
 var _manual_disconnect_requested := false
+var _authenticated := false
 
 
 func _ready() -> void:
@@ -21,6 +22,7 @@ func connect_to_server(token: String) -> void:
 	_last_connection_error = ""
 	_connection_failed_emitted = false
 	_manual_disconnect_requested = false
+	_authenticated = false
 	
 	if token.is_empty():
 		connection_failed.emit("Nu există token pentru conexiunea WebSocket.")
@@ -104,6 +106,7 @@ func disconnect_from_server() -> void:
 	
 	if state == WebSocketPeer.STATE_OPEN or state == WebSocketPeer.STATE_CONNECTING:
 		socket.close(1000, "Client logout")
+		socket.poll()
 		set_process(true)
 		return
 	
@@ -125,6 +128,7 @@ func _reset_socket() -> void:
 	_was_connected = false
 	_is_connecting = false
 	_manual_disconnect_requested = false
+	_authenticated = false
 
 
 func _handle_open_socket() -> void:
@@ -151,6 +155,9 @@ func _read_next_packet() -> void:
 	var message_type := str(parsed.get("type", "UNKNOWN"))
 	print("WebSocket received: ", message_type)
 	
+	if message_type == WsMessageType.AUTHENTICATED:
+		_authenticated = true
+	
 	if message_type == WsMessageType.ERROR:
 		var payload = parsed.get("payload", {})
 		var server_message := "Eroare server."
@@ -160,7 +167,7 @@ func _read_next_packet() -> void:
 		
 		_last_connection_error = server_message
 		
-		if _is_connecting and not _was_connected and not _connection_failed_emitted:
+		if not _authenticated and not _connection_failed_emitted:
 			_connection_failed_emitted = true
 			_is_connecting = false
 			
@@ -169,6 +176,7 @@ func _read_next_packet() -> void:
 			var state := socket.get_ready_state()
 			if state == WebSocketPeer.STATE_OPEN or state == WebSocketPeer.STATE_CONNECTING:
 				socket.close(1000, "Connection rejected")
+				socket.poll()
 				set_process(true)
 			
 			return
@@ -194,11 +202,21 @@ func _handle_closed_socket() -> void:
 		connection_failed.emit(error_message)
 	
 	elif _was_connected:
-		print("WebSocket closed")
-		disconnected.emit()
+		if not _authenticated and not _manual_disconnect_requested and not _connection_failed_emitted:
+			var error_message := _last_connection_error
+			if error_message.is_empty():
+				error_message = socket.get_close_reason()
+			if error_message.is_empty():
+				error_message = "Conexiunea WebSocket a fost închisă înainte de autentificare."
+			_connection_failed_emitted = true
+			connection_failed.emit(error_message)
+		else:
+			print("WebSocket closed")
+			disconnected.emit()
 	
 	_was_connected = false
 	_is_connecting = false
 	_manual_disconnect_requested = false
+	_authenticated = false
 	set_process(false)
 	

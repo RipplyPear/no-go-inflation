@@ -2,7 +2,7 @@ import {AuthenticatedWebSocket, ClientMessage} from "./ws.types";
 import {isRecord, sendJson} from "./wsProtocol";
 import {requireWsUser} from "./wsAuth";
 import {createDemoSession, createLobby, joinLobby, startLobbySession} from "../game/services/session.service";
-import { leaveLobby } from "../game/services/connection.service";
+import { leaveActiveSession, leaveLobby } from "../game/services/connection.service";
 import {buildBuilding, collectBuilding, upgradeBuilding} from "../game/services/building.service";
 import {
     acceptMarketOffer,
@@ -102,6 +102,42 @@ export async function handleClientMessage(ws: AuthenticatedWebSocket, message: C
                     message: error instanceof Error
                         ? error.message
                         : "Nu s-a putut părăsi lobby-ul.",
+                });
+            }
+
+            break;
+        }
+
+        case "LEAVE_SESSION": {
+            const user = requireWsUser(ws);
+
+            if (!user) {
+                return;
+            }
+
+            try {
+                const result = await leaveActiveSession(user, message.payload);
+
+                ws.currentSessionId = undefined;
+
+                sendJson(ws, "SESSION_LEFT", {
+                    sessionId: result.sessionId,
+                });
+
+                if (result.cancelled) {
+                    broadcastSessionCancelled(
+                        result.sessionId,
+                        result.reason ?? "Sesiunea a fost oprită."
+                    );
+                } else {
+                    await broadcastSessionStateToSession(result.sessionId);
+                    await broadcastMarketStateToSession(result.sessionId);
+                }
+            } catch (error) {
+                sendJson(ws, "ERROR", {
+                    message: error instanceof Error
+                        ? error.message
+                        : "Nu s-a putut părăsi sesiunea.",
                 });
             }
 
@@ -318,7 +354,14 @@ export async function handleClientMessage(ws: AuthenticatedWebSocket, message: C
                 await broadcastSessionStateToSession(result.sessionId);
                 await broadcastMarketStateToSession(result.sessionId);
             } catch (error) {
+                const payload = isRecord(message.payload) ? message.payload : {};
+                const offerId = typeof payload.offerId === "string"
+                    ? payload.offerId
+                    : undefined;
+
                 sendJson(ws, "ERROR", {
+                    context: "ACCEPT_MARKET_OFFER",
+                    offerId,
                     message: error instanceof Error
                         ? error.message
                         : "Acceptarea ofertei a eșuat.",
