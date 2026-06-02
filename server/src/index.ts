@@ -6,6 +6,7 @@ import { pool } from "./config/db";
 import { setupWebSocketServer } from "./websocket/wsServer";
 import { env } from "./config/env";
 
+const HOST = env.host;
 const PORT = env.port;
 
 async function startServer() {
@@ -17,8 +18,8 @@ async function startServer() {
 
         setupWebSocketServer(server);
 
-        server.listen(PORT, () => {
-            console.log(`Server started on port: ${PORT}`);
+        server.listen(PORT, HOST, () => {
+            console.log(`Server started on http://${HOST}:${PORT}`);
         });
     } catch (error) {
         console.error("Failed to start server:", error);

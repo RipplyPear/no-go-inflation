@@ -9,6 +9,7 @@ function requiredEnv(name: string) {
 }
 
 export const env = {
+    host: process.env.HOST ?? "0.0.0.0",
     port: Number(process.env.PORT ?? 3000),
     db: {
         host: requiredEnv('DB_HOST'),
