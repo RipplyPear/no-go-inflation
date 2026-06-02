@@ -14,6 +14,7 @@ var is_host := false
 @onready var copy_code_button: Button = $CenterContainer/PanelContainer/MarginContainer/VBoxContainer/CopyCodeButton
 @onready var back_button: Button = $CenterContainer/PanelContainer/MarginContainer/VBoxContainer/BackButton
 @onready var join_back_button: Button = $CenterContainer/PanelContainer/MarginContainer/VBoxContainer/JoinBackButton
+@onready var paste_code_button: Button = $CenterContainer/PanelContainer/MarginContainer/VBoxContainer/PasteCodeButton
 
 const PLAYER_MENU_SCENE := "res://scenes/PlayerMenuScreen.tscn"
 
@@ -22,7 +23,7 @@ func _ready() -> void:
 	_connect_ui_signals()
 	_connect_socket_signals()
 	_apply_entry_mode()
-	_set_status("Conectat. Creează un lobby sau alătură-te cu un cod.")
+	_set_status("Alătură-te cu un cod.")
 
 
 func _exit_tree() -> void:
@@ -48,7 +49,12 @@ func _connect_ui_signals() -> void:
 	
 	if not join_back_button.pressed.is_connected(_on_join_back_pressed):
 		join_back_button.pressed.connect(_on_join_back_pressed)
-
+	
+	if not paste_code_button.pressed.is_connected(_on_paste_code_pressed):
+		paste_code_button.pressed.connect(_on_paste_code_pressed)
+	
+	if not join_code_input.text_submitted.is_connected(_on_join_code_submitted):
+		join_code_input.text_submitted.connect(_on_join_code_submitted)
 
 func _connect_socket_signals() -> void:
 	if not GameSocket.message_received.is_connected(_on_ws_message_received):
@@ -71,6 +77,7 @@ func _apply_entry_mode() -> void:
 		join_back_button.visible = false
 		
 		start_session_button.visible = true
+		paste_code_button.visible = false
 		
 		_set_status("Se creează lobby-ul...")
 		call_deferred("_auto_create_lobby")
@@ -85,10 +92,27 @@ func _apply_entry_mode() -> void:
 		join_lobby_button.visible = true
 		join_back_button.visible = true
 		
+		paste_code_button.visible = true
 		start_session_button.visible = false
 		
 		_set_status("Introdu codul primit de la host.")
 		return
+
+
+func _on_paste_code_pressed() -> void:
+	var code := DisplayServer.clipboard_get().strip_edges().to_upper()
+	
+	if code.is_empty():
+		_set_status("Clipboard-ul nu conține un cod de lobby.")
+		return
+	
+	join_code_input.text = code
+	_set_status("Cod lipit: %s" % code)
+
+
+func _on_join_code_submitted(_text: String) -> void:
+	if join_lobby_button.visible and not join_lobby_button.disabled:
+		_on_join_lobby_pressed()
 
 
 func _on_create_lobby_pressed() -> void:
@@ -102,21 +126,23 @@ func _on_create_lobby_pressed() -> void:
 
 func _on_join_lobby_pressed() -> void:
 	var code := join_code_input.text.strip_edges().to_upper()
-
+	
 	if code.is_empty():
 		_set_status("Introdu codul lobby-ului.")
 		return
-
+	
 	_set_status("Se încearcă alăturarea la lobby...")
 	_set_lobby_buttons_disabled(true)
-
+	
 	var sent := GameSocket.send_message(WsMessageType.JOIN_LOBBY, {
 		"lobbyCode": code
 	})
-
+	
 	if not sent:
 		_set_lobby_buttons_disabled(false)
 		_set_status("Nu s-a putut trimite cererea de alăturare.")
+	
+	paste_code_button.visible = false
 
 
 func _on_copy_code_pressed() -> void:	

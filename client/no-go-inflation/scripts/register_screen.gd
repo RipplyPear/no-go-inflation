@@ -15,6 +15,9 @@ func _ready() -> void:
 	
 	register_button.pressed.connect(_on_register_pressed)
 	back_button.pressed.connect(_on_back_pressed)
+	username_input.text_submitted.connect(_on_register_submitted)
+	email_input.text_submitted.connect(_on_register_submitted)
+	password_input.text_submitted.connect(_on_register_submitted)
 	
 	if not AuthClient.register_succeeded.is_connected(_on_register_succeeded):
 		AuthClient.register_succeeded.connect(_on_register_succeeded)
@@ -31,6 +34,11 @@ func _exit_tree() -> void:
 
 	if AuthClient.auth_failed.is_connected(_on_auth_failed):
 		AuthClient.auth_failed.disconnect(_on_auth_failed)
+
+
+func _on_register_submitted(_text: String) -> void:
+	if not register_button.disabled:
+		_on_register_pressed()
 
 
 func _on_register_pressed() -> void:

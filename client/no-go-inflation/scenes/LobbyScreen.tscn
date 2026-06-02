@@ -89,6 +89,10 @@ text = "Creează Lobby"
 layout_mode = 2
 placeholder_text = "Cod Lobby"
 
+[node name="PasteCodeButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1490605966]
+layout_mode = 2
+text = "Lipește cod"
+
 [node name="JoinLobbyButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=460369409]
 layout_mode = 2
 text = "Alătură-te"

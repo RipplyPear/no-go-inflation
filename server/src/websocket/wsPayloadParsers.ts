@@ -5,7 +5,8 @@ import {
     TileActionPayload,
     JoinLobbyPayload,
     StartSessionPayload,
-    RecycleResourcePayload
+    RecycleResourcePayload,
+    CancelMarketOfferPayload
 } from "./ws.types";
 import {isRecord} from "./wsProtocol";
 import {OfferType, ResourceType} from "../game/game.types";
@@ -192,5 +193,23 @@ export function parseRecycleResourcePayload(payload: unknown): RecycleResourcePa
         sessionId: payload.sessionId,
         resource: payload.resource,
         quantity: payload.quantity,
+    };
+}
+
+export function parseCancelMarketOfferPayload(payload: unknown): CancelMarketOfferPayload | null {
+    if (!isRecord(payload)) {
+        return null;
+    }
+
+    if (
+        typeof payload.sessionId !== "string" ||
+        typeof payload.offerId !== "string"
+    ) {
+        return null;
+    }
+
+    return {
+        sessionId: payload.sessionId,
+        offerId: payload.offerId,
     };
 }

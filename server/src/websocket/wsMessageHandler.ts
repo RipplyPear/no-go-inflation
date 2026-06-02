@@ -4,7 +4,12 @@ import {requireWsUser} from "./wsAuth";
 import {createDemoSession, createLobby, joinLobby, startLobbySession} from "../game/services/session.service";
 import { leaveLobby } from "../game/services/connection.service";
 import {buildBuilding, collectBuilding, upgradeBuilding} from "../game/services/building.service";
-import {acceptMarketOffer, createMarketOffer, getMarketStateForUser} from "../game/services/market.service";
+import {
+    acceptMarketOffer,
+    cancelMarketOffer,
+    createMarketOffer,
+    getMarketStateForUser
+} from "../game/services/market.service";
 import {
     broadcastLobbyStateToSession,
     broadcastMarketStateToSession,
@@ -317,6 +322,33 @@ export async function handleClientMessage(ws: AuthenticatedWebSocket, message: C
                     message: error instanceof Error
                         ? error.message
                         : "Acceptarea ofertei a eșuat.",
+                });
+            }
+
+            break;
+        }
+
+        case "CANCEL_MARKET_OFFER": {
+            const user = requireWsUser(ws);
+
+            if (!user) {
+                return;
+            }
+
+            try {
+                const result = await cancelMarketOffer(user, message.payload);
+
+                sendJson(ws, "OFFER_CANCELLED", {
+                    offerId: result.offerId,
+                    message: "Oferta a fost retrasă.",
+                });
+
+                await broadcastMarketStateToSession(result.sessionId);
+            } catch (error) {
+                sendJson(ws, "ERROR", {
+                    message: error instanceof Error
+                        ? error.message
+                        : "Nu s-a putut retrage oferta.",
                 });
             }
 

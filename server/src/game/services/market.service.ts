@@ -1,5 +1,9 @@
 import {AuthenticatedUser} from "../../websocket/ws.types";
-import {parseAcceptMarketOfferPayload, parseCreateMarketOfferPayload} from "../../websocket/wsPayloadParsers";
+import {
+    parseAcceptMarketOfferPayload,
+    parseCancelMarketOfferPayload,
+    parseCreateMarketOfferPayload
+} from "../../websocket/wsPayloadParsers";
 import {pool} from "../../config/db";
 import {getParticipantForSession} from "./participant.service";
 import {
@@ -17,6 +21,40 @@ import {
     updateAveragePricesAfterTrade
 } from "./economy.service";
 import type { PoolClient } from "pg";
+
+async function syncSellOffersWithSellerResources(
+    queryable: Pick<typeof pool, "query">,
+    sessionId: string
+): Promise<void> {
+    await queryable.query(
+        `
+        WITH availability AS (
+            SELECT
+                mo.id,
+                COALESCE(pr.amount, 0) AS available_amount
+            FROM market_offers mo
+            LEFT JOIN player_resources pr
+              ON pr.participant_id = mo.creator_participant_id
+             AND pr.resource = mo.resource
+            WHERE mo.session_id = $1
+              AND mo.status = 'active'
+              AND mo.offer_type = 'sell'
+        )
+        UPDATE market_offers mo
+        SET remaining_quantity = LEAST(mo.remaining_quantity, availability.available_amount),
+            status = CASE
+                WHEN LEAST(mo.remaining_quantity, availability.available_amount) <= 0
+                    THEN 'cancelled'::offer_status
+                ELSE mo.status
+            END,
+            updated_at = now()
+        FROM availability
+        WHERE mo.id = availability.id
+          AND mo.remaining_quantity > availability.available_amount
+        `,
+        [sessionId]
+    );
+}
 
 async function getParticipantAndLockedSession(
     client: PoolClient,
@@ -68,6 +106,7 @@ async function expireOldOffers(sessionId: string): Promise<void> {
 
 export async function getMarketStateForUser(user: AuthenticatedUser, sessionId: string) {
     await expireOldOffers(sessionId);
+    await syncSellOffersWithSellerResources(pool, sessionId);
 
     const participant = await getParticipantForSession(pool, user, sessionId);
 
@@ -159,6 +198,31 @@ export async function createMarketOffer(user: AuthenticatedUser, rawPayload: unk
             throw new Error("Piața este închisă. Program: 09:00–17:00.");
         }
 
+        if (payload.offerType === "sell") {
+            const resourceResult = await client.query(
+                `
+        SELECT amount
+        FROM player_resources
+        WHERE participant_id = $1
+          AND resource = $2
+        FOR UPDATE
+        `,
+                [participant.id, payload.resource]
+            );
+
+            const availableAmount = Number(resourceResult.rows[0]?.amount ?? 0);
+
+            if (availableAmount <= 0) {
+                throw new Error("Nu ai această resursă disponibilă pentru vânzare.");
+            }
+
+            if (payload.quantity > availableAmount) {
+                throw new Error(
+                    `Nu poți vinde ${payload.quantity} unități. Ai disponibile doar ${availableAmount}.`
+                );
+            }
+        }
+
         const offerResult = await client.query(
             `
             INSERT INTO market_offers (
@@ -212,6 +276,58 @@ export async function createMarketOffer(user: AuthenticatedUser, rawPayload: unk
     }
 }
 
+export async function cancelMarketOffer(user: AuthenticatedUser, rawPayload: unknown) {
+    const payload = parseCancelMarketOfferPayload(rawPayload);
+
+    if (!payload) {
+        throw new Error("Payload invalid pentru CANCEL_MARKET_OFFER.");
+    }
+
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const participant = await getParticipantForSession(
+            client,
+            user,
+            payload.sessionId
+        );
+
+        const result = await client.query(
+            `
+            UPDATE market_offers
+            SET status = 'cancelled',
+                remaining_quantity = 0,
+                updated_at = now()
+            WHERE id = $1
+              AND session_id = $2
+              AND creator_participant_id = $3
+              AND status = 'active'
+            RETURNING id
+            `,
+            [payload.offerId, payload.sessionId, participant.id]
+        );
+
+        if (result.rows.length === 0) {
+            throw new Error("Oferta nu există, nu îți aparține sau nu mai este activă.");
+        }
+
+        await client.query("COMMIT");
+
+        return {
+            sessionId: payload.sessionId,
+            offerId: payload.offerId,
+        };
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
+
 export async function acceptMarketOffer(user: AuthenticatedUser, rawPayload: unknown) {
     const payload = parseAcceptMarketOfferPayload(rawPayload);
 
@@ -223,6 +339,8 @@ export async function acceptMarketOffer(user: AuthenticatedUser, rawPayload: unk
 
     try {
         await client.query("BEGIN");
+
+        await syncSellOffersWithSellerResources(client, payload.sessionId);
 
         const { participant: acceptor, session, currentMinute } =
             await getParticipantAndLockedSession(

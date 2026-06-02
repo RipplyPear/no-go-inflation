@@ -51,6 +51,11 @@ export type RecycleResourcePayload = {
     quantity: number;
 };
 
+export type CancelMarketOfferPayload = {
+    sessionId: string;
+    offerId: string;
+};
+
 export type JoinLobbyPayload = {
     lobbyCode: string;
 };

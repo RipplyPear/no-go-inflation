@@ -29,17 +29,31 @@ theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer" unique_id=1225936957]
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer" unique_id=7829713]
 layout_mode = 2
 
-[node name="CreatePanel" type="VBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=978101065]
+[node name="HeaderHBox" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1299361667]
 layout_mode = 2
 
-[node name="CreateTitle" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=1990946046]
+[node name="TitleLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/HeaderHBox" unique_id=511518159]
+layout_mode = 2
+text = "Piață"
+
+[node name="XButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/HeaderHBox" unique_id=481246946]
+layout_mode = 2
+text = "X"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1225936957]
+layout_mode = 2
+
+[node name="CreatePanel" type="VBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=978101065]
+layout_mode = 2
+
+[node name="CreateTitle" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CreatePanel" unique_id=1990946046]
 layout_mode = 2
 text = "Creează ofertă"
 
-[node name="TypeOption" type="OptionButton" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=1878009874]
+[node name="TypeOption" type="OptionButton" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CreatePanel" unique_id=1878009874]
 layout_mode = 2
 selected = 1
 item_count = 2
@@ -48,7 +62,7 @@ popup/item_0/id = 0
 popup/item_1/text = "Vând"
 popup/item_1/id = 1
 
-[node name="ResourceOption" type="OptionButton" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=886206914]
+[node name="ResourceOption" type="OptionButton" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CreatePanel" unique_id=886206914]
 layout_mode = 2
 selected = 0
 item_count = 3
@@ -59,64 +73,60 @@ popup/item_1/id = 1
 popup/item_2/text = "Grâne"
 popup/item_2/id = 2
 
-[node name="QuantityLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=109475492]
+[node name="QuantityLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CreatePanel" unique_id=109475492]
 layout_mode = 2
 text = "Cantitate:"
 
-[node name="AmountSpin" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=1527205649]
+[node name="AmountSpin" type="SpinBox" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CreatePanel" unique_id=1527205649]
 layout_mode = 2
 value = 10.0
 
-[node name="PriceLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=476477957]
+[node name="PriceLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CreatePanel" unique_id=476477957]
 layout_mode = 2
 text = "Preț:"
 
-[node name="PriceSpin" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=1397303371]
+[node name="PriceSpin" type="SpinBox" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CreatePanel" unique_id=1397303371]
 layout_mode = 2
 value = 1.0
 
-[node name="CreateButton" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=1709897023]
+[node name="CreateButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CreatePanel" unique_id=1709897023]
 layout_mode = 2
 text = "Creează"
 
-[node name="CloseButton" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/CreatePanel" unique_id=1021925881]
-layout_mode = 2
-text = "Închide"
-
-[node name="VSeparator" type="VSeparator" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=580353512]
+[node name="VSeparator" type="VSeparator" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=580353512]
 layout_mode = 2
 
-[node name="OffersPanel" type="VBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=1782436429]
+[node name="OffersPanel" type="VBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1782436429]
 custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 
-[node name="OffersTitle" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/OffersPanel" unique_id=2116967514]
+[node name="OffersTitle" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/OffersPanel" unique_id=2116967514]
 layout_mode = 2
 text = "Oferte disponibile"
 
-[node name="OfferList" type="VBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer/OffersPanel" unique_id=1264095160]
+[node name="OfferList" type="VBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/OffersPanel" unique_id=1264095160]
 layout_mode = 2
 
-[node name="VSeparator2" type="VSeparator" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=1457320860]
+[node name="VSeparator2" type="VSeparator" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1457320860]
 layout_mode = 2
 
-[node name="PlayerStatePanel" type="VBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer" unique_id=1079195078]
+[node name="PlayerStatePanel" type="VBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1079195078]
 layout_mode = 2
 
-[node name="PlayerStateTitle" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel" unique_id=2044160794]
+[node name="PlayerStateTitle" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel" unique_id=2044160794]
 layout_mode = 2
 
-[node name="PlayerStateLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel" unique_id=1614398074]
+[node name="PlayerStateLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel" unique_id=1614398074]
 layout_mode = 2
 
-[node name="RecycleSeparator" type="HSeparator" parent="PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel" unique_id=721383176]
+[node name="RecycleSeparator" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel" unique_id=721383176]
 layout_mode = 2
 
-[node name="RecycleTitleLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel" unique_id=44072563]
+[node name="RecycleTitleLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel" unique_id=44072563]
 layout_mode = 2
 text = "Reciclare resurse"
 
-[node name="RecycleResourceOption" type="OptionButton" parent="PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel" unique_id=2105252042]
+[node name="RecycleResourceOption" type="OptionButton" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel" unique_id=2105252042]
 layout_mode = 2
 selected = 0
 item_count = 3
@@ -127,12 +137,16 @@ popup/item_1/id = 1
 popup/item_2/text = "Grâne"
 popup/item_2/id = 2
 
-[node name="RecycleAmountSpin" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel" unique_id=1654260482]
+[node name="RecycleAmountSpin" type="SpinBox" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel" unique_id=1654260482]
 layout_mode = 2
 min_value = 2.0
 max_value = 999.0
 value = 20.0
 
-[node name="RecycleButton" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel" unique_id=1933208341]
+[node name="RecycleButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel" unique_id=1933208341]
 layout_mode = 2
 text = "Reciclează"
+
+[node name="CloseButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1021925881]
+layout_mode = 2
+text = "Închide"

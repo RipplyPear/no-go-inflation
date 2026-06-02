@@ -7,20 +7,22 @@ signal recycle_requested(resource: String, quantity: int)
 
 @onready var panel: PanelContainer = $PanelContainer
 
-@onready var type_option: OptionButton = $PanelContainer/MarginContainer/HBoxContainer/CreatePanel/TypeOption
-@onready var resource_option: OptionButton = $PanelContainer/MarginContainer/HBoxContainer/CreatePanel/ResourceOption
-@onready var amount_spin: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/CreatePanel/AmountSpin
-@onready var price_spin: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/CreatePanel/PriceSpin
-@onready var create_button: Button = $PanelContainer/MarginContainer/HBoxContainer/CreatePanel/CreateButton
-@onready var close_button: Button = $PanelContainer/MarginContainer/HBoxContainer/CreatePanel/CloseButton
-@onready var recycle_button: Button = $PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel/RecycleButton
-@onready var recycle_resource_option: OptionButton = $PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel/RecycleResourceOption
-@onready var recycle_amount_spin: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel/RecycleAmountSpin
+@onready var type_option: OptionButton = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CreatePanel/TypeOption
+@onready var resource_option: OptionButton = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CreatePanel/ResourceOption
+@onready var amount_spin: SpinBox = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CreatePanel/AmountSpin
+@onready var price_spin: SpinBox = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CreatePanel/PriceSpin
+@onready var create_button: Button = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CreatePanel/CreateButton
+@onready var recycle_resource_option: OptionButton = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel/RecycleResourceOption
+@onready var recycle_amount_spin: SpinBox = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel/RecycleAmountSpin
+@onready var recycle_button: Button = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel/RecycleButton
 
-@onready var offer_list: VBoxContainer = $PanelContainer/MarginContainer/HBoxContainer/OffersPanel/OfferList
-@onready var player_state_panel: VBoxContainer = $PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel
-@onready var player_state_title: Label = $PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel/PlayerStateTitle
-@onready var player_state_label: Label = $PanelContainer/MarginContainer/HBoxContainer/PlayerStatePanel/PlayerStateLabel
+@onready var offer_list: VBoxContainer = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/OffersPanel/OfferList
+@onready var player_state_panel: VBoxContainer = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel
+@onready var player_state_title: Label = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel/PlayerStateTitle
+@onready var player_state_label: Label = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel/PlayerStateLabel
+
+@onready var x_button: Button = $PanelContainer/MarginContainer/VBoxContainer/HeaderHBox/XButton
+@onready var close_button: Button = $PanelContainer/MarginContainer/VBoxContainer/CloseButton
 
 
 func _ready() -> void:
@@ -82,6 +84,8 @@ func _connect_signals() -> void:
 	create_button.pressed.connect(_on_create_pressed)
 	close_button.pressed.connect(hide_popup)
 	recycle_button.pressed.connect(_on_recycle_pressed)
+	x_button.pressed.connect(hide_popup)
+	close_button.pressed.connect(hide_popup)
 
 
 func _on_recycle_pressed() -> void:
@@ -108,6 +112,17 @@ func _on_create_pressed() -> void:
 	var resource := _get_selected_resource()
 	var amount := int(amount_spin.value)
 	var price := int(price_spin.value)
+	
+	if offer_type == GameDomain.OFFER_SELL:
+		var owned := GameState.get_resource_amount(resource)
+		
+		if owned <= 0:
+			push_warning("Nu ai această resursă de vândut.")
+			return
+		
+		if amount > owned:
+			amount = owned
+			amount_spin.value = owned
 	
 	create_offer_requested.emit(offer_type, resource, amount, price)
 

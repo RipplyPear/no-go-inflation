@@ -15,11 +15,18 @@ func _ready() -> void:
 	
 	login_button.pressed.connect(_on_login_pressed)
 	back_button.pressed.connect(_on_back_pressed)
+	email_input.text_submitted.connect(_on_login_submitted)
+	password_input.text_submitted.connect(_on_login_submitted)
 	
 	_connect_auth_signals()
 	_connect_socket_signals()
 	
 	status_label.text = ""
+
+
+func _on_login_submitted(_text: String) -> void:
+	if not login_button.disabled:
+		_on_login_pressed()
 
 
 func _exit_tree() -> void:
