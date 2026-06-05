@@ -10,14 +10,14 @@ import {
     INITIAL_AVERAGE_PRICE,
     MARKET_CLOSE_MINUTE,
     MARKET_OPEN_MINUTE,
-    OFFER_DURATION_MINUTES
+    OFFER_DURATION_MINUTES, STABLE_TRADE_MIN_QUANTITY
 } from "../game.constants";
 import {OfferType, ResourceType} from "../game.types";
 import {getAveragePriceColumn} from "../gameRules";
 import {
     applyEconomyPressuresAndSaveSnapshot,
     calculateDemandSupplyPressure,
-    calculateOverpricePressure,
+    calculateOverpricePressure, calculateUnderpricePressure,
     updateAveragePricesAfterTrade
 } from "./economy.service";
 import type { PoolClient } from "pg";
@@ -466,6 +466,11 @@ export async function acceptMarketOffer(user: AuthenticatedUser, rawPayload: unk
             averagePriceBeforeTrade
         );
 
+        const underpricePressure = calculateUnderpricePressure(
+            pricePerUnit,
+            averagePriceBeforeTrade
+        );
+
         if (quantity < minQuantity) {
             throw new Error(`Cantitatea minimă acceptată este ${minQuantity}.`);
         }
@@ -608,8 +613,33 @@ export async function acceptMarketOffer(user: AuthenticatedUser, rawPayload: unk
 
         const demandSupplyPressure = await calculateDemandSupplyPressure(
             client,
-            payload.sessionId
+            payload.sessionId,
+            {
+                excludedOfferId: offer.id,
+            }
         );
+
+        const economyResult = await client.query(
+            `
+                SELECT inflation
+                FROM session_economy_state
+                WHERE session_id = $1
+                FOR UPDATE
+                `,
+            [payload.sessionId]
+        );
+
+        const currentInflationForTrade = Number(economyResult.rows[0]?.inflation ?? 20);
+
+        const MIN_INFLATION_FOR_TRADE_STABILIZATION = 10;
+
+        const stabilizationPressure =
+            overpricePressure === 0 &&
+            underpricePressure === 0 &&
+            demandSupplyPressure === 0 &&
+            quantity >= STABLE_TRADE_MIN_QUANTITY
+                ? 1
+                : 0;
 
         await applyEconomyPressuresAndSaveSnapshot(
             client,
@@ -618,6 +648,8 @@ export async function acceptMarketOffer(user: AuthenticatedUser, rawPayload: unk
             {
                 demandSupplyPressure,
                 overpricePressure,
+                underpricePressure,
+                stabilizationPressure,
             }
         );
 

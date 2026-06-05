@@ -5,6 +5,7 @@ import {advanceSessionTime} from "../game/services/sessionTime.service";
 import {finalizeSessionIfNeeded} from "../game/services/finalResults.service";
 import {getSessionStateForUser} from "../game/services/session.service";
 import {sendJson} from "./wsProtocol";
+import {maybeApplyPeriodicEconomyUpdate} from "../game/services/economy.service";
 
 let gameLoopStarted = false;
 
@@ -43,6 +44,8 @@ async function processGameLoopTick(gameMinutesToAdvance: number): Promise<void> 
             if (!sessionWasUpdated) {
                 continue;
             }
+
+            await maybeApplyPeriodicEconomyUpdate(sessionId);
 
             const finalResult = await finalizeSessionIfNeeded(sessionId);
 

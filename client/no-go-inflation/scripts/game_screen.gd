@@ -16,7 +16,7 @@ var dev_panel: GameDevPanel
 var end_game_dialog: EndGameDialog
 var _returning_to_player_menu := false
 
-const SHOW_DEV_CONTROLS := true
+const SHOW_DEV_CONTROLS := true #false
 const MAP_MARGIN_TILES := 2
 const SCREEN_SIZE := Vector2(1280, 720)
 

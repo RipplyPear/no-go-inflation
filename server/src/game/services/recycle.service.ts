@@ -6,11 +6,17 @@ import {parseRecycleResourcePayload} from "../../websocket/wsPayloadParsers";
 import {getParticipantForSession} from "./participant.service";
 import {getSessionStateForUser} from "./session.service";
 import {ResourceType} from "../game.types";
+import {applyEconomyPressuresAndSaveSnapshot} from "./economy.service";
 
 const RESOURCES_PER_GALBEN = 2;
 const MIN_RECYCLE_QUANTITY = 2;
 const MAX_INFLATION_REDUCTION = 5;
 const RESOURCES_PER_INFLATION_POINT = 50;
+const MAX_MODERATE_RECYCLE_REDUCTION = 3;
+
+const MODERATE_RECYCLE_MAX_QUANTITY = 150;
+const EXCESSIVE_RECYCLE_START_QUANTITY = 200;
+const MAX_EXCESSIVE_RECYCLE_PRESSURE = 5;
 
 async function getCurrentEconomyForSnapshot(client: PoolClient, sessionId: string) {
     const result = await client.query(
@@ -24,6 +30,28 @@ async function getCurrentEconomyForSnapshot(client: PoolClient, sessionId: strin
     );
 
     return result.rows[0];
+}
+
+function calculateRecyclePressure(quantity: number): number {
+    if (quantity <= MODERATE_RECYCLE_MAX_QUANTITY) {
+        const reduction = Math.min(
+            MAX_MODERATE_RECYCLE_REDUCTION,
+            Math.floor(quantity / RESOURCES_PER_INFLATION_POINT)
+        );
+
+        return -reduction;
+    }
+
+    if (quantity <= EXCESSIVE_RECYCLE_START_QUANTITY) {
+        return 0;
+    }
+
+    const excessiveQuantity = quantity - EXCESSIVE_RECYCLE_START_QUANTITY;
+
+    return Math.min(
+        MAX_EXCESSIVE_RECYCLE_PRESSURE,
+        Math.ceil(excessiveQuantity / RESOURCES_PER_INFLATION_POINT)
+    );
 }
 
 export async function recycleResource(user: AuthenticatedUser, rawPayload: unknown) {
@@ -43,10 +71,9 @@ export async function recycleResource(user: AuthenticatedUser, rawPayload: unkno
         throw new Error("Cantitatea reciclată este prea mică pentru a primi galbeni.");
     }
 
-    const inflationReduction = Math.min(
-        MAX_INFLATION_REDUCTION,
-        Math.floor(payload.quantity / RESOURCES_PER_INFLATION_POINT)
-    );
+    const recyclePressure = calculateRecyclePressure(payload.quantity);
+    const inflationReduction = Math.max(0, -recyclePressure);
+    const inflationIncrease = Math.max(0, recyclePressure);
 
     const client = await pool.connect();
 
@@ -116,44 +143,13 @@ export async function recycleResource(user: AuthenticatedUser, rawPayload: unkno
             [participant.id, galbeniGained, payload.quantity]
         );
 
-        const economyRow = await getCurrentEconomyForSnapshot(client, payload.sessionId);
-
-        const newInflation = Math.max(
-            0,
-            Number(economyRow?.inflation ?? 20) - inflationReduction
-        );
-
-        await client.query(
-            `
-            UPDATE session_economy_state
-            SET inflation = $2,
-                last_calculated_at = now()
-            WHERE session_id = $1
-            `,
-            [payload.sessionId, newInflation]
-        );
-
-        await client.query(
-            `
-            INSERT INTO economy_snapshots (
-                session_id,
-                inflation,
-                wood_avg_price,
-                stone_avg_price,
-                grain_avg_price,
-                recycle_pressure,
-                reason
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, 'recycle')
-            `,
-            [
-                payload.sessionId,
-                newInflation,
-                Number(economyRow?.wood_avg_price ?? 5),
-                Number(economyRow?.stone_avg_price ?? 5),
-                Number(economyRow?.grain_avg_price ?? 5),
-                -inflationReduction,
-            ]
+        await applyEconomyPressuresAndSaveSnapshot(
+            client,
+            payload.sessionId,
+            "recycle",
+            {
+                recyclePressure,
+            }
         );
 
         await client.query("COMMIT");
@@ -164,6 +160,8 @@ export async function recycleResource(user: AuthenticatedUser, rawPayload: unkno
             quantity: payload.quantity,
             galbeniGained,
             inflationReduction,
+            inflationIncrease,
+            recyclePressure,
             sessionState: await getSessionStateForUser(user, payload.sessionId),
         };
     } catch (error) {

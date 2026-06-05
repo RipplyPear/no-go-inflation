@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS game_sessions
     current_day     INTEGER           NOT NULL DEFAULT 1,
 
     -- minute in-game: 08:00 = 480, 20:00 = 1200
-    current_minute  INTEGER           NOT NULL DEFAULT 480,
+    current_minute  INTEGER           NOT NULL DEFAULT 540,
 
     final_inflation INTEGER,
     result          collective_result NOT NULL DEFAULT 'pending',
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS game_sessions
     updated_at      TIMESTAMPTZ       NOT NULL DEFAULT now(),
 
     CONSTRAINT game_sessions_day_valid CHECK (current_day BETWEEN 1 AND 5),
-    CONSTRAINT game_sessions_minute_valid CHECK (current_minute BETWEEN 480 AND 1200),
+    CONSTRAINT game_sessions_minute_valid CHECK (current_minute BETWEEN 540 AND 1020),
     CONSTRAINT game_sessions_final_inflation_valid CHECK (
         final_inflation IS NULL OR final_inflation BETWEEN 0 AND 100
     )
@@ -396,7 +396,7 @@ CREATE TABLE IF NOT EXISTS player_session_results
     CONSTRAINT player_session_results_trades_count_non_negative CHECK (trades_count >= 0),
     CONSTRAINT player_session_results_traded_value_non_negative CHECK (total_traded_value >= 0),
     CONSTRAINT player_session_results_recycled_non_negative CHECK (total_recycled_amount >= 0),
-    CONSTRAINT player_session_results_rank_not_empty CHECK (length(trim(rank)) > 0)
+    CONSTRAINT player_session_results_rank_valid CHECK (rank IN ('S', 'A', 'B', 'C', 'D'))
 );
 
 CREATE OR REPLACE FUNCTION set_updated_at()

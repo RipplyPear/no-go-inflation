@@ -263,6 +263,8 @@ export async function handleClientMessage(ws: AuthenticatedWebSocket, message: C
                     quantity: result.quantity,
                     galbeniGained: result.galbeniGained,
                     inflationReduction: result.inflationReduction,
+                    inflationIncrease: result.inflationIncrease,
+                    recyclePressure: result.recyclePressure,
                 });
 
                 await broadcastSessionStateToSession(result.sessionId);

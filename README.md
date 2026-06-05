@@ -1,176 +1,473 @@
 # No-go Inflation
 
-No-go Inflation este un joc video multiplayer **cooperativ** în care jucătorii gestionează economii locale, produc resurse și fac comerț între ei, încercând să își dezvolte economiile fără să destabilizeze piața și fără să provoace inflație excesivă.
+No-go Inflation este un joc 2D multiplayer cooperativ în care jucătorii gestionează economii locale, construiesc clădiri de producție, colectează resurse și tranzacționează între ei printr-o piață comună. Obiectivul este dezvoltarea economiei proprii fără destabilizarea economiei globale a sesiunii prin inflație excesivă.
 
-## Descriere pe scurt
+Aplicația este realizată ca proiect client-server:
 
-Fiecare jucător primește o hartă proprie, cu loturi pe care poate construi clădiri de producție. Clădirile generează resurse în timp, iar jucătorii trebuie să decidă cum își folosesc resursele: pentru dezvoltare, pentru comerț sau pentru menținerea lichidității.
+* clientul este implementat în Godot;
+* serverul este implementat în Node.js + TypeScript;
+* baza de date este PostgreSQL;
+* autentificarea se face prin REST;
+* gameplay-ul realtime se face prin WebSocket.
 
-Componenta principală a jocului este cooperativă: succesul nu depinde doar de performanța individuală, ci și de menținerea stabilității economice generale a sesiunii.
+## Descriere generală
 
-## Obiectiv
+Fiecare jucător primește o hartă proprie, generată la începutul sesiunii. Harta este formată din loturi de tip:
 
-Scopul jocului este:
-- dezvoltarea propriei economii;
-- realizarea unor tranzacții eficiente;
-- cooperarea cu ceilalți jucători;
-- evitarea creșterii excesive a inflației;
-- atingerea pragului minim de performanță economică până la finalul sesiunii.
+* câmp;
+* carieră;
+* pădure.
 
-## Gameplay de bază
+Pe fiecare tip de lot se poate construi o clădire potrivită:
 
-Fluxul principal al aplicației este:
+* pe câmp se construiește o fermă;
+* pe carieră se construiește o mină;
+* pe pădure se construiește o lemnărie.
 
-1. jucătorul își creează cont sau se autentifică;
-2. host-ul creează un lobby;
-3. al doilea jucător se alătură lobby-ului folosind codul generat;
-4. host-ul pornește sesiunea;
-5. fiecare jucător primește o hartă proprie generată dinamic;
-6. jucătorii construiesc și îmbunătățesc clădiri;
-7. clădirile produc resurse în timp;
-8. jucătorii colectează resursele produse;
-9. jucătorii creează și acceptă oferte pe piață;
-10. tranzacțiile influențează economia sesiunii și indicatorii de inflație;
-11. la finalul sesiunii sunt afișate rezultatele.
+Clădirile produc resurse în timp. Jucătorii pot colecta resursele produse, le pot folosi pentru construcții și upgrade-uri sau le pot tranzacționa pe piața comună.
 
-## Scenariu demonstrativ
+## Resurse și monedă
 
-Pentru demonstrarea aplicației se poate rula jocul în două instanțe Godot conectate la același server local.
+Resursele de bază sunt:
 
-Pași:
+* lemn;
+* piatră;
+* grâne.
 
-1. se pornește serverul Node.js;
-2. se pornesc două instanțe ale clientului Godot;
-3. în prima instanță se autentifică utilizatorul `user1`;
-4. în a doua instanță se autentifică utilizatorul `user2`;
-5. `user1` creează un lobby;
-6. `user2` se alătură lobby-ului folosind codul generat;
-7. `user1`, ca host, pornește sesiunea;
-8. fiecare jucător primește o hartă proprie;
-9. jucătorii pot construi clădiri, colecta resurse și interacționa cu piața;
-10. un jucător creează o ofertă de vânzare/cumpărare;
-11. celălalt jucător acceptă oferta;
-12. serverul procesează tranzacția și actualizează starea jocului pentru ambii participanți.
+Moneda folosită în joc este galbenul.
 
-## Rulare locală
+## Obiectivul jocului
+
+Scopul jocului este ca jucătorii să își dezvolte economia și să mențină economia sesiunii într-o stare stabilă.
+
+La finalul sesiunii, serverul calculează:
+
+* inflația finală;
+* scorul economic al fiecărui participant;
+* rangul individual;
+* rezultatul colectiv al sesiunii.
+
+Rezultatul nu depinde doar de un singur jucător, ci de stabilitatea generală a economiei.
+
+## Funcționalități implementate
+
+Versiunea curentă include:
+
+* înregistrare și autentificare utilizatori;
+* autentificare cu token JWT;
+* creare lobby de către host;
+* generare cod lobby;
+* alăturare la lobby prin cod;
+* pornirea sesiunii de către host;
+* conectare client-server prin WebSocket;
+* hartă individuală pentru fiecare participant;
+* generare dinamică a hărților pe server;
+* construire clădiri;
+* upgrade clădiri până la nivelul 3;
+* producție automată de resurse în timp;
+* colectare resurse din clădiri;
+* piață comună de oferte;
+* creare ofertă de cumpărare sau vânzare;
+* acceptare ofertă;
+* retragere ofertă proprie;
+* validare server-side pentru resurse, bani și stare sesiune;
+* tranzacții procesate pe server;
+* actualizare realtime a stării prin WebSocket;
+* calcul inflație și prețuri medii;
+* reciclare resurse pentru obținere de galbeni și influențarea inflației;
+* finalizare sesiune;
+* afișare rezultate finale;
+* comenzi DEV pentru testare rapidă.
+
+## Funcționalități de test / dezvoltare
+
+În interfața de joc există un panou DEV folosit pentru demonstrație și testare locală.
+
+Acesta permite:
+
+* generarea rapidă a unei oferte de bot;
+* finalizarea forțată a sesiunii.
+
+Aceste comenzi sunt utile pentru prezentare, deoarece permit testarea pieței și a ecranului de final fără a aștepta terminarea naturală a sesiunii.
+
+Comenzile DEV nu fac parte din fluxul normal de gameplay și sunt blocate de server când `NODE_ENV=production`.
+
+## Funcționalități care nu sunt în scope
+
+Versiunea curentă nu include:
+
+* matchmaking automat;
+* listă publică de lobby-uri;
+* chat între jucători;
+* sistem de prieteni;
+* ranking global între sesiuni;
+* suport pentru sesiuni foarte mari;
+* scalare orizontală reală;
+* export mobil;
+* sisteme economice foarte avansate;
+* interfață la nivel de produs comercial final.
+
+## Arhitectură pe scurt
+
+Proiectul folosește o arhitectură client-server cu server autoritativ.
+
+Clientul Godot:
+
+* afișează interfața;
+* preia inputul jucătorului;
+* trimite intenții către server;
+* afișează starea primită de la server.
+
+Serverul Node.js:
+
+* validează autentificarea;
+* gestionează lobby-urile;
+* gestionează sesiunile active;
+* generează hărțile;
+* procesează construcțiile, upgrade-urile și colectările;
+* procesează piața și tranzacțiile;
+* calculează indicatorii economici;
+* salvează datele importante în PostgreSQL.
+
+Baza de date PostgreSQL:
+
+* salvează utilizatorii;
+* salvează sesiunile;
+* salvează participanții;
+* salvează hărțile, resursele și clădirile;
+* salvează ofertele și tranzacțiile;
+* salvează starea economiei;
+* salvează rezultatele finale.
+
+## Stack tehnologic
+
+### Client
+
+* Godot 4.x
+* GDScript
+* WebSocketPeer
+* HTTPRequest
 
 ### Server
+
+* Node.js
+* TypeScript
+* Express
+* ws
+* pg
+* bcrypt
+* jsonwebtoken
+* zod
+* dotenv
+* cors
+
+### Bază de date
+
+* PostgreSQL
+* migrații SQL simple în `server/db/migrations`
+
+## Structura proiectului
+
+```text
+/client/no-go-inflation      # proiectul Godot
+/server                      # backend Node.js + TypeScript
+/server/db/migrations        # scripturi SQL pentru baza de date
+/server/requests             # cereri HTTP/WebSocket pentru testare în WebStorm
+/documentation               # documentație tehnică și funcțională
+```
+
+## Configurare locală
+
+### 1. Cerințe
+
+Pentru rulare locală sunt necesare:
+
+* Node.js și npm;
+* PostgreSQL;
+* Godot 4.x;
+* un editor pentru server, de exemplu WebStorm sau VS Code.
+
+## 2. Configurarea bazei de date
+```bash
+createdb no_go_inflation
+
+cd server
+
+psql -U postgres -d no_go_inflation -f db/migrations/01_users.sql
+psql -U postgres -d no_go_inflation -f db/migrations/02_game_state_tables.sql
+```
+
+Migrațiile creează:
+
+* tabela `users`;
+* tabelele pentru sesiuni;
+* participanți;
+* hărți;
+* clădiri;
+* resurse;
+* oferte;
+* tranzacții;
+* stare economică;
+* snapshot-uri economice;
+* rezultate finale.
+
+## 3. Configurarea serverului
+
+În folderul `server`, se creează un fișier `.env`.
+
+Exemplu:
+
+```env
+HOST=0.0.0.0
+PORT=3000
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=no_go_inflation
+DB_USER=postgres
+DB_PASSWORD=parola_ta
+
+JWT_SECRET=schimba_aceasta_valoare
+NODE_ENV=development
+```
+
+Observații:
+
+* `HOST=0.0.0.0` permite conectarea și de pe alte dispozitive din aceeași rețea locală;
+* pentru rulare doar pe calculatorul local, se poate folosi și `localhost`;
+* `JWT_SECRET` trebuie schimbat cu o valoare proprie;
+* `NODE_ENV=development` permite folosirea comenzilor DEV.
+
+## 4. Instalarea și pornirea serverului
+
+Din folderul `server`:
+
 ```bash
 npm install
 npm run dev
 ```
-Serverul pornește pe portul 3000.
 
-### Client
-Se lanseaza proiectul din Godot Editor cu opțiunea de instanțe multiple.
+Serverul pornește implicit pe portul `3000`.
 
-### Bază de date
-Aplicația folosește PostgreSQL. Înainte de rulare trebuie configurat fișierul `.env` al serverului pe baza fișierului `.env.example`.
-
-### Resurse
-- Grâne
-- Piatră
-- Lemn
-
-### Monedă
-- Galbeni
-
-### Clădiri
-- Fermă
-- Mină
-- Lemnărie
-
-## Actori principali
-
-### Jucător
-Actorul principal al sistemului. Controlează o economie locală și interacționează cu interfața jocului.
-
-### Bot
-Actor software controlat de server. Susține activitatea economică minimă a pieței și poate completa sesiunile mici.
-
-### Server
-Componenta autoritativă a sistemului. Validează acțiunile, procesează logica economică, sincronizează sesiunile și persistă datele relevante.
-
-## Stack tehnologic
-
-### Frontend
-- Godot
-- GDScript
-
-### Backend
-- Node.js
-- TypeScript
-- WebSocket
-- REST pentru operații pre-game / administrative
-
-### Bază de date
-- PostgreSQL
-
-### Librării / tool-uri posibile
-- ws
-- Express.js
-- Prisma
-- jsonwebtoken
-- bcrypt
-- Zod
-- Docker
-- ESLint
-- Prettier
-
-## Arhitectură pe scurt
-
-Proiectul urmează un model cu **server autoritativ**:
-- clientul afișează interfața și trimite intenții;
-- serverul validează și procesează acțiunile;
-- baza de date persistă informațiile importante;
-- starea runtime a sesiunii este gestionată în principal de server.
-
-## Scope-ul versiunii curente
-
-În scope:
-- autentificare;
-- creare joc/lobby;
-- alăturare prin cod;
-- pornire sesiune;
-- hartă generată dinamic;
-- clădiri: construire, upgrade, colectare;
-- piață cu oferte;
-- tranzacții între participanți;
-- indicatori economici;
-- final de joc;
-- persistență PostgreSQL;
-- comunicare realtime prin WebSocket.
-
-În afara scope-ului:
-- matchmaking automat;
-- sesiuni cu mai mult de 8 jucători;
-- export pe mobil;
-- scalare orizontală reală;
-- sisteme economice foarte avansate.
-
-## Structură generală
+La pornire, serverul verifică conexiunea la baza de date și montează serverul WebSocket pe ruta:
 
 ```text
-/client           # proiectul Godot
-/server           # backend Node.js + TypeScript
-/documentation    # documentație tehnică și funcțională
+/ws
 ```
 
-## Status implementare
+Endpoint-uri REST importante:
 
-Funcționalități implementate în versiunea curentă:
+```text
+GET  /health
+POST /auth/register
+POST /auth/login
+GET  /users/me
+```
 
-- autentificare utilizatori;
-- creare lobby;
-- alăturare la lobby prin cod;
-- pornire sesiune multiplayer de către host;
-- generare hartă individuală pentru fiecare participant;
-- construire clădiri;
-- upgrade clădiri;
-- producție și colectare resurse;
-- piață cu oferte;
-- acceptare oferte între jucători;
-- tranzacții procesate server-side;
-- actualizare stare joc prin WebSocket;
-- calcul și afișare indicatori economici;
-- final de joc și afișare rezultate.
+Endpoint WebSocket:
+
+```text
+ws://HOST:PORT/ws?token=TOKEN
+```
+
+## 5. Build server
+
+Pentru compilarea TypeScript:
+
+```bash
+cd server
+npm run build
+```
+
+Pentru pornirea versiunii compilate:
+
+```bash
+npm start
+```
+
+`npm start` rulează fișierul generat în `dist/index.js`, deci trebuie rulat după `npm run build`.
+
+## 6. Configurarea clientului Godot
+
+Clientul se află în:
+
+```text
+client/no-go-inflation
+```
+
+Se deschide acest folder în Godot.
+Configurarea adresei serverului se face în:
+
+```text
+client/no-go-inflation/scripts/client_config.gd
+```
+
+În implementarea curentă, configurarea este de forma:
+
+```gdscript
+const SERVER_HOST := "192.168.1.144"
+const SERVER_PORT := "3000"
+
+const API_BASE_URL := "http://" + SERVER_HOST + ":" + SERVER_PORT
+const WS_BASE_URL := "ws://" + SERVER_HOST + ":" + SERVER_PORT + "/ws"
+```
+
+Pentru rulare pe același calculator cu serverul, se poate folosi:
+
+```gdscript
+const SERVER_HOST := "localhost"
+const SERVER_PORT := "3000"
+```
+
+Pentru rulare de pe alt dispozitiv din aceeași rețea, se folosește IP-ul calculatorului pe care rulează serverul.
+
+Exemplu:
+
+```gdscript
+const SERVER_HOST := "192.168.1.144"
+const SERVER_PORT := "3000"
+```
+
+## 7. Rularea clientului
+
+În Godot:
+
+1. se deschide proiectul din `client/no-go-inflation`;
+2. se verifică scena principală;
+3. se pornește proiectul cu Run.
+
+Pentru demonstrație multiplayer locală, se rulează două instanțe ale jocului.
+
+În Godot se poate activa rularea mai multor instanțe din opțiunile de debug ale editorului.
+
+## 8. Flux principal de gameplay
+
+Fluxul normal este:
+
+```text
+Register/Login
+        ↓
+Meniu jucător
+        ↓
+Creare lobby / Alăturare lobby
+        ↓
+Start sesiune
+        ↓
+Generare hartă individuală
+        ↓
+Construire / Upgrade / Colectare
+        ↓
+Piață / Tranzacții / Reciclare
+        ↓
+Actualizare inflație
+        ↓
+Final sesiune
+        ↓
+Rezultate finale
+```
+
+## 9. Mesaje WebSocket principale
+
+Clientul trimite către server mesaje de tip:
+
+```text
+PING
+CREATE_LOBBY
+JOIN_LOBBY
+LEAVE_LOBBY
+START_SESSION
+LEAVE_SESSION
+BUILD_BUILDING
+UPGRADE_BUILDING
+COLLECT_BUILDING
+RECYCLE_RESOURCE
+GET_MARKET_STATE
+CREATE_MARKET_OFFER
+ACCEPT_MARKET_OFFER
+CANCEL_MARKET_OFFER
+DEV_SEED_BOT_OFFER
+DEV_FORCE_FINISH_SESSION
+```
+
+Serverul poate răspunde cu:
+
+```text
+PONG
+AUTHENTICATED
+LOBBY_STATE
+SESSION_STATE
+MARKET_STATE
+OFFER_CREATED
+OFFER_CANCELLED
+TRADE_COMPLETED
+RESOURCE_RECYCLED
+GAME_FINISHED
+SESSION_CANCELLED
+SESSION_LEFT
+ERROR
+```
+
+## 10. Testare server din WebStorm
+
+Folderul `server/requests` conține fișiere pentru testarea serverului:
+
+```text
+00-health.http
+01-auth.http
+02-user.http
+10-ws-smoke.http
+11-ws-gameplay.http
+12-ws-market-dev.http
+13-ws-lobby.http
+http-client.env.json
+```
+
+## 11. Observații despre implementare
+
+Aplicația folosește server autoritativ. Clientul nu modifică direct resurse, bani, clădiri sau oferte. Clientul trimite doar acțiuni intenționate, iar serverul validează și aplică modificările.
+
+Exemple de validări realizate server-side:
+
+* utilizatorul trebuie să fie autentificat;
+* participantul trebuie să aparțină sesiunii;
+* sesiunea trebuie să fie în starea potrivită;
+* clădirea trebuie să corespundă tipului de lot;
+* jucătorul trebuie să aibă resurse suficiente;
+* oferta trebuie să fie activă;
+* cumpărătorul trebuie să aibă galbeni suficienți;
+* vânzătorul trebuie să aibă resurse suficiente;
+* acțiunile DEV nu sunt permise în producție.
+
+## 14. Assets
+
+Proiectul folosește asset-uri grafice pentru:
+
+* clădiri;
+* resurse;
+* tile-uri;
+* interfață.
+
+Asset-urile medievale provin din pachetul Kenney RTS Pack: Medieval, licențiat CC0.
+
+Interfața folosește o temă Godot de tip soft retro, inclusiv fontul Righteous, conform fișierelor de licență incluse în proiect.
+
+## 15. Status curent
+
+Proiectul este într-o stare funcțională pentru demonstrație.
+
+Sunt implementate mecanicile principale:
+
+* autentificare;
+* lobby;
+* sesiune multiplayer;
+* hartă individuală;
+* clădiri;
+* producție;
+* colectare;
+* piață;
+* tranzacții;
+* reciclare;
+* inflație;
+* rezultate finale.
+
+Nu este o versiune comercială finală, ci un MVP funcțional care demonstrează arhitectura, fluxurile multiplayer și mecanicile economice principale.

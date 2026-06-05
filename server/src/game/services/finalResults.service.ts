@@ -138,6 +138,21 @@ export async function finalizeSessionIfNeeded(
                 FROM player_resources pr
                 GROUP BY pr.participant_id
             ),
+             stored_resource_values AS (
+                 SELECT
+                     participant_id,
+                     SUM(
+                             CASE building
+                                 WHEN 'lumberyard' THEN stored_amount * $2::numeric
+                                 WHEN 'mine' THEN stored_amount * $3::numeric
+                                 WHEN 'farm' THEN stored_amount * $4::numeric
+                                 ELSE 0
+                                 END
+                     ) AS stored_resource_value
+                 FROM player_buildings
+                 WHERE session_id = $1
+                 GROUP BY participant_id
+             ),
             building_values AS (
                 SELECT
                     participant_id,
@@ -170,6 +185,7 @@ export async function finalizeSessionIfNeeded(
                 COALESCE(ps.galbeni, 0) AS galbeni,
                 COALESCE(ps.total_recycled_amount, 0) AS total_recycled_amount,
                 COALESCE(rv.resource_value, 0) AS resource_value,
+                COALESCE(srv.stored_resource_value, 0) AS stored_resource_value,
                 COALESCE(bv.building_value, 0) AS building_value,
                 COALESCE(tv.trades_count, 0) AS trades_count,
                 COALESCE(tv.total_traded_value, 0) AS total_traded_value
@@ -178,6 +194,8 @@ export async function finalizeSessionIfNeeded(
               ON ps.participant_id = sp.id
             LEFT JOIN resource_values rv
               ON rv.participant_id = sp.id
+            LEFT JOIN stored_resource_values srv
+              ON srv.participant_id = sp.id
             LEFT JOIN building_values bv
               ON bv.participant_id = sp.id
             LEFT JOIN trade_values tv
@@ -202,14 +220,28 @@ export async function finalizeSessionIfNeeded(
             const tradesCount = Number(row.trades_count ?? 0);
             const totalTradedValue = Number(row.total_traded_value ?? 0);
             const totalRecycledAmount = Number(row.total_recycled_amount ?? 0);
+            const storedResourceValue = Number(row.stored_resource_value ?? 0);
 
-            const tradeBonus = Math.floor(
-                totalTradedValue / TRADE_VALUE_SCORE_DIVISOR
+            const MAX_TRADE_BONUS = 300;
+
+            const RECYCLE_SCORE_DIVISOR = 10;
+            const recycleBonus = Math.floor(totalRecycledAmount / RECYCLE_SCORE_DIVISOR);
+
+            const tradeBonus = Math.min(
+                MAX_TRADE_BONUS,
+                Math.floor(totalTradedValue / TRADE_VALUE_SCORE_DIVISOR)
             );
 
             const economicScore = Math.max(
                 0,
-                Math.round(galbeni + resourceValue + buildingValue + tradeBonus)
+                Math.round(
+                    galbeni +
+                    resourceValue +
+                    storedResourceValue +
+                    buildingValue +
+                    tradeBonus +
+                    recycleBonus
+                )
             );
 
             return {
@@ -222,6 +254,8 @@ export async function finalizeSessionIfNeeded(
                 totalRecycledAmount,
             };
         });
+
+        finalRows.sort((a, b) => b.economicScore - a.economicScore);
 
         const averageEconomicScore =
             finalRows.length === 0

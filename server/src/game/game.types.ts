@@ -17,7 +17,9 @@ export type EconomySnapshotReason =
 export type EconomyPressures = {
     demandSupplyPressure?: number;
     overpricePressure?: number;
+    underpricePressure?: number;
     recyclePressure?: number;
+    stabilizationPressure?: number;
 };
 
 export type PlayerFinalResult = {

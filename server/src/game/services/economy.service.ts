@@ -3,16 +3,25 @@ import {
     DEMAND_SUPPLY_PRESSURE_THRESHOLD,
     MAX_DEMAND_SUPPLY_PRESSURE,
     MAX_TRADE_INFLATION_PRESSURE,
-    OVERPRICE_THRESHOLD_MULTIPLIER
+    OVERPRICE_THRESHOLD_MULTIPLIER,
+    ECONOMY_UPDATE_INTERVAL_MINUTES,
+    PERIODIC_STABILIZATION_PRESSURE, UNDERPRICE_SOFT_THRESHOLD_MULTIPLIER, UNDERPRICE_HARD_THRESHOLD_MULTIPLIER,
+    DUMPING_INFLATION_PRESSURE, MAX_UNDERPRICE_INFLATION_RELIEF
 } from "../game.constants";
 import {clampNumber} from "../gameRules";
 import {pool} from "../../config/db";
 import {EconomyPressures, EconomySnapshotReason} from "../game.types";
 
+type DemandSupplyPressureOptions = {
+    excludedOfferId?: string;
+};
+
 export async function calculateDemandSupplyPressure(
     queryable: Pick<typeof pool, "query">,
-    sessionId: string
+    sessionId: string,
+    options: DemandSupplyPressureOptions = {}
 ): Promise<number> {
+    const excludedOfferId = options.excludedOfferId ?? null;
     const result = await queryable.query(
         `
         SELECT
@@ -33,9 +42,10 @@ export async function calculateDemandSupplyPressure(
         WHERE session_id = $1
           AND status = 'active'
           AND expires_at > now()
+          AND ($2::uuid IS NULL OR id <> $2::uuid)
         GROUP BY resource
         `,
-        [sessionId]
+        [sessionId, excludedOfferId]
     );
 
     let totalPressure = 0;
@@ -65,6 +75,37 @@ export async function calculateDemandSupplyPressure(
         Math.round(totalPressure),
         0,
         MAX_DEMAND_SUPPLY_PRESSURE
+    );
+}
+
+export function calculateUnderpricePressure(
+    pricePerUnit: number,
+    averagePriceBeforeTrade: number
+): number {
+    if (averagePriceBeforeTrade <= 0) {
+        return 0;
+    }
+
+    const softThreshold =
+        averagePriceBeforeTrade * UNDERPRICE_SOFT_THRESHOLD_MULTIPLIER;
+
+    const hardThreshold =
+        averagePriceBeforeTrade * UNDERPRICE_HARD_THRESHOLD_MULTIPLIER;
+
+    if (pricePerUnit < hardThreshold) {
+        return DUMPING_INFLATION_PRESSURE;
+    }
+
+    if (pricePerUnit >= softThreshold) {
+        return 0;
+    }
+
+    const underpriceRatio =
+        (softThreshold - pricePerUnit) / softThreshold;
+
+    return -Math.min(
+        MAX_UNDERPRICE_INFLATION_RELIEF,
+        Math.max(1, Math.ceil(underpriceRatio * MAX_UNDERPRICE_INFLATION_RELIEF))
     );
 }
 
@@ -151,9 +192,15 @@ export async function applyEconomyPressuresAndSaveSnapshot(
     const demandSupplyPressure = pressures.demandSupplyPressure ?? 0;
     const overpricePressure = pressures.overpricePressure ?? 0;
     const recyclePressure = pressures.recyclePressure ?? 0;
+    const stabilizationPressure = pressures.stabilizationPressure ?? 0;
+    const underpricePressure = pressures.underpricePressure ?? 0;
 
-    const totalPositivePressure =
-        demandSupplyPressure + overpricePressure + recyclePressure;
+    const signedPressure =
+        demandSupplyPressure +
+        overpricePressure +
+        underpricePressure +
+        recyclePressure -
+        stabilizationPressure;
 
     const currentEconomyResult = await queryable.query(
         `
@@ -176,8 +223,22 @@ export async function applyEconomyPressuresAndSaveSnapshot(
     const economy = currentEconomyResult.rows[0];
 
     const currentInflation = Number(economy.inflation);
-    const inflationDelta = Math.round(totalPositivePressure);
+    const inflationDelta = Math.round(signedPressure);
     const nextInflation = clampNumber(currentInflation + inflationDelta, 0, 100);
+
+    console.log("[ECONOMY]", {
+        sessionId,
+        reason,
+        currentInflation,
+        demandSupplyPressure,
+        overpricePressure,
+        underpricePressure,
+        recyclePressure,
+        stabilizationPressure,
+        signedPressure,
+        inflationDelta,
+        nextInflation,
+    });
 
     await queryable.query(
         `
@@ -241,4 +302,62 @@ export async function applyEconomyPressuresAndSaveSnapshot(
             reason,
         ]
     );
+}
+
+export async function maybeApplyPeriodicEconomyUpdate(sessionId: string): Promise<void> {
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const sessionResult = await client.query(
+            `
+            SELECT current_minute
+            FROM game_sessions
+            WHERE id = $1
+              AND status = 'active'
+            FOR UPDATE
+            `,
+            [sessionId]
+        );
+
+        if (sessionResult.rows.length === 0) {
+            await client.query("COMMIT");
+            return;
+        }
+
+        const currentMinute = Number(sessionResult.rows[0].current_minute);
+
+        if (currentMinute % ECONOMY_UPDATE_INTERVAL_MINUTES !== 0) {
+            await client.query("COMMIT");
+            return;
+        }
+
+        const demandSupplyPressure = await calculateDemandSupplyPressure(
+            client,
+            sessionId
+        );
+
+        const stabilizationPressure =
+            demandSupplyPressure === 0
+                ? PERIODIC_STABILIZATION_PRESSURE
+                : 0;
+
+        await applyEconomyPressuresAndSaveSnapshot(
+            client,
+            sessionId,
+            "periodic",
+            {
+                demandSupplyPressure,
+                stabilizationPressure,
+            }
+        );
+
+        await client.query("COMMIT");
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+    } finally {
+        client.release();
+    }
 }
