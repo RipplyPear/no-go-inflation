@@ -2,7 +2,7 @@ import {AuthenticatedWebSocket, ClientMessage} from "./ws.types";
 import {isRecord, sendJson} from "./wsProtocol";
 import {requireWsUser} from "./wsAuth";
 import {createDemoSession, createLobby, joinLobby, startLobbySession} from "../game/services/session.service";
-import { leaveActiveSession, leaveLobby } from "../game/services/connection.service";
+import {leaveActiveSession, leaveLobby} from "../game/services/connection.service";
 import {buildBuilding, collectBuilding, upgradeBuilding} from "../game/services/building.service";
 import {
     acceptMarketOffer,

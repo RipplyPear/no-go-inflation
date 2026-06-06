@@ -1,6 +1,6 @@
-import type { TileType } from "./mapGenerator";
+import type {TileType} from "./mapGenerator";
 
-export type { TileType };
+export type {TileType};
 
 export type BuildingType = "farm" | "mine" | "lumberyard";
 export type ResourceType = "wood" | "stone" | "grain";

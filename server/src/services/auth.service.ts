@@ -1,11 +1,11 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-import { pool } from "../config/db";
-import { AppError } from "../errors/AppError";
-import { LoginSchemaType, RegisterSchemaType } from "../schemas/auth.schema";
-import { env } from "../config/env";
-import type { SafeUser, User } from "../types/user";
+import {pool} from "../config/db";
+import {AppError} from "../errors/AppError";
+import {LoginSchemaType, RegisterSchemaType} from "../schemas/auth.schema";
+import {env} from "../config/env";
+import type {SafeUser, User} from "../types/user";
 
 type LoginResult = {
     token: string;
@@ -13,13 +13,14 @@ type LoginResult = {
 };
 
 export async function registerUser(input: RegisterSchemaType): Promise<SafeUser> {
-    const { username, email, password } = input;
+    const {username, email, password} = input;
 
     const existingUser = await pool.query(
         `
-        SELECT id
-        FROM users
-        WHERE username = $1 OR email = $2
+            SELECT id
+            FROM users
+            WHERE username = $1
+               OR email = $2
         `,
         [username, email]
     );
@@ -32,33 +33,39 @@ export async function registerUser(input: RegisterSchemaType): Promise<SafeUser>
 
     const result = await pool.query(
         `
-        INSERT INTO users (username, email, password_hash)
-        VALUES ($1, $2, $3)
-        RETURNING id, username, email, created_at, updated_at
+            INSERT INTO users (username, email, password_hash)
+            VALUES ($1, $2, $3)
+            RETURNING id, username, email, created_at, updated_at
         `,
         [username, email, passwordHash]
     );
+
+    if (result.rows.length > 0) {
+        throw new AppError("Nu s-a putut realiza inregistrarea", 500);
+    }
 
     return result.rows[0];
 }
 
 export async function loginUser(input: LoginSchemaType): Promise<LoginResult> {
-    const { email, password } = input;
+    const {email, password} = input;
 
-    const result = await pool.query(
+    // row pare impropriu spus fiindca query() poate returna mai multe randuri, dar selectam dupa email
+    // care e UNIQUE asa ca o sa avem 0 sau 1 rand(uri)
+    const userRow = await pool.query(
         `
-        SELECT id, username, email, password_hash, created_at, updated_at
-        FROM users
-        WHERE email = $1
+            SELECT id, username, email, password_hash, created_at, updated_at
+            FROM users
+            WHERE email = $1
         `,
         [email]
     );
 
-    if (result.rows.length === 0) {
+    if (userRow.rows.length === 0) {
         throw new AppError("Email sau parolă incorectă.", 401);
     }
 
-    const user = result.rows[0] as User;
+    const user = userRow.rows[0] as User;
 
     const passwordMatches = await bcrypt.compare(password, user.password_hash);
 
@@ -68,6 +75,7 @@ export async function loginUser(input: LoginSchemaType): Promise<LoginResult> {
 
     const secret = env.jwtSecret;
 
+    // Faciliteaza identificarea utilizatorului fara a mai trece prin procesu de login
     const token = jwt.sign(
         {
             userId: user.id,
@@ -75,7 +83,7 @@ export async function loginUser(input: LoginSchemaType): Promise<LoginResult> {
             email: user.email,
         },
         secret,
-        { expiresIn: "7d" }
+        {expiresIn: "7d"}
     );
 
     return {

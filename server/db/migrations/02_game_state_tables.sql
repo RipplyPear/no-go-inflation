@@ -1,9 +1,15 @@
+-- Tabelele au fost definite in idee ca pot exista si jucatori boti.
+-- In timpul dezvoltarii, acestia au fost scosi din scope.
+-- Botii raman totusi o directie de extindere asa ca nu au fost eliminati
+-- din structura tabelelor.
+
 BEGIN;
 
+-- necesara pentru get_random_uuid()
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-DO
-$$
+DO -- bloc anonim
+$$ -- "dollar" quoting
     BEGIN
         CREATE TYPE resource_type AS ENUM ('wood', 'stone', 'grain');
     EXCEPTION
@@ -113,7 +119,7 @@ CREATE TABLE IF NOT EXISTS game_sessions
     -- 1 = monday
     current_day     INTEGER           NOT NULL DEFAULT 1,
 
-    -- minute in-game: 08:00 = 480, 20:00 = 1200
+    -- minute in-game: 09:00 = 540, 17:00 = 1020
     current_minute  INTEGER           NOT NULL DEFAULT 540,
 
     final_inflation INTEGER,
@@ -129,7 +135,7 @@ CREATE TABLE IF NOT EXISTS game_sessions
     CONSTRAINT game_sessions_minute_valid CHECK (current_minute BETWEEN 540 AND 1020),
     CONSTRAINT game_sessions_final_inflation_valid CHECK (
         final_inflation IS NULL OR final_inflation BETWEEN 0 AND 100
-    )
+        )
 );
 
 CREATE TABLE IF NOT EXISTS session_participants
@@ -156,18 +162,18 @@ CREATE TABLE IF NOT EXISTS session_participants
         (participant_type = 'human' AND user_id IS NOT NULL)
             OR
         (participant_type = 'bot' AND user_id IS NULL)
-    ),
+        ),
 
     CONSTRAINT session_participants_role_valid CHECK (
         (participant_type = 'bot' AND role = 'bot')
             OR
         (participant_type = 'human' AND role IN ('host', 'player'))
-    )
+        )
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_session_participants_session_user
     ON session_participants (session_id, user_id)
-    WHERE user_id IS NOT NULL;
+    WHERE user_id IS NOT NULL; -- index partial
 
 CREATE TABLE IF NOT EXISTS player_states
 (
@@ -188,6 +194,9 @@ CREATE TABLE IF NOT EXISTS player_states
     CONSTRAINT player_states_recycled_non_negative CHECK (total_recycled_amount >= 0)
 );
 
+-- In forma actuala, exista un rand pentru fiecare resursa a unui player, deci pentru un jucator cate 3 randuri
+-- Alternativa era ca toate 3 nivelurile de resurse sa faca parte din acelasi rand
+-- Dar structura aceasta este ceva mai uniforma si flexibila (pot adauga o resursa noua mai usor)
 CREATE TABLE IF NOT EXISTS player_resources
 (
     participant_id UUID          NOT NULL REFERENCES session_participants (id) ON DELETE CASCADE,
@@ -247,7 +256,7 @@ CREATE TABLE IF NOT EXISTS player_buildings
         (tile = 'quarry' AND building = 'mine')
             OR
         (tile = 'forest' AND building = 'lumberyard')
-    ),
+        ),
 
     CONSTRAINT player_buildings_tile_exists FOREIGN KEY (participant_id, tile_x, tile_y)
         REFERENCES player_map_tiles (participant_id, tile_x, tile_y)
@@ -403,10 +412,10 @@ CREATE OR REPLACE FUNCTION set_updated_at()
     RETURNS TRIGGER AS
 $$
 BEGIN
-    NEW.updated_at = now();
+    NEW.updated_at = now(); -- NEW reprezinta randul care se insereaza / modifica
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql; -- PostGreSQL accepta si alte limbaje procedurale
 
 DROP TRIGGER IF EXISTS trg_users_updated_at ON users;
 CREATE TRIGGER trg_users_updated_at

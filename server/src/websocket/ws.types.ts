@@ -1,5 +1,5 @@
-import type { WebSocket } from "ws";
-import type { OfferType, ResourceType } from "../game/game.types";
+import type {WebSocket} from "ws";
+import type {OfferType, ResourceType} from "../game/game.types";
 
 export type AuthenticatedUser = {
     id: number;

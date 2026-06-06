@@ -1,26 +1,22 @@
-import type { IncomingMessage } from "node:http";
+import type {IncomingMessage} from "node:http";
 import jwt from "jsonwebtoken";
 
-import { env } from "../config/env";
-import { sendJson } from "./wsProtocol";
-import type { AuthenticatedUser, AuthenticatedWebSocket } from "./ws.types";
+import {env} from "../config/env";
+import {sendJson} from "./wsProtocol";
+import type {AuthenticatedUser, AuthenticatedWebSocket} from "./ws.types";
 
-function getTokenFromRequest(request: IncomingMessage): string | null {
+export function authenticateRequest(request: IncomingMessage): AuthenticatedUser | null {
     const requestUrl = request.url ?? "";
-    const queryStartIndex = requestUrl.indexOf("?");
+    const queryIndex = requestUrl.indexOf("?");
 
-    if (queryStartIndex === -1) {
+    if (queryIndex === -1) {
         return null;
     }
 
-    const queryString = requestUrl.slice(queryStartIndex + 1);
+    const queryString = requestUrl.slice(queryIndex + 1);
     const searchParams = new URLSearchParams(queryString);
 
-    return searchParams.get("token");
-}
-
-export function authenticateRequest(request: IncomingMessage): AuthenticatedUser | null {
-    const token = getTokenFromRequest(request);
+    const token = searchParams.get("token");
 
     if (!token) {
         return null;

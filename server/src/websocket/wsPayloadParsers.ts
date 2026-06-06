@@ -11,6 +11,15 @@ import {
 import {isRecord} from "./wsProtocol";
 import {OfferType, ResourceType} from "../game/game.types";
 
+
+function isResourceType(value: unknown): value is ResourceType {
+    return value === "wood" || value === "stone" || value === "grain";
+}
+
+function isOfferType(value: unknown): value is OfferType {
+    return value === "buy" || value === "sell";
+}
+
 export function parseTileActionPayload(payload: unknown): TileActionPayload | null {
     if (!isRecord(payload)) {
         return null;
@@ -33,14 +42,6 @@ export function parseTileActionPayload(payload: unknown): TileActionPayload | nu
         x: payload.x,
         y: payload.y,
     };
-}
-
-function isResourceType(value: unknown): value is ResourceType {
-    return value === "wood" || value === "stone" || value === "grain";
-}
-
-function isOfferType(value: unknown): value is OfferType {
-    return value === "buy" || value === "sell";
 }
 
 export function parseCreateMarketOfferPayload(payload: unknown): CreateMarketOfferPayload | null {

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import {z} from "zod";
 
 export const registerSchema = z.object({
     username: z
@@ -21,3 +21,11 @@ export const loginSchema = z.object({
 
 export type RegisterSchemaType = z.infer<typeof registerSchema>;
 export type LoginSchemaType = z.infer<typeof loginSchema>;
+
+/* Practic:
+* export type RegisterSchemaType = {
+    username: string;
+    email: string;
+    password: string;
+}
+* Dar z.infer ofera ceva mai safe si mai compact*/

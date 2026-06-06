@@ -1,16 +1,16 @@
 import "dotenv/config";
-import { createServer } from "node:http";
+import {createServer} from "node:http";
 
 import app from "./app";
-import { pool } from "./config/db";
-import { setupWebSocketServer } from "./websocket/wsServer";
-import { env } from "./config/env";
+import {pool} from "./config/db";
+import {setupWebSocketServer} from "./websocket/wsServer";
+import {env} from "./config/env";
 
 const HOST = env.host;
 const PORT = env.port;
 
 async function startServer() {
-    try{
+    try {
         await pool.query("SELECT NOW()");
         console.log("Query OK");
 

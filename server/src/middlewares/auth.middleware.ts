@@ -1,7 +1,7 @@
 import {NextFunction, Request, Response} from "express";
 import jwt from "jsonwebtoken";
 
-import { env } from "../config/env";
+import {env} from "../config/env";
 
 export interface AuthRequest extends Request {
     user?: {
@@ -30,6 +30,7 @@ export function authMiddleware(
     try {
         const decoded = jwt.verify(token, secret);
 
+        // Ne asteptam la un JwtPayload fiindca am creat tokenul cu secret
         if (typeof decoded === "string") {
             return res.status(401).json({
                 message: "Invalid token payload",

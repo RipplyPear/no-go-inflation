@@ -1,7 +1,7 @@
-import { getClientsInSession } from "./wsClients";
-import { getMarketStateForUser } from "../game/services/market.service";
-import { sendJson } from "./wsProtocol";
-import { getLobbyStateForUser, getSessionStateForUser } from "../game/services/session.service";
+import {getClientsInSession} from "./wsClients";
+import {getMarketStateForUser} from "../game/services/market.service";
+import {sendJson} from "./wsProtocol";
+import {getLobbyStateForUser, getSessionStateForUser} from "../game/services/session.service";
 
 export async function broadcastMarketStateToSession(sessionId: string): Promise<void> {
     for (const client of getClientsInSession(sessionId)) {

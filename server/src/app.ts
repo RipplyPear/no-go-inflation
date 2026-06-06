@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import routes from "./routes";
-import { errorMiddleware } from "./middlewares/error.middleware";
+import {errorMiddleware} from "./middlewares/error.middleware";
 
 const app = express();
 

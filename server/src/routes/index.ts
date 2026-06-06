@@ -1,4 +1,4 @@
-import { Router } from "express";
+import {Router} from "express";
 import healthRouter from "./health.routes";
 import authRouter from "./auth.routes";
 import userRouter from "./user.routes";

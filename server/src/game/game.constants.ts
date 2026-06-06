@@ -1,4 +1,4 @@
-import type { BuildingType, ResourceType, TileType } from "./game.types";
+import type {BuildingType, ResourceType, TileType} from "./game.types";
 
 export const DAY_START_MINUTE = 540;
 export const DAY_END_MINUTE = 1020;

@@ -1,4 +1,7 @@
-function requiredEnv(name: string) {
+/**
+ * Verifica existenta variabilelor de mediu necesare
+ * */
+function checkEnvValue(name: string) {
     const value = process.env[name];
 
     if (!value) {
@@ -12,11 +15,11 @@ export const env = {
     host: process.env.HOST ?? "0.0.0.0",
     port: Number(process.env.PORT ?? 3000),
     db: {
-        host: requiredEnv('DB_HOST'),
-        port: Number(requiredEnv('DB_PORT')),
-        name: requiredEnv('DB_NAME'),
-        user: requiredEnv('DB_USER'),
-        password: requiredEnv('DB_PASSWORD'),
+        host: checkEnvValue('DB_HOST'),
+        port: Number(checkEnvValue('DB_PORT')),
+        name: checkEnvValue('DB_NAME'),
+        user: checkEnvValue('DB_USER'),
+        password: checkEnvValue('DB_PASSWORD'),
     },
-    jwtSecret: requiredEnv('JWT_SECRET'),
+    jwtSecret: checkEnvValue('JWT_SECRET'),
 }

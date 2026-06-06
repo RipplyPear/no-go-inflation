@@ -1,12 +1,7 @@
-import { NextFunction, Request, Response } from "express";
-import type { ZodError } from "zod";
+import {NextFunction, Request, Response} from "express";
 
-import { loginSchema, registerSchema } from "../schemas/auth.schema";
-import { loginUser, registerUser } from "../services/auth.service";
-
-function getValidationMessage(error: ZodError): string {
-    return error.issues[0]?.message ?? "Datele introduse nu sunt valide.";
-}
+import {loginSchema, registerSchema} from "../schemas/auth.schema";
+import {loginUser, registerUser} from "../services/auth.service";
 
 export async function register(
     req: Request,
@@ -18,7 +13,7 @@ export async function register(
 
         if (!parsed.success) {
             return res.status(400).json({
-                message: getValidationMessage(parsed.error),
+                message: parsed.error.issues[0]?.message ?? "Datele introduse nu sunt valide.",
                 errors: parsed.error.issues,
             });
         }
@@ -44,7 +39,7 @@ export async function login(
 
         if (!parsed.success) {
             return res.status(400).json({
-                message: getValidationMessage(parsed.error),
+                message: parsed.error.issues[0]?.message ?? "Datele introduse nu sunt valide.",
                 errors: parsed.error.issues,
             });
         }
