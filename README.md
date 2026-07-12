@@ -1,6 +1,6 @@
 # No-go Inflation
 
-[![Server CI](https://github.com/RipplyPear/2d-collaborative-game/actions/workflows/server-ci.yml/badge.svg?branch=polish)](https://github.com/RipplyPear/2d-collaborative-game/actions/workflows/server-ci.yml?query=branch%3Apolish)
+[![Server CI](https://github.com/RipplyPear/2d-collaborative-game/actions/workflows/server-ci.yaml/badge.svg?branch=polish)](https://github.com/RipplyPear/2d-collaborative-game/actions/workflows/server-ci.yaml)
 
 > A cooperative multiplayer economic strategy game built as a client-server application.
 
