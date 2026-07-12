@@ -1,60 +1,65 @@
-import {AuthenticatedUser} from "../../websocket/ws.types";
-import {pool} from "../../config/db";
-import {generatePlayerMap, type TileType} from "../mapGenerator";
-import {INITIAL_AVERAGE_PRICE, INITIAL_GALBENI, INITIAL_INFLATION, INITIAL_RESOURCE_AMOUNT} from "../game.constants";
-import {ResourceType} from "../game.types";
-import {randomInt} from "node:crypto";
-import {parseJoinLobbyPayload, parseStartSessionPayload} from "../../websocket/wsPayloadParsers";
+import { AuthenticatedUser } from '../../websocket/ws.types';
+import { pool } from '../../config/db';
+import { generatePlayerMap, type TileType } from '../mapGenerator';
+import {
+  INITIAL_AVERAGE_PRICE,
+  INITIAL_GALBENI,
+  INITIAL_INFLATION,
+  INITIAL_RESOURCE_AMOUNT,
+} from '../game.constants';
+import { ResourceType } from '../game.types';
+import { randomInt } from 'node:crypto';
+import { parseJoinLobbyPayload, parseStartSessionPayload } from '../../websocket/wsPayloadParsers';
 
-const LOBBY_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const LOBBY_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const LOBBY_CODE_LENGTH = 6;
 const MAX_LOBBY_PARTICIPANTS = 8;
 
 const MIN_PARTICIPANTS_TO_START = 2;
 
-type Queryable = Pick<typeof pool, "query">;
+type Queryable = Pick<typeof pool, 'query'>;
 
 function generateLobbyCode(): string {
-    let code = "";
+  let code = '';
 
-    for (let i = 0; i < LOBBY_CODE_LENGTH; i++) {
-        code += LOBBY_CODE_ALPHABET[randomInt(LOBBY_CODE_ALPHABET.length)];
-    }
+  for (let i = 0; i < LOBBY_CODE_LENGTH; i++) {
+    code += LOBBY_CODE_ALPHABET[randomInt(LOBBY_CODE_ALPHABET.length)];
+  }
 
-    return code;
+  return code;
 }
 
 async function generateUniqueLobbyCode(queryable: Queryable): Promise<string> {
-    for (let attempt = 0; attempt < 10; attempt++) {
-        const lobbyCode = generateLobbyCode();
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const lobbyCode = generateLobbyCode();
 
-        const result = await queryable.query(
-            `
+    const result = await queryable.query(
+      `
             SELECT 1
             FROM game_sessions
             WHERE lobby_code = $1
             LIMIT 1
             `,
-            [lobbyCode]
-        );
+      [lobbyCode]
+    );
 
-        if (result.rows.length === 0) {
-            return lobbyCode;
-        }
+    if (result.rows.length === 0) {
+      return lobbyCode;
     }
+  }
 
-    throw new Error("Nu s-a putut genera un cod unic pentru lobby.");
+  throw new Error('Nu s-a putut genera un cod unic pentru lobby.');
 }
 
 async function initializeParticipantGameState(
-    queryable: Queryable,
-    sessionId: string,
-    participantId: string
+  queryable: Queryable,
+  sessionId: string,
+  participantId: string
 ): Promise<void> {
-    const playerMap = generatePlayerMap();
+  const playerMap = generatePlayerMap();
 
-    await queryable.query(
-        `
+  await queryable.query(
+    `
         INSERT INTO player_states (
             session_id,
             participant_id,
@@ -65,12 +70,12 @@ async function initializeParticipantGameState(
         VALUES ($1, $2, $3, 0, 0)
         ON CONFLICT (participant_id) DO NOTHING
         `,
-        [sessionId, participantId, INITIAL_GALBENI]
-    );
+    [sessionId, participantId, INITIAL_GALBENI]
+  );
 
-    for (const resource of ["wood", "stone", "grain"] as const) {
-        await queryable.query(
-            `
+  for (const resource of ['wood', 'stone', 'grain'] as const) {
+    await queryable.query(
+      `
             INSERT INTO player_resources (
                 participant_id,
                 resource,
@@ -79,14 +84,14 @@ async function initializeParticipantGameState(
             VALUES ($1, $2, $3)
             ON CONFLICT (participant_id, resource) DO NOTHING
             `,
-            [participantId, resource, INITIAL_RESOURCE_AMOUNT]
-        );
-    }
+      [participantId, resource, INITIAL_RESOURCE_AMOUNT]
+    );
+  }
 
-    for (let y = 0; y < playerMap.tiles.length; y++) {
-        for (let x = 0; x < playerMap.tiles[y].length; x++) {
-            await queryable.query(
-                `
+  for (let y = 0; y < playerMap.tiles.length; y++) {
+    for (let x = 0; x < playerMap.tiles[y].length; x++) {
+      await queryable.query(
+        `
                 INSERT INTO player_map_tiles (
                     participant_id,
                     tile_x,
@@ -96,24 +101,24 @@ async function initializeParticipantGameState(
                 VALUES ($1, $2, $3, $4)
                 ON CONFLICT (participant_id, tile_x, tile_y) DO NOTHING
                 `,
-                [participantId, x, y, playerMap.tiles[y][x]]
-            );
-        }
+        [participantId, x, y, playerMap.tiles[y][x]]
+      );
     }
+  }
 }
 
 export async function createDemoSession(user: AuthenticatedUser) {
-    const client = await pool.connect();
+  const client = await pool.connect();
 
-    const lobbyCode = Math.random().toString(36).slice(2, 8).toUpperCase();
+  const lobbyCode = Math.random().toString(36).slice(2, 8).toUpperCase();
 
-    const demoMap = generatePlayerMap();
+  const demoMap = generatePlayerMap();
 
-    try {
-        await client.query("BEGIN");
+  try {
+    await client.query('BEGIN');
 
-        const sessionResult = await client.query(
-            `
+    const sessionResult = await client.query(
+      `
             INSERT INTO game_sessions (
                 host_user_id,
                 lobby_code,
@@ -124,13 +129,13 @@ export async function createDemoSession(user: AuthenticatedUser) {
             VALUES ($1, $2, false, 'active', now())
             RETURNING id, lobby_code, status, current_day, current_minute
             `,
-            [user.id, lobbyCode]
-        );
+      [user.id, lobbyCode]
+    );
 
-        const session = sessionResult.rows[0];
+    const session = sessionResult.rows[0];
 
-        const participantResult = await client.query(
-            `
+    const participantResult = await client.query(
+      `
             INSERT INTO session_participants (
                 session_id,
                 user_id,
@@ -143,13 +148,13 @@ export async function createDemoSession(user: AuthenticatedUser) {
             VALUES ($1, $2, 'human', 'host', $3, true, true)
             RETURNING id, display_name, role
             `,
-            [session.id, user.id, user.username]
-        );
+      [session.id, user.id, user.username]
+    );
 
-        const participant = participantResult.rows[0];
+    const participant = participantResult.rows[0];
 
-        await client.query(
-            `
+    await client.query(
+      `
             INSERT INTO player_states (
                 session_id,
                 participant_id,
@@ -159,12 +164,12 @@ export async function createDemoSession(user: AuthenticatedUser) {
             )
             VALUES ($1, $2, $3, 0, 0)
             `,
-            [session.id, participant.id, INITIAL_GALBENI]
-        );
+      [session.id, participant.id, INITIAL_GALBENI]
+    );
 
-        for (const resource of ["wood", "stone", "grain"]) {
-            await client.query(
-                `
+    for (const resource of ['wood', 'stone', 'grain']) {
+      await client.query(
+        `
                 INSERT INTO player_resources (
                     participant_id,
                     resource,
@@ -172,14 +177,14 @@ export async function createDemoSession(user: AuthenticatedUser) {
                 )
                 VALUES ($1, $2, $3)
                 `,
-                [participant.id, resource, INITIAL_RESOURCE_AMOUNT]
-            );
-        }
+        [participant.id, resource, INITIAL_RESOURCE_AMOUNT]
+      );
+    }
 
-        for (let y = 0; y < demoMap.tiles.length; y++) {
-            for (let x = 0; x < demoMap.tiles[y].length; x++) {
-                await client.query(
-                    `
+    for (let y = 0; y < demoMap.tiles.length; y++) {
+      for (let x = 0; x < demoMap.tiles[y].length; x++) {
+        await client.query(
+          `
             INSERT INTO player_map_tiles (
                 participant_id,
                 tile_x,
@@ -188,13 +193,13 @@ export async function createDemoSession(user: AuthenticatedUser) {
             )
             VALUES ($1, $2, $3, $4)
             `,
-                    [participant.id, x, y, demoMap.tiles[y][x]]
-                );
-            }
-        }
+          [participant.id, x, y, demoMap.tiles[y][x]]
+        );
+      }
+    }
 
-        await client.query(
-            `
+    await client.query(
+      `
                 INSERT INTO session_economy_state (
                     session_id,
                     inflation,
@@ -204,57 +209,57 @@ export async function createDemoSession(user: AuthenticatedUser) {
                 )
                 VALUES ($1, $2, $3, $3, $3)
             `,
-            [session.id, INITIAL_INFLATION, INITIAL_AVERAGE_PRICE]
-        );
+      [session.id, INITIAL_INFLATION, INITIAL_AVERAGE_PRICE]
+    );
 
-        await client.query("COMMIT");
+    await client.query('COMMIT');
 
-        return {
-            sessionId: session.id,
-            lobbyCode: session.lobby_code,
-            status: session.status,
-            currentDay: session.current_day,
-            currentMinute: session.current_minute,
-            participant: {
-                id: participant.id,
-                displayName: participant.display_name,
-                role: participant.role,
-            },
-            resources: {
-                wood: INITIAL_RESOURCE_AMOUNT,
-                stone: INITIAL_RESOURCE_AMOUNT,
-                grain: INITIAL_RESOURCE_AMOUNT,
-                galbeni: INITIAL_GALBENI,
-            },
-            economy: {
-                inflation: INITIAL_INFLATION,
-                averagePrices: {
-                    wood: INITIAL_AVERAGE_PRICE,
-                    stone: INITIAL_AVERAGE_PRICE,
-                    grain: INITIAL_AVERAGE_PRICE,
-                },
-            },
-            map: demoMap,
-            buildings: [],
-        };
-    } catch (error) {
-        await client.query("ROLLBACK");
-        throw error;
-    } finally {
-        client.release();
-    }
+    return {
+      sessionId: session.id,
+      lobbyCode: session.lobby_code,
+      status: session.status,
+      currentDay: session.current_day,
+      currentMinute: session.current_minute,
+      participant: {
+        id: participant.id,
+        displayName: participant.display_name,
+        role: participant.role,
+      },
+      resources: {
+        wood: INITIAL_RESOURCE_AMOUNT,
+        stone: INITIAL_RESOURCE_AMOUNT,
+        grain: INITIAL_RESOURCE_AMOUNT,
+        galbeni: INITIAL_GALBENI,
+      },
+      economy: {
+        inflation: INITIAL_INFLATION,
+        averagePrices: {
+          wood: INITIAL_AVERAGE_PRICE,
+          stone: INITIAL_AVERAGE_PRICE,
+          grain: INITIAL_AVERAGE_PRICE,
+        },
+      },
+      map: demoMap,
+      buildings: [],
+    };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function createLobby(user: AuthenticatedUser) {
-    const client = await pool.connect();
+  const client = await pool.connect();
 
-    try {
-        await client.query("BEGIN");
+  try {
+    await client.query('BEGIN');
 
-        const lobbyCode = await generateUniqueLobbyCode(client);
+    const lobbyCode = await generateUniqueLobbyCode(client);
 
-        const sessionResult = await client.query(
-            `
+    const sessionResult = await client.query(
+      `
             INSERT INTO game_sessions (
                 host_user_id,
                 lobby_code,
@@ -264,13 +269,13 @@ export async function createLobby(user: AuthenticatedUser) {
             VALUES ($1, $2, true, 'lobby')
             RETURNING id
             `,
-            [user.id, lobbyCode]
-        );
+      [user.id, lobbyCode]
+    );
 
-        const session = sessionResult.rows[0];
+    const session = sessionResult.rows[0];
 
-        await client.query(
-            `
+    await client.query(
+      `
             INSERT INTO session_participants (
                 session_id,
                 user_id,
@@ -282,96 +287,96 @@ export async function createLobby(user: AuthenticatedUser) {
             )
             VALUES ($1, $2, 'human', 'host', $3, true, true)
             `,
-            [session.id, user.id, user.username]
-        );
+      [session.id, user.id, user.username]
+    );
 
-        await client.query("COMMIT");
+    await client.query('COMMIT');
 
-        return getLobbyStateForUser(user, session.id);
-    } catch (error) {
-        await client.query("ROLLBACK");
-        throw error;
-    } finally {
-        client.release();
-    }
+    return getLobbyStateForUser(user, session.id);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function joinLobby(user: AuthenticatedUser, rawPayload: unknown) {
-    const payload = parseJoinLobbyPayload(rawPayload);
+  const payload = parseJoinLobbyPayload(rawPayload);
 
-    if (!payload) {
-        throw new Error("Payload invalid pentru JOIN_LOBBY.");
-    }
+  if (!payload) {
+    throw new Error('Payload invalid pentru JOIN_LOBBY.');
+  }
 
-    const client = await pool.connect();
+  const client = await pool.connect();
 
-    try {
-        await client.query("BEGIN");
+  try {
+    await client.query('BEGIN');
 
-        const sessionResult = await client.query(
-            `
+    const sessionResult = await client.query(
+      `
             SELECT id, status
             FROM game_sessions
             WHERE lobby_code = $1
             FOR UPDATE
             `,
-            [payload.lobbyCode]
-        );
+      [payload.lobbyCode]
+    );
 
-        if (sessionResult.rows.length === 0) {
-            throw new Error("Lobby-ul nu există.");
-        }
+    if (sessionResult.rows.length === 0) {
+      throw new Error('Lobby-ul nu există.');
+    }
 
-        const session = sessionResult.rows[0];
+    const session = sessionResult.rows[0];
 
-        if (session.status !== "lobby") {
-            throw new Error("Lobby-ul nu mai este disponibil.");
-        }
+    if (session.status !== 'lobby') {
+      throw new Error('Lobby-ul nu mai este disponibil.');
+    }
 
-        const existingParticipantResult = await client.query(
-            `
+    const existingParticipantResult = await client.query(
+      `
             SELECT id
             FROM session_participants
             WHERE session_id = $1
               AND user_id = $2
             LIMIT 1
             `,
-            [session.id, user.id]
-        );
+      [session.id, user.id]
+    );
 
-        if (existingParticipantResult.rows.length > 0) {
-            await client.query(
-                `
+    if (existingParticipantResult.rows.length > 0) {
+      await client.query(
+        `
                 UPDATE session_participants
                 SET is_connected = true,
                     last_seen_at = now()
                 WHERE session_id = $1
                   AND user_id = $2
                 `,
-                [session.id, user.id]
-            );
+        [session.id, user.id]
+      );
 
-            await client.query("COMMIT");
-            return getLobbyStateForUser(user, session.id);
-        }
+      await client.query('COMMIT');
+      return getLobbyStateForUser(user, session.id);
+    }
 
-        const participantCountResult = await client.query(
-            `
+    const participantCountResult = await client.query(
+      `
             SELECT COUNT(*) AS participant_count
             FROM session_participants
             WHERE session_id = $1
             `,
-            [session.id]
-        );
+      [session.id]
+    );
 
-        const participantCount = Number(participantCountResult.rows[0]?.participant_count ?? 0);
+    const participantCount = Number(participantCountResult.rows[0]?.participant_count ?? 0);
 
-        if (participantCount >= MAX_LOBBY_PARTICIPANTS) {
-            throw new Error("Lobby-ul este plin.");
-        }
+    if (participantCount >= MAX_LOBBY_PARTICIPANTS) {
+      throw new Error('Lobby-ul este plin.');
+    }
 
-        await client.query(
-            `
+    await client.query(
+      `
             INSERT INTO session_participants (
                 session_id,
                 user_id,
@@ -383,58 +388,58 @@ export async function joinLobby(user: AuthenticatedUser, rawPayload: unknown) {
             )
             VALUES ($1, $2, 'human', 'player', $3, true, true)
             `,
-            [session.id, user.id, user.username]
-        );
+      [session.id, user.id, user.username]
+    );
 
-        await client.query("COMMIT");
+    await client.query('COMMIT');
 
-        return getLobbyStateForUser(user, session.id);
-    } catch (error) {
-        await client.query("ROLLBACK");
-        throw error;
-    } finally {
-        client.release();
-    }
+    return getLobbyStateForUser(user, session.id);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function startLobbySession(user: AuthenticatedUser, rawPayload: unknown) {
-    const payload = parseStartSessionPayload(rawPayload);
+  const payload = parseStartSessionPayload(rawPayload);
 
-    if (!payload) {
-        throw new Error("Payload invalid pentru START_SESSION.");
-    }
+  if (!payload) {
+    throw new Error('Payload invalid pentru START_SESSION.');
+  }
 
-    const client = await pool.connect();
+  const client = await pool.connect();
 
-    try {
-        await client.query("BEGIN");
+  try {
+    await client.query('BEGIN');
 
-        const sessionResult = await client.query(
-            `
+    const sessionResult = await client.query(
+      `
             SELECT id, status, host_user_id
             FROM game_sessions
             WHERE id = $1
             FOR UPDATE
             `,
-            [payload.sessionId]
-        );
+      [payload.sessionId]
+    );
 
-        if (sessionResult.rows.length === 0) {
-            throw new Error("Sesiunea nu există.");
-        }
+    if (sessionResult.rows.length === 0) {
+      throw new Error('Sesiunea nu există.');
+    }
 
-        const session = sessionResult.rows[0];
+    const session = sessionResult.rows[0];
 
-        if (session.status !== "lobby") {
-            throw new Error("Sesiunea nu este în starea lobby.");
-        }
+    if (session.status !== 'lobby') {
+      throw new Error('Sesiunea nu este în starea lobby.');
+    }
 
-        if (Number(session.host_user_id) !== user.id) {
-            throw new Error("Doar host-ul poate porni sesiunea.");
-        }
+    if (Number(session.host_user_id) !== user.id) {
+      throw new Error('Doar host-ul poate porni sesiunea.');
+    }
 
-        const participantsResult = await client.query(
-            `
+    const participantsResult = await client.query(
+      `
                 SELECT id
                 FROM session_participants
                 WHERE session_id = $1
@@ -442,23 +447,19 @@ export async function startLobbySession(user: AuthenticatedUser, rawPayload: unk
                   AND is_connected = true
                 ORDER BY joined_at
             `,
-            [payload.sessionId]
-        );
+      [payload.sessionId]
+    );
 
-        if (participantsResult.rows.length < MIN_PARTICIPANTS_TO_START) {
-            throw new Error("Nu sunt suficienți participanți pentru pornirea sesiunii.");
-        }
+    if (participantsResult.rows.length < MIN_PARTICIPANTS_TO_START) {
+      throw new Error('Nu sunt suficienți participanți pentru pornirea sesiunii.');
+    }
 
-        for (const participant of participantsResult.rows) {
-            await initializeParticipantGameState(
-                client,
-                payload.sessionId,
-                participant.id
-            );
-        }
+    for (const participant of participantsResult.rows) {
+      await initializeParticipantGameState(client, payload.sessionId, participant.id);
+    }
 
-        await client.query(
-            `
+    await client.query(
+      `
             INSERT INTO session_economy_state (
                 session_id,
                 inflation,
@@ -469,247 +470,247 @@ export async function startLobbySession(user: AuthenticatedUser, rawPayload: unk
             VALUES ($1, $2, $3, $3, $3)
             ON CONFLICT (session_id) DO NOTHING
             `,
-            [payload.sessionId, INITIAL_INFLATION, INITIAL_AVERAGE_PRICE]
-        );
+      [payload.sessionId, INITIAL_INFLATION, INITIAL_AVERAGE_PRICE]
+    );
 
-        await client.query(
-            `
+    await client.query(
+      `
             UPDATE game_sessions
             SET status = 'active',
                 started_at = COALESCE(started_at, now()),
                 updated_at = now()
             WHERE id = $1
             `,
-            [payload.sessionId]
-        );
+      [payload.sessionId]
+    );
 
-        await client.query("COMMIT");
+    await client.query('COMMIT');
 
-        return {
-            sessionId: payload.sessionId,
-        };
-    } catch (error) {
-        await client.query("ROLLBACK");
-        throw error;
-    } finally {
-        client.release();
-    }
+    return {
+      sessionId: payload.sessionId,
+    };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function getLobbyStateForUser(user: AuthenticatedUser, sessionId: string) {
-    const sessionResult = await pool.query(
-        `
+  const sessionResult = await pool.query(
+    `
         SELECT id, lobby_code, status, host_user_id
         FROM game_sessions
         WHERE id = $1
         `,
-        [sessionId]
-    );
+    [sessionId]
+  );
 
-    if (sessionResult.rows.length === 0) {
-        throw new Error("Lobby-ul nu există.");
-    }
+  if (sessionResult.rows.length === 0) {
+    throw new Error('Lobby-ul nu există.');
+  }
 
-    const session = sessionResult.rows[0];
+  const session = sessionResult.rows[0];
 
-    const participantResult = await pool.query(
-        `
+  const participantResult = await pool.query(
+    `
         SELECT id, display_name, role, is_ready, is_connected
         FROM session_participants
         WHERE session_id = $1
           AND user_id = $2
         LIMIT 1
         `,
-        [sessionId, user.id]
-    );
+    [sessionId, user.id]
+  );
 
-    if (participantResult.rows.length === 0) {
-        throw new Error("Jucătorul nu aparține acestui lobby.");
-    }
+  if (participantResult.rows.length === 0) {
+    throw new Error('Jucătorul nu aparține acestui lobby.');
+  }
 
-    const participant = participantResult.rows[0];
+  const participant = participantResult.rows[0];
 
-    const participantsResult = await pool.query(
-        `
+  const participantsResult = await pool.query(
+    `
         SELECT id, user_id, display_name, role, is_ready, is_connected
         FROM session_participants
         WHERE session_id = $1
         ORDER BY joined_at
         `,
-        [sessionId]
-    );
+    [sessionId]
+  );
 
-    return {
-        sessionId: session.id,
-        lobbyCode: session.lobby_code,
-        status: session.status,
-        hostUserId: Number(session.host_user_id),
-        participant: {
-            id: participant.id,
-            displayName: participant.display_name,
-            role: participant.role,
-            isReady: Boolean(participant.is_ready),
-            isConnected: Boolean(participant.is_connected),
-        },
-        participants: participantsResult.rows.map((row) => ({
-            id: row.id,
-            userId: row.user_id === null ? null : Number(row.user_id),
-            displayName: row.display_name,
-            role: row.role,
-            isReady: Boolean(row.is_ready),
-            isConnected: Boolean(row.is_connected),
-        })),
-    };
+  return {
+    sessionId: session.id,
+    lobbyCode: session.lobby_code,
+    status: session.status,
+    hostUserId: Number(session.host_user_id),
+    participant: {
+      id: participant.id,
+      displayName: participant.display_name,
+      role: participant.role,
+      isReady: Boolean(participant.is_ready),
+      isConnected: Boolean(participant.is_connected),
+    },
+    participants: participantsResult.rows.map((row) => ({
+      id: row.id,
+      userId: row.user_id === null ? null : Number(row.user_id),
+      displayName: row.display_name,
+      role: row.role,
+      isReady: Boolean(row.is_ready),
+      isConnected: Boolean(row.is_connected),
+    })),
+  };
 }
 
 export async function getSessionStateForUser(user: AuthenticatedUser, sessionId: string) {
-    const sessionResult = await pool.query(
-        `
+  const sessionResult = await pool.query(
+    `
         SELECT id, lobby_code, status, current_day, current_minute
         FROM game_sessions
         WHERE id = $1
         `,
-        [sessionId]
-    );
+    [sessionId]
+  );
 
-    if (sessionResult.rows.length === 0) {
-        throw new Error("Sesiunea nu există.");
-    }
+  if (sessionResult.rows.length === 0) {
+    throw new Error('Sesiunea nu există.');
+  }
 
-    const session = sessionResult.rows[0];
+  const session = sessionResult.rows[0];
 
-    const participantResult = await pool.query(
-        `
+  const participantResult = await pool.query(
+    `
         SELECT id, display_name, role
         FROM session_participants
         WHERE session_id = $1
           AND user_id = $2
         LIMIT 1
         `,
-        [sessionId, user.id]
-    );
+    [sessionId, user.id]
+  );
 
-    if (participantResult.rows.length === 0) {
-        throw new Error("Jucătorul nu aparține acestei sesiuni.");
-    }
+  if (participantResult.rows.length === 0) {
+    throw new Error('Jucătorul nu aparține acestei sesiuni.');
+  }
 
-    const participant = participantResult.rows[0];
+  const participant = participantResult.rows[0];
 
-    const playerStateResult = await pool.query(
-        `
+  const playerStateResult = await pool.query(
+    `
         SELECT galbeni
         FROM player_states
         WHERE participant_id = $1
         `,
-        [participant.id]
-    );
+    [participant.id]
+  );
 
-    const galbeni = Number(playerStateResult.rows[0]?.galbeni ?? 0);
+  const galbeni = Number(playerStateResult.rows[0]?.galbeni ?? 0);
 
-    const resourceResult = await pool.query(
-        `
+  const resourceResult = await pool.query(
+    `
         SELECT resource, amount
         FROM player_resources
         WHERE participant_id = $1
         `,
-        [participant.id]
-    );
+    [participant.id]
+  );
 
-    const resources: Record<ResourceType | "galbeni", number> = {
-        wood: 0,
-        stone: 0,
-        grain: 0,
-        galbeni,
-    };
+  const resources: Record<ResourceType | 'galbeni', number> = {
+    wood: 0,
+    stone: 0,
+    grain: 0,
+    galbeni,
+  };
 
-    for (const row of resourceResult.rows) {
-        const resource = row.resource as ResourceType;
+  for (const row of resourceResult.rows) {
+    const resource = row.resource as ResourceType;
 
-        if (resource === "wood" || resource === "stone" || resource === "grain") {
-            resources[resource] = Number(row.amount);
-        }
+    if (resource === 'wood' || resource === 'stone' || resource === 'grain') {
+      resources[resource] = Number(row.amount);
     }
+  }
 
-    const economyResult = await pool.query(
-        `
+  const economyResult = await pool.query(
+    `
         SELECT inflation, wood_avg_price, stone_avg_price, grain_avg_price
         FROM session_economy_state
         WHERE session_id = $1
         `,
-        [sessionId]
-    );
+    [sessionId]
+  );
 
-    const economyRow = economyResult.rows[0];
+  const economyRow = economyResult.rows[0];
 
-    const tileResult = await pool.query(
-        `
+  const tileResult = await pool.query(
+    `
         SELECT tile_x, tile_y, tile
         FROM player_map_tiles
         WHERE participant_id = $1
         ORDER BY tile_y, tile_x
         `,
-        [participant.id]
-    );
+    [participant.id]
+  );
 
-    let width = 0;
-    let height = 0;
+  let width = 0;
+  let height = 0;
 
-    for (const row of tileResult.rows) {
-        width = Math.max(width, Number(row.tile_x) + 1);
-        height = Math.max(height, Number(row.tile_y) + 1);
-    }
+  for (const row of tileResult.rows) {
+    width = Math.max(width, Number(row.tile_x) + 1);
+    height = Math.max(height, Number(row.tile_y) + 1);
+  }
 
-    const tiles: TileType[][] = Array.from({length: height}, () =>
-        Array.from({length: width}, () => "field" as TileType)
-    );
+  const tiles: TileType[][] = Array.from({ length: height }, () =>
+    Array.from({ length: width }, () => 'field' as TileType)
+  );
 
-    for (const row of tileResult.rows) {
-        tiles[Number(row.tile_y)][Number(row.tile_x)] = row.tile as TileType;
-    }
+  for (const row of tileResult.rows) {
+    tiles[Number(row.tile_y)][Number(row.tile_x)] = row.tile as TileType;
+  }
 
-    const buildingResult = await pool.query(
-        `
+  const buildingResult = await pool.query(
+    `
         SELECT tile_x, tile_y, building, level, stored_amount
         FROM player_buildings
         WHERE participant_id = $1
         ORDER BY tile_y, tile_x
         `,
-        [participant.id]
-    );
+    [participant.id]
+  );
 
-    const buildings = buildingResult.rows.map((row) => ({
-        x: Number(row.tile_x),
-        y: Number(row.tile_y),
-        type: String(row.building),
-        level: Number(row.level),
-        stored: Number(row.stored_amount),
-    }));
+  const buildings = buildingResult.rows.map((row) => ({
+    x: Number(row.tile_x),
+    y: Number(row.tile_y),
+    type: String(row.building),
+    level: Number(row.level),
+    stored: Number(row.stored_amount),
+  }));
 
-    return {
-        sessionId: session.id,
-        lobbyCode: session.lobby_code,
-        status: session.status,
-        currentDay: Number(session.current_day),
-        currentMinute: Number(session.current_minute),
-        participant: {
-            id: participant.id,
-            displayName: participant.display_name,
-            role: participant.role,
-        },
-        resources,
-        economy: {
-            inflation: Number(economyRow?.inflation ?? 20),
-            averagePrices: {
-                wood: Number(economyRow?.wood_avg_price ?? INITIAL_AVERAGE_PRICE),
-                stone: Number(economyRow?.stone_avg_price ?? INITIAL_AVERAGE_PRICE),
-                grain: Number(economyRow?.grain_avg_price ?? INITIAL_AVERAGE_PRICE),
-            },
-        },
-        map: {
-            width,
-            height,
-            tiles,
-        },
-        buildings,
-    };
+  return {
+    sessionId: session.id,
+    lobbyCode: session.lobby_code,
+    status: session.status,
+    currentDay: Number(session.current_day),
+    currentMinute: Number(session.current_minute),
+    participant: {
+      id: participant.id,
+      displayName: participant.display_name,
+      role: participant.role,
+    },
+    resources,
+    economy: {
+      inflation: Number(economyRow?.inflation ?? 20),
+      averagePrices: {
+        wood: Number(economyRow?.wood_avg_price ?? INITIAL_AVERAGE_PRICE),
+        stone: Number(economyRow?.stone_avg_price ?? INITIAL_AVERAGE_PRICE),
+        grain: Number(economyRow?.grain_avg_price ?? INITIAL_AVERAGE_PRICE),
+      },
+    },
+    map: {
+      width,
+      height,
+      tiles,
+    },
+    buildings,
+  };
 }

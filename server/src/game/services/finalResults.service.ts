@@ -1,32 +1,32 @@
-import {PlayerFinalResult, SessionFinalResult} from "../game.types";
-import {pool} from "../../config/db";
+import { PlayerFinalResult, SessionFinalResult } from '../game.types';
+import { pool } from '../../config/db';
 import {
-    BUILDING_SCORE_PER_LEVEL,
-    INFLATION_LOSS_THRESHOLD,
-    MIN_AVERAGE_ECONOMIC_SCORE,
-    TRADE_VALUE_SCORE_DIVISOR
-} from "../game.constants";
-import {getRankForEconomicScore} from "../gameRules";
-import {applyEconomyPressuresAndSaveSnapshot} from "./economy.service";
+  BUILDING_SCORE_PER_LEVEL,
+  INFLATION_LOSS_THRESHOLD,
+  MIN_AVERAGE_ECONOMIC_SCORE,
+  TRADE_VALUE_SCORE_DIVISOR,
+} from '../game.constants';
+import { getRankForEconomicScore } from '../gameRules';
+import { applyEconomyPressuresAndSaveSnapshot } from './economy.service';
 
 async function getSessionFinalResult(sessionId: string): Promise<SessionFinalResult> {
-    const sessionResult = await pool.query(
-        `
+  const sessionResult = await pool.query(
+    `
         SELECT final_inflation, result
         FROM game_sessions
         WHERE id = $1
         `,
-        [sessionId]
-    );
+    [sessionId]
+  );
 
-    if (sessionResult.rows.length === 0) {
-        throw new Error("Sesiunea nu există.");
-    }
+  if (sessionResult.rows.length === 0) {
+    throw new Error('Sesiunea nu există.');
+  }
 
-    const session = sessionResult.rows[0];
+  const session = sessionResult.rows[0];
 
-    const resultsResult = await pool.query(
-        `
+  const resultsResult = await pool.query(
+    `
         SELECT
             psr.participant_id,
             sp.display_name,
@@ -41,89 +41,86 @@ async function getSessionFinalResult(sessionId: string): Promise<SessionFinalRes
         WHERE psr.session_id = $1
         ORDER BY psr.economic_score DESC
         `,
-        [sessionId]
-    );
+    [sessionId]
+  );
 
-    const results: PlayerFinalResult[] = resultsResult.rows.map((row) => ({
-        participantId: String(row.participant_id),
-        displayName: String(row.display_name),
-        economicScore: Number(row.economic_score),
-        rank: String(row.rank),
-        tradesCount: Number(row.trades_count),
-        totalTradedValue: Number(row.total_traded_value),
-        totalRecycledAmount: Number(row.total_recycled_amount),
-    }));
+  const results: PlayerFinalResult[] = resultsResult.rows.map((row) => ({
+    participantId: String(row.participant_id),
+    displayName: String(row.display_name),
+    economicScore: Number(row.economic_score),
+    rank: String(row.rank),
+    tradesCount: Number(row.trades_count),
+    totalTradedValue: Number(row.total_traded_value),
+    totalRecycledAmount: Number(row.total_recycled_amount),
+  }));
 
-    const averageEconomicScore =
-        results.length === 0
-            ? 0
-            : Math.round(
-                results.reduce((sum, result) => sum + result.economicScore, 0) /
-                results.length
-            );
+  const averageEconomicScore =
+    results.length === 0
+      ? 0
+      : Math.round(results.reduce((sum, result) => sum + result.economicScore, 0) / results.length);
 
-    return {
-        sessionId,
-        finalInflation: Number(session.final_inflation ?? 0),
-        collectiveResult: session.result === "win" ? "win" : "loss",
-        averageEconomicScore,
-        results,
-    };
+  return {
+    sessionId,
+    finalInflation: Number(session.final_inflation ?? 0),
+    collectiveResult: session.result === 'win' ? 'win' : 'loss',
+    averageEconomicScore,
+    results,
+  };
 }
 
 export async function finalizeSessionIfNeeded(
-    sessionId: string
+  sessionId: string
 ): Promise<SessionFinalResult | null> {
-    const client = await pool.connect();
+  const client = await pool.connect();
 
-    try {
-        await client.query("BEGIN");
+  try {
+    await client.query('BEGIN');
 
-        const sessionResult = await client.query(
-            `
+    const sessionResult = await client.query(
+      `
             SELECT id, status, result
             FROM game_sessions
             WHERE id = $1
             FOR UPDATE
             `,
-            [sessionId]
-        );
+      [sessionId]
+    );
 
-        if (sessionResult.rows.length === 0) {
-            throw new Error("Sesiunea nu există.");
-        }
+    if (sessionResult.rows.length === 0) {
+      throw new Error('Sesiunea nu există.');
+    }
 
-        const session = sessionResult.rows[0];
+    const session = sessionResult.rows[0];
 
-        if (session.status !== "finished") {
-            await client.query("COMMIT");
-            return null;
-        }
+    if (session.status !== 'finished') {
+      await client.query('COMMIT');
+      return null;
+    }
 
-        if (session.result !== "pending") {
-            await client.query("COMMIT");
-            return await getSessionFinalResult(sessionId);
-        }
+    if (session.result !== 'pending') {
+      await client.query('COMMIT');
+      return await getSessionFinalResult(sessionId);
+    }
 
-        const economyResult = await client.query(
-            `
+    const economyResult = await client.query(
+      `
             SELECT inflation, wood_avg_price, stone_avg_price, grain_avg_price
             FROM session_economy_state
             WHERE session_id = $1
             FOR UPDATE
             `,
-            [sessionId]
-        );
+      [sessionId]
+    );
 
-        if (economyResult.rows.length === 0) {
-            throw new Error("Starea economiei nu există pentru această sesiune.");
-        }
+    if (economyResult.rows.length === 0) {
+      throw new Error('Starea economiei nu există pentru această sesiune.');
+    }
 
-        const economy = economyResult.rows[0];
-        const finalInflation = Number(economy.inflation);
+    const economy = economyResult.rows[0];
+    const finalInflation = Number(economy.inflation);
 
-        const participantsResult = await client.query(
-            `
+    const participantsResult = await client.query(
+      `
             WITH resource_values AS (
                 SELECT
                     pr.participant_id,
@@ -204,76 +201,68 @@ export async function finalizeSessionIfNeeded(
               AND sp.participant_type = 'human'
             ORDER BY sp.joined_at
             `,
-            [
-                sessionId,
-                Number(economy.wood_avg_price),
-                Number(economy.stone_avg_price),
-                Number(economy.grain_avg_price),
-                BUILDING_SCORE_PER_LEVEL,
-            ]
-        );
+      [
+        sessionId,
+        Number(economy.wood_avg_price),
+        Number(economy.stone_avg_price),
+        Number(economy.grain_avg_price),
+        BUILDING_SCORE_PER_LEVEL,
+      ]
+    );
 
-        const finalRows = participantsResult.rows.map((row) => {
-            const galbeni = Number(row.galbeni ?? 0);
-            const resourceValue = Number(row.resource_value ?? 0);
-            const buildingValue = Number(row.building_value ?? 0);
-            const tradesCount = Number(row.trades_count ?? 0);
-            const totalTradedValue = Number(row.total_traded_value ?? 0);
-            const totalRecycledAmount = Number(row.total_recycled_amount ?? 0);
-            const storedResourceValue = Number(row.stored_resource_value ?? 0);
+    const finalRows = participantsResult.rows.map((row) => {
+      const galbeni = Number(row.galbeni ?? 0);
+      const resourceValue = Number(row.resource_value ?? 0);
+      const buildingValue = Number(row.building_value ?? 0);
+      const tradesCount = Number(row.trades_count ?? 0);
+      const totalTradedValue = Number(row.total_traded_value ?? 0);
+      const totalRecycledAmount = Number(row.total_recycled_amount ?? 0);
+      const storedResourceValue = Number(row.stored_resource_value ?? 0);
 
-            const MAX_TRADE_BONUS = 300;
+      const MAX_TRADE_BONUS = 300;
 
-            const RECYCLE_SCORE_DIVISOR = 10;
-            const recycleBonus = Math.floor(totalRecycledAmount / RECYCLE_SCORE_DIVISOR);
+      const RECYCLE_SCORE_DIVISOR = 10;
+      const recycleBonus = Math.floor(totalRecycledAmount / RECYCLE_SCORE_DIVISOR);
 
-            const tradeBonus = Math.min(
-                MAX_TRADE_BONUS,
-                Math.floor(totalTradedValue / TRADE_VALUE_SCORE_DIVISOR)
-            );
+      const tradeBonus = Math.min(
+        MAX_TRADE_BONUS,
+        Math.floor(totalTradedValue / TRADE_VALUE_SCORE_DIVISOR)
+      );
 
-            const economicScore = Math.max(
-                0,
-                Math.round(
-                    galbeni +
-                    resourceValue +
-                    storedResourceValue +
-                    buildingValue +
-                    tradeBonus +
-                    recycleBonus
-                )
-            );
+      const economicScore = Math.max(
+        0,
+        Math.round(
+          galbeni + resourceValue + storedResourceValue + buildingValue + tradeBonus + recycleBonus
+        )
+      );
 
-            return {
-                participantId: String(row.participant_id),
-                displayName: String(row.display_name),
-                economicScore,
-                rank: getRankForEconomicScore(economicScore),
-                tradesCount,
-                totalTradedValue,
-                totalRecycledAmount,
-            };
-        });
+      return {
+        participantId: String(row.participant_id),
+        displayName: String(row.display_name),
+        economicScore,
+        rank: getRankForEconomicScore(economicScore),
+        tradesCount,
+        totalTradedValue,
+        totalRecycledAmount,
+      };
+    });
 
-        finalRows.sort((a, b) => b.economicScore - a.economicScore);
+    finalRows.sort((a, b) => b.economicScore - a.economicScore);
 
-        const averageEconomicScore =
-            finalRows.length === 0
-                ? 0
-                : Math.round(
-                    finalRows.reduce((sum, row) => sum + row.economicScore, 0) /
-                    finalRows.length
-                );
+    const averageEconomicScore =
+      finalRows.length === 0
+        ? 0
+        : Math.round(finalRows.reduce((sum, row) => sum + row.economicScore, 0) / finalRows.length);
 
-        const collectiveResult =
-            finalInflation >= INFLATION_LOSS_THRESHOLD ||
-            averageEconomicScore < MIN_AVERAGE_ECONOMIC_SCORE
-                ? "loss"
-                : "win";
+    const collectiveResult =
+      finalInflation >= INFLATION_LOSS_THRESHOLD ||
+      averageEconomicScore < MIN_AVERAGE_ECONOMIC_SCORE
+        ? 'loss'
+        : 'win';
 
-        for (const row of finalRows) {
-            await client.query(
-                `
+    for (const row of finalRows) {
+      await client.query(
+        `
                 INSERT INTO player_session_results (
                     session_id,
                     participant_id,
@@ -292,30 +281,30 @@ export async function finalizeSessionIfNeeded(
                     total_traded_value = EXCLUDED.total_traded_value,
                     total_recycled_amount = EXCLUDED.total_recycled_amount
                 `,
-                [
-                    sessionId,
-                    row.participantId,
-                    row.economicScore,
-                    row.rank,
-                    row.tradesCount,
-                    row.totalTradedValue,
-                    row.totalRecycledAmount,
-                ]
-            );
+        [
+          sessionId,
+          row.participantId,
+          row.economicScore,
+          row.rank,
+          row.tradesCount,
+          row.totalTradedValue,
+          row.totalRecycledAmount,
+        ]
+      );
 
-            await client.query(
-                `
+      await client.query(
+        `
                 UPDATE player_states
                 SET economic_score = $2,
                     updated_at = now()
                 WHERE participant_id = $1
                 `,
-                [row.participantId, row.economicScore]
-            );
-        }
+        [row.participantId, row.economicScore]
+      );
+    }
 
-        await client.query(
-            `
+    await client.query(
+      `
             UPDATE game_sessions
             SET final_inflation = $2,
                 result = $3::collective_result,
@@ -323,28 +312,24 @@ export async function finalizeSessionIfNeeded(
                 updated_at = now()
             WHERE id = $1
             `,
-            [sessionId, finalInflation, collectiveResult]
-        );
+      [sessionId, finalInflation, collectiveResult]
+    );
 
-        await applyEconomyPressuresAndSaveSnapshot(
-            client,
-            sessionId,
-            "session_end"
-        );
+    await applyEconomyPressuresAndSaveSnapshot(client, sessionId, 'session_end');
 
-        await client.query("COMMIT");
+    await client.query('COMMIT');
 
-        return {
-            sessionId,
-            finalInflation,
-            collectiveResult,
-            averageEconomicScore,
-            results: finalRows,
-        };
-    } catch (error) {
-        await client.query("ROLLBACK");
-        throw error;
-    } finally {
-        client.release();
-    }
+    return {
+      sessionId,
+      finalInflation,
+      collectiveResult,
+      averageEconomicScore,
+      results: finalRows,
+    };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }

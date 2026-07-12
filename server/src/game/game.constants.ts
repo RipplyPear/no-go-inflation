@@ -1,4 +1,4 @@
-import type {BuildingType, ResourceType, TileType} from "./game.types";
+import type { BuildingType, ResourceType, TileType } from './game.types';
 
 export const DAY_START_MINUTE = 540;
 export const DAY_END_MINUTE = 1020;
@@ -43,28 +43,28 @@ export const MAX_UNDERPRICE_INFLATION_RELIEF = 3;
 export const DUMPING_INFLATION_PRESSURE = 2;
 
 export const BUILDING_BY_TILE: Record<TileType, BuildingType> = {
-    field: "farm",
-    quarry: "mine",
-    forest: "lumberyard",
+  field: 'farm',
+  quarry: 'mine',
+  forest: 'lumberyard',
 };
 
 export const BUILD_COSTS: Record<BuildingType, Partial<Record<ResourceType, number>>> = {
-    farm: {
-        wood: 10,
-        stone: 20,
-    },
-    mine: {
-        wood: 20,
-        grain: 10,
-    },
-    lumberyard: {
-        stone: 10,
-        grain: 20,
-    },
+  farm: {
+    wood: 10,
+    stone: 20,
+  },
+  mine: {
+    wood: 20,
+    grain: 10,
+  },
+  lumberyard: {
+    stone: 10,
+    grain: 20,
+  },
 };
 
 export const RESOURCE_BY_BUILDING: Record<BuildingType, ResourceType> = {
-    farm: "grain",
-    mine: "stone",
-    lumberyard: "wood",
+  farm: 'grain',
+  mine: 'stone',
+  lumberyard: 'wood',
 };

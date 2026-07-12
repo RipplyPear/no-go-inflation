@@ -1,24 +1,29 @@
-import {AuthenticatedUser} from "../../websocket/ws.types";
-import {ResourceType, SessionFinalResult} from "../game.types";
-import {isRecord} from "../../websocket/wsProtocol";
-import {getParticipantForSession} from "./participant.service";
-import {pool} from "../../config/db";
-import {DAY_END_MINUTE, FINAL_DAY, MARKET_CLOSE_MINUTE, MARKET_OPEN_MINUTE} from "../game.constants";
-import {finalizeSessionIfNeeded} from "./finalResults.service";
-import {parseDevSeedBotOfferPayload} from "../../websocket/wsPayloadParsers";
+import { AuthenticatedUser } from '../../websocket/ws.types';
+import { ResourceType, SessionFinalResult } from '../game.types';
+import { isRecord } from '../../websocket/wsProtocol';
+import { getParticipantForSession } from './participant.service';
+import { pool } from '../../config/db';
+import {
+  DAY_END_MINUTE,
+  FINAL_DAY,
+  MARKET_CLOSE_MINUTE,
+  MARKET_OPEN_MINUTE,
+} from '../game.constants';
+import { finalizeSessionIfNeeded } from './finalResults.service';
+import { parseDevSeedBotOfferPayload } from '../../websocket/wsPayloadParsers';
 
 export async function forceFinishSessionForTesting(
-    user: AuthenticatedUser,
-    rawPayload: unknown
+  user: AuthenticatedUser,
+  rawPayload: unknown
 ): Promise<SessionFinalResult> {
-    if (!isRecord(rawPayload) || typeof rawPayload.sessionId !== "string") {
-        throw new Error("Payload invalid pentru DEV_FORCE_FINISH_SESSION.");
-    }
+  if (!isRecord(rawPayload) || typeof rawPayload.sessionId !== 'string') {
+    throw new Error('Payload invalid pentru DEV_FORCE_FINISH_SESSION.');
+  }
 
-    await getParticipantForSession(pool, user, rawPayload.sessionId);
+  await getParticipantForSession(pool, user, rawPayload.sessionId);
 
-    await pool.query(
-        `
+  await pool.query(
+    `
         UPDATE game_sessions
         SET current_day = $2,
             current_minute = $3,
@@ -27,67 +32,67 @@ export async function forceFinishSessionForTesting(
             updated_at = now()
         WHERE id = $1
         `,
-        [rawPayload.sessionId, FINAL_DAY, DAY_END_MINUTE]
-    );
+    [rawPayload.sessionId, FINAL_DAY, DAY_END_MINUTE]
+  );
 
-    const finalResult = await finalizeSessionIfNeeded(rawPayload.sessionId);
+  const finalResult = await finalizeSessionIfNeeded(rawPayload.sessionId);
 
-    if (!finalResult) {
-        throw new Error("Sesiunea nu a putut fi finalizată.");
-    }
+  if (!finalResult) {
+    throw new Error('Sesiunea nu a putut fi finalizată.');
+  }
 
-    return finalResult;
+  return finalResult;
 }
 
 export async function seedBotOfferForTesting(user: AuthenticatedUser, rawPayload: unknown) {
-    const payload = parseDevSeedBotOfferPayload(rawPayload);
+  const payload = parseDevSeedBotOfferPayload(rawPayload);
 
-    if (!payload) {
-        throw new Error("Payload invalid pentru DEV_SEED_BOT_OFFER.");
-    }
+  if (!payload) {
+    throw new Error('Payload invalid pentru DEV_SEED_BOT_OFFER.');
+  }
 
-    const client = await pool.connect();
+  const client = await pool.connect();
 
-    try {
-        await client.query("BEGIN");
+  try {
+    await client.query('BEGIN');
 
-        await getParticipantForSession(client, user, payload.sessionId);
+    await getParticipantForSession(client, user, payload.sessionId);
 
-        const sessionResult = await client.query(
-            `
+    const sessionResult = await client.query(
+      `
             SELECT id, status, current_minute
             FROM game_sessions
             WHERE id = $1
             FOR UPDATE
             `,
-            [payload.sessionId]
-        );
+      [payload.sessionId]
+    );
 
-        if (sessionResult.rows.length === 0) {
-            throw new Error("Sesiunea nu există.");
-        }
+    if (sessionResult.rows.length === 0) {
+      throw new Error('Sesiunea nu există.');
+    }
 
-        const session = sessionResult.rows[0];
+    const session = sessionResult.rows[0];
 
-        if (session.status !== "active") {
-            throw new Error("Seed-ul de ofertă merge doar într-o sesiune activă.");
-        }
+    if (session.status !== 'active') {
+      throw new Error('Seed-ul de ofertă merge doar într-o sesiune activă.');
+    }
 
-        const currentMinute = Number(session.current_minute);
+    const currentMinute = Number(session.current_minute);
 
-        if (currentMinute < MARKET_OPEN_MINUTE || currentMinute >= MARKET_CLOSE_MINUTE) {
-            await client.query(
-                `
+    if (currentMinute < MARKET_OPEN_MINUTE || currentMinute >= MARKET_CLOSE_MINUTE) {
+      await client.query(
+        `
                 UPDATE game_sessions
                 SET current_minute = $2
                 WHERE id = $1
                 `,
-                [payload.sessionId, MARKET_OPEN_MINUTE]
-            );
-        }
+        [payload.sessionId, MARKET_OPEN_MINUTE]
+      );
+    }
 
-        const existingBotResult = await client.query(
-            `
+    const existingBotResult = await client.query(
+      `
             SELECT id
             FROM session_participants
             WHERE session_id = $1
@@ -95,16 +100,16 @@ export async function seedBotOfferForTesting(user: AuthenticatedUser, rawPayload
               AND display_name = 'Bot Test'
             LIMIT 1
             `,
-            [payload.sessionId]
-        );
+      [payload.sessionId]
+    );
 
-        let botParticipantId: string;
+    let botParticipantId: string;
 
-        if (existingBotResult.rows.length > 0) {
-            botParticipantId = existingBotResult.rows[0].id;
-        } else {
-            const botResult = await client.query(
-                `
+    if (existingBotResult.rows.length > 0) {
+      botParticipantId = existingBotResult.rows[0].id;
+    } else {
+      const botResult = await client.query(
+        `
                 INSERT INTO session_participants (
                     session_id,
                     user_id,
@@ -125,14 +130,14 @@ export async function seedBotOfferForTesting(user: AuthenticatedUser, rawPayload
                 )
                 RETURNING id
                 `,
-                [payload.sessionId]
-            );
+        [payload.sessionId]
+      );
 
-            botParticipantId = botResult.rows[0].id;
-        }
+      botParticipantId = botResult.rows[0].id;
+    }
 
-        await client.query(
-            `
+    await client.query(
+      `
             INSERT INTO player_states (
                 session_id,
                 participant_id,
@@ -146,12 +151,12 @@ export async function seedBotOfferForTesting(user: AuthenticatedUser, rawPayload
                 galbeni = GREATEST(player_states.galbeni, 10000),
                 updated_at = now()
             `,
-            [payload.sessionId, botParticipantId]
-        );
+      [payload.sessionId, botParticipantId]
+    );
 
-        for (const resource of ["wood", "stone", "grain"] as ResourceType[]) {
-            await client.query(
-                `
+    for (const resource of ['wood', 'stone', 'grain'] as ResourceType[]) {
+      await client.query(
+        `
                 INSERT INTO player_resources (participant_id, resource, amount)
                 VALUES ($1, $2::resource_type, 2000)
                 ON CONFLICT (participant_id, resource)
@@ -159,23 +164,23 @@ export async function seedBotOfferForTesting(user: AuthenticatedUser, rawPayload
                     amount = GREATEST(player_resources.amount, 2000),
                     updated_at = now()
                 `,
-                [botParticipantId, resource]
-            );
-        }
+        [botParticipantId, resource]
+      );
+    }
 
-        await client.query(
-            `
+    await client.query(
+      `
             UPDATE market_offers
             SET status = 'cancelled',
                 updated_at = now()
             WHERE creator_participant_id = $1
               AND status = 'active'
             `,
-            [botParticipantId]
-        );
+      [botParticipantId]
+    );
 
-        const offerResult = await client.query(
-            `
+    const offerResult = await client.query(
+      `
             INSERT INTO market_offers (
                 session_id,
                 creator_participant_id,
@@ -202,27 +207,27 @@ export async function seedBotOfferForTesting(user: AuthenticatedUser, rawPayload
             )
             RETURNING id, offer_type, resource, remaining_quantity, price_per_unit, expires_at
             `,
-            [
-                payload.sessionId,
-                botParticipantId,
-                payload.offerType,
-                payload.resource,
-                payload.quantity,
-                payload.pricePerUnit,
-            ]
-        );
+      [
+        payload.sessionId,
+        botParticipantId,
+        payload.offerType,
+        payload.resource,
+        payload.quantity,
+        payload.pricePerUnit,
+      ]
+    );
 
-        await client.query("COMMIT");
+    await client.query('COMMIT');
 
-        return {
-            sessionId: payload.sessionId,
-            botParticipantId,
-            offer: offerResult.rows[0],
-        };
-    } catch (error) {
-        await client.query("ROLLBACK");
-        throw error;
-    } finally {
-        client.release();
-    }
+    return {
+      sessionId: payload.sessionId,
+      botParticipantId,
+      offer: offerResult.rows[0],
+    };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }

@@ -1,5 +1,5 @@
-import {type RawData, WebSocket} from "ws";
-import type {ClientMessage} from "./ws.types";
+import { type RawData, WebSocket } from 'ws';
+import type { ClientMessage } from './ws.types';
 
 /**
  * Trimite mesaj WebSocket catre client in formatul `{type, payload}`.
@@ -10,31 +10,31 @@ import type {ClientMessage} from "./ws.types";
  * @param payload Daca e gol, se trimite {}
  */
 export function sendJson(ws: WebSocket, type: string, payload: unknown = {}) {
-    ws.send(
-        JSON.stringify({
-            type,
-            payload,
-        })
-    );
+  ws.send(
+    JSON.stringify({
+      type,
+      payload,
+    })
+  );
 }
 
 export function parseClientMessage(rawMessage: RawData): ClientMessage | null {
-    try {
-        const text = rawMessage.toString();
-        const parsed = JSON.parse(text);
+  try {
+    const text = rawMessage.toString();
+    const parsed = JSON.parse(text);
 
-        if (typeof parsed !== "object" || parsed === null) {
-            return null;
-        }
-
-        if (typeof parsed.type !== "string") {
-            return null;
-        }
-
-        return parsed as ClientMessage;
-    } catch {
-        return null;
+    if (typeof parsed !== 'object' || parsed === null) {
+      return null;
     }
+
+    if (typeof parsed.type !== 'string') {
+      return null;
+    }
+
+    return parsed as ClientMessage;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -46,5 +46,5 @@ export function parseClientMessage(rawMessage: RawData): ClientMessage | null {
  * @returns `true` daca valoarea este un obiect nenul si nu este array.
  */
 export function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
