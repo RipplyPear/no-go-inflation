@@ -75,6 +75,10 @@ text = "Conectare"
 layout_mode = 2
 text = "Înregistrare"
 
+[node name="ServerConfigButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1564386638]
+layout_mode = 2
+text = "Configurare server"
+
 [node name="AboutButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1468028763]
 layout_mode = 2
 text = "Despre"

@@ -73,7 +73,7 @@ func _send_auth_request(path: String, payload: Dictionary, is_register: bool) ->
 
 
 func _start_http_request(path: String, payload: Dictionary) -> Error:
-	var url := ClientConfig.API_BASE_URL + path
+	var url := ClientConfig.get_api_base_url() + path
 	var headers := ["Content-Type: application/json"]
 	var body := JSON.stringify(payload)
 	

@@ -30,7 +30,10 @@ func connect_to_server(token: String) -> void:
 	
 	_reset_socket()
 	
-	var url := "%s?token=%s" % [ClientConfig.WS_BASE_URL, token.uri_encode()]
+	var url := "%s?token=%s" % [
+		ClientConfig.get_ws_base_url(),
+		token.uri_encode()
+	]
 	print("Connecting WebSocket to server...")
 	
 	var error := socket.connect_to_url(url)

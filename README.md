@@ -270,6 +270,28 @@ Endpoint WebSocket:
 ws://HOST:PORT/ws?token=TOKEN
 ```
 
+### Conectare în rețeaua locală
+
+La pornire, serverul afișează atât adresa locală, cât și adresele IPv4 disponibile în rețeaua locală:
+
+```text
+Local: http://localhost:3000
+LAN: http://192.168.x.x:3000
+```
+
+Pentru a conecta un alt calculator din aceeași rețea:
+
+1. Se pornește serverul cu `HOST=0.0.0.0`;
+2. În client, se deschide "Configurare server" din meniul principal;
+3. Se introduce adresa IPv4 afișată de server, de exemplu `192.168.x.x`;
+4. Se apasă "Verifică și salvează".
+
+Dacă câmpul este lăsat gol, clientul folosește implicit `localhost`. Adresa selectată este salvată local și este folosită atât pentru cererile REST, cât și pentru WebSocket.
+
+Dacă verificarea eșuează, se recomandă următoarele verificări:
+- dispozitivele sunt în aceeași rețea;
+- firewall-ul permite conexiuni pe portul `3000`.
+
 ## 5. Build server
 
 Pentru compilarea TypeScript:
