@@ -1,5 +1,7 @@
 # No-go Inflation
 
+[![Server CI](https://github.com/RipplyPear/2d-collaborative-game/actions/workflows/server-ci.yml/badge.svg?branch=polish)](https://github.com/RipplyPear/2d-collaborative-game/actions/workflows/server-ci.yml?query=branch%3Apolish)
+
 > A cooperative multiplayer economic strategy game built as a client-server application.
 
 No-go Inflation is a 2D multiplayer game in which players build local economies, collect resources, trade through a shared market, and try to grow without destabilizing the session economy through excessive inflation.
