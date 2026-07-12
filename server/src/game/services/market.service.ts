@@ -619,20 +619,6 @@ export async function acceptMarketOffer(user: AuthenticatedUser, rawPayload: unk
             }
         );
 
-        const economyResult = await client.query(
-            `
-                SELECT inflation
-                FROM session_economy_state
-                WHERE session_id = $1
-                FOR UPDATE
-                `,
-            [payload.sessionId]
-        );
-
-        const currentInflationForTrade = Number(economyResult.rows[0]?.inflation ?? 20);
-
-        const MIN_INFLATION_FOR_TRADE_STABILIZATION = 10;
-
         const stabilizationPressure =
             overpricePressure === 0 &&
             underpricePressure === 0 &&

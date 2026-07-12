@@ -1,5 +1,3 @@
-import {PoolClient} from "pg";
-
 import {pool} from "../../config/db";
 import {AuthenticatedUser} from "../../websocket/ws.types";
 import {parseRecycleResourcePayload} from "../../websocket/wsPayloadParsers";
@@ -10,27 +8,12 @@ import {applyEconomyPressuresAndSaveSnapshot} from "./economy.service";
 
 const RESOURCES_PER_GALBEN = 2;
 const MIN_RECYCLE_QUANTITY = 2;
-const MAX_INFLATION_REDUCTION = 5;
 const RESOURCES_PER_INFLATION_POINT = 50;
 const MAX_MODERATE_RECYCLE_REDUCTION = 3;
 
 const MODERATE_RECYCLE_MAX_QUANTITY = 150;
 const EXCESSIVE_RECYCLE_START_QUANTITY = 200;
 const MAX_EXCESSIVE_RECYCLE_PRESSURE = 5;
-
-async function getCurrentEconomyForSnapshot(client: PoolClient, sessionId: string) {
-    const result = await client.query(
-        `
-        SELECT inflation, wood_avg_price, stone_avg_price, grain_avg_price
-        FROM session_economy_state
-        WHERE session_id = $1
-        FOR UPDATE
-        `,
-        [sessionId]
-    );
-
-    return result.rows[0];
-}
 
 function calculateRecyclePressure(quantity: number): number {
     if (quantity <= MODERATE_RECYCLE_MAX_QUANTITY) {
