@@ -2,6 +2,12 @@
 
 [← Back to the project README](../README.md)
 
+## Start here
+
+- [Technical overview (English)](./technical-overview.md) - architecture, authoritative multiplayer model, LAN support, and verification.
+- [Gameplay and economy (English)](./gameplay-and-economy.md) - core game loop, market, inflation, and session results.
+- [Academic documentation hub (Romanian)](./academic/README-ro.md) - project material created for the Bachelor's thesis.
+
 ## Overview
 
 **No-go Inflation** is a cooperative 2D economic strategy game built as a client-server application.
@@ -53,23 +59,6 @@ The client uses REST endpoints for registration and login, then maintains a WebS
 Follow the setup instructions in the [main README](../README.md#run-locally).
 
 The server starts on the configured host and port. The client connects to `localhost` by default; for local-network play, enter the server machine’s IPv4 address through **Server configuration** in the start menu.
-
-## Documentation languages
-
-This folder is being maintained in two forms:
-
-- **English**: concise technical documentation intended for GitHub and portfolio presentation.
-- **Romanian**: the original academic documentation associated with the Bachelor’s thesis.
-
-### Romanian academic documentation
-
-- [Academic project overview](./academic-project-overview-ro.md)
-- [System architecture](./arhitectura_sistemului.md)
-- [Problem statement](./formularea_problemei.md)
-- [Technology stack](./stack.md)
-- [Buildings and production rules](./cladiri.md)
-- [Non-functional requirements](./cerinte_non_functionale.md)
-- [Extended project documentation](./masterdoc.md)
 
 ## License
 

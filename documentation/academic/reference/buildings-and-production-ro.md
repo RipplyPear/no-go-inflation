@@ -6,9 +6,9 @@ Documentul descrie relația dintre resurse, loturi și clădirile de producție 
 
 | Resursă | Lot | Clădire | Nivel 1 | Nivel 2 | Nivel 3 |
 |---|---|---|---|---|---|
-| Grâne (G) | Câmp | Fermă | ![Fermă nivel 1](assets/frontend/buildings/farmer1.png) | ![Fermă nivel 2](assets/frontend/buildings/farmer2.png) | ![Fermă nivel 3](assets/frontend/buildings/farmer3.png) |
-| Piatră (P) | Carieră | Mină | ![Mină nivel 1](assets/frontend/buildings/mine1.png) | ![Mină nivel 2](assets/frontend/buildings/mine2.png) | ![Mină nivel 3](assets/frontend/buildings/mine3.png) |
-| Lemn (L) | Pădure | Lemnărie | ![Lemnărie nivel 1](assets/frontend/buildings/forester1.png) | ![Lemnărie nivel 2](assets/frontend/buildings/forester2.png) | ![Lemnărie nivel 3](assets/frontend/buildings/forester3.png) |
+| Grâne (G) | Câmp | Fermă | ![Fermă nivel 1](../assets/buildings/farmer1.png) | ![Fermă nivel 2](../assets/buildings/farmer2.png) | ![Fermă nivel 3](../assets/buildings/farmer3.png) |
+| Piatră (P) | Carieră | Mină | ![Mină nivel 1](../assets/buildings/mine1.png) | ![Mină nivel 2](../assets/buildings/mine2.png) | ![Mină nivel 3](../assets/buildings/mine3.png) |
+| Lemn (L) | Pădure | Lemnărie | ![Lemnărie nivel 1](../assets/buildings/forester1.png) | ![Lemnărie nivel 2](../assets/buildings/forester2.png) | ![Lemnărie nivel 3](../assets/buildings/forester3.png) |
 
 ## 2. Convenție de timp
 

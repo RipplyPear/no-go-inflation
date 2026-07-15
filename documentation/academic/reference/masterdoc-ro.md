@@ -8,6 +8,7 @@ description: Project source of truth
 
 # Masterdoc - No-go Inflation
 ***
+> **Status:** referință istorică de proiectare. Documentul surprinde decizii și idei din perioada de dezvoltare; pentru funcționalitățile implementate și documentația actuală, consultați [prezentarea proiectului](../project-overview-ro.md) și codul sursă.
 
 ## 1. Scopul documentului
 Acest document reprezintă sursa unică de adevăr pentru proiectul de licență. El definește varianta canonică a jocului: viziunea produsului, regulile de gameplay, entitățile, fluxurile utilizatorului, limitele de scope și deciziile tehnice de nivel înalt.

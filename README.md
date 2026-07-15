@@ -83,36 +83,42 @@ psql -U postgres -d no_go_inflation -f db/migrations/02_game_state_tables.sql
 
 ### 2. Configure and start the server
 
-Create `server/.env`:
-```
-HOST=0.0.0.0
-PORT=3000
+Copy the example configuration, then replace the placeholder database password and JWT secret:
 
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=no_go_inflation
-DB_USER=postgres
-DB_PASSWORD=your_password
-
-JWT_SECRET=replace_with_a_secure_value
-NODE_ENV=development
+```bash
+cp server/.env.example server/.env
 ```
+
 Then start the server:
+
 ```
 cd server
 npm install
 npm run dev
 ```
+
 ### 3. Start the Godot client
 
 Open `client/no-go-inflation` in Godot and run the project.
 
 By default, the client connects to `localhost`. To play on the same local network, enter the IPv4 address printed by the server in Server Configuration - for example, `192.168.1.144` - then verify and save it.
 
-### Documentation
+## Verify the server
 
-- [Technical documentation (English)](./documentation/README.md)
-- [Academic project overview (Romanian)](./documentation/academic-project-overview-ro.md)
+```bash
+cd server
+npm run format:check
+npm run lint
+npm test
+npm run build
+```
+
+The same checks run in GitHub Actions for pull requests targeting `main`.
+
+## Documentation
+
+- [Technical overview](./documentation/technical-overview.md)
+- [Academic documentation hub (Romanian)](./documentation/academic/README-ro.md)
 - [Database migrations](./server/db/migrations/)
 
 ### Development notes
