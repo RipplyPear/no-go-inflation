@@ -8,7 +8,7 @@ No-go Inflation is a 2D multiplayer game in which players build local economies,
 
 Built as my Bachelor's degree project at the Bucharest University of Economic Studies (ASE).
 
-![Gameplay map](documentation/screenshots/game-start-map.png)
+![Gameplay map](documentation/screenshots/en/gameplay.png)
 
 ## Highlights
 
@@ -33,9 +33,15 @@ Players receive their own map containing fields, forests, and quarries.
 - Recycle resources for gold, affecting the session's inflation.
 - At the end of the session, the server calculates individual scores and the collective economic outcome.
 
-| Lobby | Multiplayer session |
+## Screenshots
+
+| Start menu | Multiplayer lobby |
 | --- | --- |
-| ![Lobby with two players](documentation/screenshots/lobby-two-players.png) | ![Final results](documentation/screenshots/end-game-results.png) |
+| ![English start menu](documentation/screenshots/en/start-menu.png) | ![Lobby with two connected players](documentation/screenshots/en/lobby.png) |
+
+![Gameplay: building on terrain](documentation/screenshots/en/gameplay.png)
+
+![Shared market](documentation/screenshots/en/market.png)
 
 ## Architecture
 
@@ -45,7 +51,7 @@ The application follows an authoritative client-server design:
 - **Node.js / TypeScript server**: authentication, lobby management, game rules, economy calculations, and WebSocket communication.
 - **PostgreSQL**: persistent users, sessions, maps, resources, buildings, market offers, trades, and results.
 
-![System architecture](documentation/diagrams/architecture.png)
+![System architecture](documentation/diagrams/en/architecture.png)
 
 ## Tech stack
 
@@ -77,35 +83,42 @@ psql -U postgres -d no_go_inflation -f db/migrations/02_game_state_tables.sql
 
 ### 2. Configure and start the server
 
-Create `server/.env`:
-```
-HOST=0.0.0.0
-PORT=3000
+Copy the example configuration, then replace the placeholder database password and JWT secret:
 
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=no_go_inflation
-DB_USER=postgres
-DB_PASSWORD=your_password
-
-JWT_SECRET=replace_with_a_secure_value
-NODE_ENV=development
+```bash
+cp server/.env.example server/.env
 ```
+
 Then start the server:
+
 ```
 cd server
 npm install
 npm run dev
 ```
+
 ### 3. Start the Godot client
 
 Open `client/no-go-inflation` in Godot and run the project.
 
 By default, the client connects to `localhost`. To play on the same local network, enter the IPv4 address printed by the server in Server Configuration - for example, `192.168.1.144` - then verify and save it.
 
-### Documentation
-- [Academic project overview (Romanian)](./documentation/academic-project-overview-ro.md)
-- [Technical and functional documentation](./documentation/)
+## Verify the server
+
+```bash
+cd server
+npm run format:check
+npm run lint
+npm test
+npm run build
+```
+
+The same checks run in GitHub Actions for pull requests targeting `main`.
+
+## Documentation
+
+- [Technical overview](./documentation/technical-overview.md)
+- [Academic documentation hub (Romanian)](./documentation/academic/README-ro.md)
 - [Database migrations](./server/db/migrations/)
 
 ### Development notes

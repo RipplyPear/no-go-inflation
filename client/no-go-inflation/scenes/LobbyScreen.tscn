@@ -63,52 +63,52 @@ theme_override_constants/separation = 10
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=281321621]
 layout_mode = 2
-text = "Lobby"
+text = "LOBBY_TITLE"
 horizontal_alignment = 1
 
 [node name="LobbyCodeLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1714901730]
 layout_mode = 2
-text = "Cod Lobby:"
+text = "LOBBY_CODE_EMPTY"
 horizontal_alignment = 1
 
 [node name="CopyCodeButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1662887651]
 layout_mode = 2
-text = "Copiază cod"
+text = "LOBBY_COPY_CODE"
 
 [node name="ParticipantsLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1003802219]
 custom_minimum_size = Vector2(360, 80)
 layout_mode = 2
-text = "Participanți:"
+text = "LOBBY_PARTICIPANTS_EMPTY"
 autowrap_mode = 3
 
 [node name="CreateLobbyButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1090317721]
 layout_mode = 2
-text = "Creează Lobby"
+text = "LOBBY_CREATE"
 
 [node name="JoinCodeInput" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1315785939]
 layout_mode = 2
-placeholder_text = "Cod Lobby"
+placeholder_text = "LOBBY_CODE_PLACEHOLDER"
 
 [node name="PasteCodeButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1490605966]
 layout_mode = 2
-text = "Lipește cod"
+text = "LOBBY_PASTE_CODE"
 
 [node name="JoinLobbyButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=460369409]
 layout_mode = 2
-text = "Alătură-te"
+text = "LOBBY_JOIN"
 
 [node name="JoinBackButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1363541509]
 layout_mode = 2
-text = "Înapoi"
+text = "COMMON_BACK"
 
 [node name="StartSessionButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=35852102]
 layout_mode = 2
 disabled = true
-text = "Pornește o sesiune"
+text = "LOBBY_START_SESSION"
 
 [node name="BackButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=4426173]
 layout_mode = 2
-text = "Înapoi"
+text = "COMMON_BACK"
 
 [node name="StatusLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=601103735]
 custom_minimum_size = Vector2(360, 50)

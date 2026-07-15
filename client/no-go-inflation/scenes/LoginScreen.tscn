@@ -63,24 +63,24 @@ theme_override_constants/separation = 10
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1645995244]
 layout_mode = 2
-text = "Intrare în cont"
+text = "AUTH_LOGIN_TITLE"
 horizontal_alignment = 1
 
 [node name="EmailLineEdit" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1195046219]
 layout_mode = 2
-placeholder_text = "Email"
+placeholder_text = "AUTH_EMAIL"
 
 [node name="PasswordLineEdit" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=780583484]
 layout_mode = 2
-placeholder_text = "Parolă"
+placeholder_text = "AUTH_PASSWORD"
 
 [node name="LoginButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1549951960]
 layout_mode = 2
-text = "Conectare"
+text = "AUTH_LOGIN"
 
 [node name="BackButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=619705509]
 layout_mode = 2
-text = "Înapoi"
+text = "COMMON_BACK"
 
 [node name="StatusLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=749658426]
 layout_mode = 2

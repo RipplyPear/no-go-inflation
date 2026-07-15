@@ -1,9 +1,11 @@
 export class AppError extends Error {
-  public readonly statusCode: number;
-
-  constructor(message: string, statusCode = 400) {
+  constructor(
+    message: string,
+    public readonly statusCode = 400,
+    public readonly code = 'UNKNOWN_ERROR',
+    public readonly params: Record<string, string | number> = {}
+  ) {
     super(message);
-    this.statusCode = statusCode;
     this.name = 'AppError';
   }
 }

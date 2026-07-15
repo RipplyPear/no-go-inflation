@@ -69,35 +69,35 @@ theme_override_constants/separation = 10
 [node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=604902699]
 layout_mode = 2
 theme = ExtResource("1_5ynd0")
-text = "Meniu Principal"
+text = "PLAYER_MENU_TITLE"
 horizontal_alignment = 1
 
 [node name="HostButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=905112970]
 layout_mode = 2
 theme = ExtResource("1_5ynd0")
-text = "Găzduiește un joc"
+text = "PLAYER_MENU_HOST"
 
 [node name="JoinButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=2012874199]
 layout_mode = 2
 theme = ExtResource("1_5ynd0")
-text = "Alătură-te unui joc"
+text = "PLAYER_MENU_JOIN"
 
 [node name="HowToPlayButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=81180330]
 layout_mode = 2
 theme = ExtResource("1_5ynd0")
-text = "Cum se joacă?"
+text = "PLAYER_MENU_HOW_TO_PLAY"
 
 [node name="AboutButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=2035586168]
 layout_mode = 2
 theme = ExtResource("1_5ynd0")
-text = "Despre"
+text = "MENU_ABOUT"
 
 [node name="LogoutButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=428458262]
 layout_mode = 2
 theme = ExtResource("1_5ynd0")
-text = "Deconectare"
+text = "PLAYER_MENU_LOGOUT"
 
 [node name="ExitButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1379205631]
 layout_mode = 2
 theme = ExtResource("1_5ynd0")
-text = "Ieșire"
+text = "MENU_QUIT"

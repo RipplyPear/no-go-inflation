@@ -70,11 +70,11 @@ func _on_login_pressed() -> void:
 	var password := password_input.text
 	
 	if email.is_empty() or password.is_empty():
-		_set_status("Completează email și parolă.")
+		_set_status(tr("AUTH_LOGIN_REQUIRED"))
 		return
 	
 	_set_buttons_disabled(true)
-	_set_status("Autentificare...")
+	_set_status(tr("AUTH_LOGGING_IN"))
 	
 	AuthClient.login_user(email, password)
 
@@ -84,7 +84,9 @@ func _on_back_pressed() -> void:
 
 
 func _on_login_succeeded(user: Dictionary, token: String) -> void:
-	_set_status("Login reușit. Bun venit, %s!" % str(user.get("username", "jucător")))
+	_set_status(tr("AUTH_LOGIN_SUCCESS").format({
+		"username": str(user.get("username", "player"))
+	}))
 	GameSocket.connect_to_server(token)
 
 
@@ -94,7 +96,7 @@ func _on_auth_failed(message: String) -> void:
 
 
 func _on_ws_connected() -> void:
-	_set_status("WebSocket conectat. Se validează sesiunea...")
+	_set_status(tr("AUTH_WEBSOCKET_VALIDATING"))
 
 
 func _on_ws_connection_failed(message: String) -> void:
@@ -116,7 +118,7 @@ func _on_ws_message_received(message: Dictionary) -> void:
 		if typeof(payload) == TYPE_DICTIONARY:
 			_set_status(str(payload.get("message", "Eroare necunoscută.")))
 		else:
-			_set_status("Eroare necunoscută.")
+			_set_status(tr("AUTH_UNKNOWN_ERROR"))
 		
 		AuthClient.logout()
 		_set_buttons_disabled(false)

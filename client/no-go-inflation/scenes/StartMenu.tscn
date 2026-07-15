@@ -64,25 +64,31 @@ theme_override_constants/separation = 10
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=281321621]
 layout_mode = 2
-text = "Bun venit!"
+text = "MENU_WELCOME"
 horizontal_alignment = 1
 
 [node name="LoginButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=2009534765]
 layout_mode = 2
-text = "Conectare"
+text = "MENU_LOGIN"
 
 [node name="RegisterButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1000145172]
 layout_mode = 2
-text = "Înregistrare"
-
-[node name="ServerConfigButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1564386638]
-layout_mode = 2
-text = "Configurare server"
+text = "MENU_REGISTER"
 
 [node name="AboutButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1468028763]
 layout_mode = 2
-text = "Despre"
+text = "MENU_ABOUT"
 
 [node name="ExitButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=384747208]
 layout_mode = 2
-text = "Ieșire"
+text = "MENU_QUIT"
+
+[node name="HSeparator" type="HSeparator" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=777459113]
+layout_mode = 2
+
+[node name="ServerConfigButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1564386638]
+layout_mode = 2
+text = "MENU_SERVER_CONFIGURATION"
+
+[node name="LanguageOptionButton" type="OptionButton" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=25053069]
+layout_mode = 2

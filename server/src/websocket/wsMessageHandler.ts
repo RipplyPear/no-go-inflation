@@ -25,6 +25,21 @@ import { forceFinishSessionForTesting, seedBotOfferForTesting } from '../game/se
 import { getConnectedClients } from './wsClients';
 import { recycleResource } from '../game/services/recycle.service';
 import { WebSocket } from 'ws';
+import { ClientError } from '../errors/ClientError';
+
+function toErrorPayload(error: unknown, fallbackCode: string) {
+  if (error instanceof ClientError) {
+    return {
+      code: error.code,
+      params: error.params,
+    };
+  }
+
+  return {
+    code: fallbackCode,
+    params: {},
+  };
+}
 
 export async function handleClientMessage(ws: AuthenticatedWebSocket, message: ClientMessage) {
   switch (message.type) {
@@ -49,9 +64,7 @@ export async function handleClientMessage(ws: AuthenticatedWebSocket, message: C
 
         sendJson(ws, 'LOBBY_STATE', lobbyState);
       } catch (error) {
-        sendJson(ws, 'ERROR', {
-          message: error instanceof Error ? error.message : 'Nu s-a putut crea lobby-ul.',
-        });
+        sendJson(ws, 'ERROR', toErrorPayload(error, 'LOBBY_CREATE_FAILED'));
       }
 
       break;
@@ -70,10 +83,7 @@ export async function handleClientMessage(ws: AuthenticatedWebSocket, message: C
 
         await broadcastLobbyStateToSession(lobbyState.sessionId);
       } catch (error) {
-        sendJson(ws, 'ERROR', {
-          message:
-            error instanceof Error ? error.message : 'Nu s-a putut realiza alăturarea la lobby.',
-        });
+        sendJson(ws, 'ERROR', toErrorPayload(error, 'LOBBY_JOIN_FAILED'));
       }
 
       break;
@@ -149,9 +159,7 @@ export async function handleClientMessage(ws: AuthenticatedWebSocket, message: C
 
         await broadcastSessionStateToSession(result.sessionId);
       } catch (error) {
-        sendJson(ws, 'ERROR', {
-          message: error instanceof Error ? error.message : 'Nu s-a putut porni sesiunea.',
-        });
+        sendJson(ws, 'ERROR', toErrorPayload(error, 'LOBBY_START_FAILED'));
       }
 
       break;

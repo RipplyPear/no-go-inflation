@@ -1,0 +1,229 @@
+keys,en,ro
+MENU_WELCOME,Welcome!,Bun venit!
+MENU_LOGIN,Log in,Conectare
+MENU_REGISTER,Register,Înregistrare
+MENU_SERVER_CONFIGURATION,Server configuration,Configurare server
+MENU_ABOUT,About,Despre
+MENU_QUIT,Quit,Ieșire
+AUTH_LOGIN_TITLE,Log in,Intrare în cont
+AUTH_REGISTER_TITLE,Create an account,Creare cont
+AUTH_EMAIL,Email,Email
+AUTH_PASSWORD,Password,Parolă
+AUTH_USERNAME,Username,Nume utilizator
+AUTH_LOGIN,Log in,Conectare
+AUTH_REGISTER,Register,Înregistrare
+AUTH_LOGIN_REQUIRED,Enter your email and password.,Completează email și parolă.
+AUTH_REGISTER_REQUIRED,"Enter a username, email, and password.","Completează username, email și parolă."
+AUTH_LOGGING_IN,Logging in...,Autentificare...
+AUTH_REGISTERING,Creating account...,Se creează contul...
+AUTH_REGISTER_SUCCESS,Account created successfully. You can now log in.,Cont creat cu succes. Te poți autentifica.
+AUTH_REGISTER_SUCCESS_BACK,Account created successfully. Press Back and log in.,Cont creat cu succes. Apasă Înapoi și autentifică-te.
+AUTH_LOGIN_SUCCESS,"Login successful. Welcome, {username}!","Login reușit. Bun venit, {username}!"
+AUTH_WEBSOCKET_VALIDATING,WebSocket connected. Validating session...,WebSocket conectat. Se validează sesiunea...
+AUTH_UNKNOWN_ERROR,An unknown error occurred.,Eroare necunoscută.
+AUTH_USERNAME_TOO_SHORT,"Username must be at least {min} characters long.","Username-ul trebuie să aibă cel puțin {min} caractere."
+AUTH_USERNAME_TOO_LONG,"Username cannot exceed {max} characters.","Username-ul nu poate depăși {max} caractere."
+AUTH_INVALID_EMAIL,Enter a valid email address.,Introdu o adresă de email validă.
+AUTH_PASSWORD_TOO_SHORT,"Password must be at least {min} characters long.","Parola trebuie să aibă cel puțin {min} caractere."
+AUTH_INVALID_INPUT,The submitted data is invalid.,Datele introduse nu sunt valide.
+AUTH_IDENTITY_ALREADY_EXISTS,This username or email address is already in use.,Username-ul sau adresa de email este deja folosită.
+AUTH_INVALID_CREDENTIALS,Incorrect email or password.,Email sau parolă incorectă.
+AUTH_REGISTRATION_FAILED,Could not complete registration. Please try again.,Nu s-a putut finaliza înregistrarea. Încearcă din nou.
+COMMON_BACK,Back,Înapoi
+SERVER_TITLE,Server configuration,Configurare server
+SERVER_CURRENT,Current server: {host},Server curent: {host}
+SERVER_ADDRESS_PLACEHOLDER,Example: 192.168.1.144,Exemplu: 192.168.1.144
+SERVER_TEST_AND_SAVE,Test and save,Verifică și salvează
+SERVER_INVALID_ADDRESS,Enter a valid IPv4 address or leave the field empty for localhost.,Introdu o adresă IPv4 validă sau lasă câmpul gol pentru localhost.
+SERVER_TESTING,Testing {url}...,Se verifică {url}...
+SERVER_CONNECT_SUCCESS,Connection successful. The server address has been saved.,Conexiune reușită. Adresa serverului a fost salvată.
+SERVER_DESCRIPTION,Enter the IPv4 address of the server.\nLeave empty for localhost.,Introdu adresa IPv4 a server-ului.\nLasă liber pentru localhost.
+SERVER_REQUEST_ERROR,Server testing could not begin.,Nu s-a putut inițializa verificarea serverului.
+SERVER_REQUEST_FAILED,"The server could not be reached. Check the address, the network and the firewall.","Serverul nu a putut fi contactat. Verifică adresa, rețeaua și firewall-ul."
+SERVER_RESPONSE,Server answered with HTTP status {status}.,Serverul a răspuns cu status HTTP {status}.
+SERVER_NOT_NO_GO_INFLATION,"The address responds, but it does not seem to be a No go Inflation server.","Adresa răspunde, dar nu pare să fie un server No-go Inflation."
+SERVER_SAVE_ERROR,"The server is available, but the address could not be saved.","Serverul este disponibil, dar adresa nu a putut fi salvată."
+ABOUT_TITLE,About,Despre
+ABOUT_BODY,"University of Economic Studies Bucharest\nFaculty of Cybernetics, Statistics and Economic Informatics\nSpecialization in Economic Informatics\n\nBachelor's thesis\nMODELLING AND BALANCING OF DEMAND AND PRODUCTION IN A COLLABORATIVE STRATEGY GAME\n\nGraduate\nMincinoiu Dragoș-Matei\n\nScientific coordinator\nAssistant. dr. Vîlcea Alexandru-Lucian\n\nBucharest, July 2026","Academia de Studii Economice din București\nFacultatea de Cibernetică, Statistică și Informatică Economică\nSpecializarea Informatică Economică\n\nLucrare de licență\nMODELAREA ȘI ECHILIBRAREA CERERII ȘI A PRODUCȚIEI ÎNTR-UN JOC COLABORATIV DE STRATEGIE\n\nAbsolvent\nMincinoiu Dragoș-Matei\n\nCoordonator științific\nAsist. univ. dr. Vîlcea Alexandru-Lucian\n\nBucurești, iulie 2026"
+HOW_TO_PLAY_TITLE,How to play,Cum se joacă
+HOW_TO_PLAY_BODY,"1. The host creates a lobby and sends the code to the other players.\n2. Each player gets their own map.\n3. Build buildings on matching tiles.\n4. Buildings produce resources over time.\n5. Collect resources and use them for upgrades or trades.\n6. Create or accept offers in the market.\n7. Keep inflation under control until the end of the session.","1. Gazda creează un lobby și trimite codul celorlalți jucători.\n2. Fiecare jucător primește o hartă proprie.\n3. Construiește clădiri pe tile-uri potrivite.\n4. Clădirile produc resurse în timp.\n5. Colectează resursele și folosește-le pentru îmbunătățiri sau tranzacții.\n6. Creează sau acceptă oferte în piață.\n7. Menține inflația sub control până la finalul sesiunii."
+LOBBY_TITLE,Lobby,Lobby
+LOBBY_CODE_EMPTY,Lobby code: -,Cod lobby: -
+LOBBY_CODE,Lobby code: {code},Cod lobby: {code}
+LOBBY_COPY_CODE,Copy code,Copiază codul
+LOBBY_CODE_PLACEHOLDER,Lobby code,Cod lobby
+LOBBY_PASTE_CODE,Paste code,Lipește codul
+LOBBY_JOIN,Join,Alătură-te
+LOBBY_CREATE,Create lobby,Creează lobby
+LOBBY_START_SESSION,Start session,Pornește sesiunea
+LOBBY_BACK_TO_MENU,Back to menu,Înapoi la meniu
+LOBBY_PARTICIPANTS_EMPTY,Participants: -,Participanți: -
+LOBBY_PARTICIPANTS_LIST,"Participants:
+{participants}","Participanți:
+{participants}"
+LOBBY_JOIN_WITH_CODE,Join with a lobby code.,Alătură-te cu un cod.
+LOBBY_CREATING,Creating lobby...,Se creează lobby-ul...
+LOBBY_ENTER_RECEIVED_CODE,Enter the code received from the host.,Introdu codul primit de la gazdă.
+LOBBY_CLIPBOARD_EMPTY,The clipboard does not contain a lobby code.,Clipboard-ul nu conține un cod de lobby.
+LOBBY_CODE_PASTED,Lobby code pasted: {code},Cod lipit: {code}
+LOBBY_JOINING,Joining lobby...,Se încearcă alăturarea la lobby...
+LOBBY_CODE_COPIED,Lobby code copied: {code},Codul lobby-ului a fost copiat: {code}
+LOBBY_NO_ACTIVE_LOBBY,There is no active lobby.,Nu există lobby activ.
+LOBBY_STARTING,Starting session...,Se pornește sesiunea...
+LOBBY_CREATED_WAITING,Lobby created. Waiting for another player to connect.,Lobby creat. Se așteaptă conectarea unui alt jucător.
+LOBBY_CREATED_READY,Lobby created. You can start the session.,Lobby creat. Poți porni sesiunea.
+LOBBY_JOINED_WAITING,You joined the lobby. Waiting for the host to start the session.,Te-ai alăturat lobby-ului. Așteaptă ca gazda să pornească sesiunea.
+LOBBY_COULD_NOT_SEND,Could not send the create lobby request.,Nu s-a putut trimite cererea de creare lobby.
+LOBBY_ENTER_CODE,Enter lobby code.,Introdu codul lobby-ului.
+LOBBY_COULD_NOT_SEND_JOIN,Could not send the join lobby request.,Nu s-a putut trimite cererea de alăturare la lobby.
+LOBBY_NO_CODE_TO_COPY,There is no lobby code to copy yet.,Nu există încă un cod de lobby de copiat.
+LOBBY_COULD_NOT_SEND_START,Could not send the start session request.,Nu s-a putut trimite cererea de pornire a sesiunii.
+LOBBY_CANCELLED_DEFAULT,The lobby was closed.,Lobby-ul a fost închis.
+LOBBY_STATE_INVALID,Invalid lobby state received from the server.,S-a primit o stare de lobby invalidă de la server.
+LOBBY_SESSION_STATE_INVALID,Invalid session state received from the server.,S-a primit o stare de sesiune invalidă de la server.
+LOBBY_UNKNOWN_ERROR,An unknown lobby error occurred.,A apărut o eroare necunoscută în lobby.
+LOBBY_DEFAULT_PLAYER,Player,Jucător
+LOBBY_ROLE_HOST,Host,Gazdă
+LOBBY_ROLE_PLAYER,Player,Jucător
+LOBBY_CONNECTION_CONNECTED,connected,conectat
+LOBBY_CONNECTION_DISCONNECTED,disconnected,deconectat
+LOBBY_PARTICIPANT_ENTRY,"- {name} ({role}, {connection})","- {name} ({role}, {connection})"
+LOBBY_CREATE_FAILED,Could not create the lobby. Please try again.,Nu s-a putut crea lobby-ul. Încearcă din nou.
+LOBBY_JOIN_FAILED,Could not join the lobby. Please try again.,Nu s-a putut realiza alăturarea la lobby. Încearcă din nou.
+LOBBY_START_FAILED,Could not start the session. Please try again.,Nu s-a putut porni sesiunea. Încearcă din nou.
+LOBBY_INVALID_JOIN_PAYLOAD,The lobby code is invalid.,Codul de lobby este invalid.
+LOBBY_NOT_FOUND,The lobby does not exist.,Lobby-ul nu există.
+LOBBY_UNAVAILABLE,This lobby is no longer available.,Lobby-ul nu mai este disponibil.
+LOBBY_FULL,This lobby is full.,Lobby-ul este plin.
+LOBBY_INVALID_START_PAYLOAD,The session identifier is invalid.,Identificatorul sesiunii este invalid.
+LOBBY_SESSION_NOT_FOUND,The session does not exist.,Sesiunea nu există.
+LOBBY_SESSION_NOT_IN_LOBBY,The session is no longer in the lobby state.,Sesiunea nu mai este în starea de lobby.
+LOBBY_START_NOT_HOST,Only the host can start the session.,Doar gazda poate porni sesiunea.
+LOBBY_START_NOT_ENOUGH_PLAYERS,At least two connected players are required to start the session.,Sunt necesari cel puțin doi jucători conectați pentru a porni sesiunea.
+PLAYER_MENU_TITLE,Main menu,Meniu principal
+PLAYER_MENU_HOST,Host a game,Găzduiește un joc
+PLAYER_MENU_JOIN,Join a game,Alătură-te unui joc
+PLAYER_MENU_HOW_TO_PLAY,How to play?,Cum se joacă?
+PLAYER_MENU_LOGOUT,Log out,Deconectare
+GAME_TIME,"Day {day} - {time}","Ziua {day} - {time}"
+GAME_RESOURCES,"Wood: {wood} | Stone: {stone} | Grain: {grain} | Gold: {gold} | Inflation: {inflation}","Lemn: {wood} | Piatră: {stone} | Grâne: {grain} | Galbeni: {gold} | Inflație: {inflation}"
+GAME_MARKET,Market,Piață
+GAME_LEAVE_SESSION,Leave session,Părăsește jocul
+GAME_LEAVE_CONFIRM,Are you sure you want to leave the session?,Ești sigur că vrei să părăsești jocul?
+GAME_CONFIRM_LEAVE,Yes leave,Sunt sigur
+
+COMMON_CLOSE,Close,Închide
+COMMON_UNKNOWN_ERROR,An unknown error occurred.,A apărut o eroare necunoscută.
+
+GAME_DAY_MONDAY,Monday,Luni
+GAME_DAY_TUESDAY,Tuesday,Marți
+GAME_DAY_WEDNESDAY,Wednesday,Miercuri
+GAME_DAY_THURSDAY,Thursday,Joi
+GAME_DAY_FRIDAY,Friday,Vineri
+GAME_DAY_FALLBACK,Day {day},Ziua {day}
+GAME_LEAVING_SESSION,Leaving session...,Părăsești sesiunea...
+GAME_SESSION_CANCELLED,The session was stopped.,Sesiunea a fost oprită.
+GAME_NO_ACTIVE_SESSION,There is no active session for {action}.,Nu există sesiune activă pentru {action}.
+GAME_MESSAGE_SEND_FAILED,Could not send the request for {action}.,Nu s-a putut trimite cererea pentru {action}.
+GAME_INVALID_WS_PAYLOAD,Invalid {message_type} payload received from the server.,S-a primit un payload {message_type} invalid de la server.
+GAME_UNHANDLED_WS_MESSAGE,Unhandled WebSocket message: {message_type},Mesaj WebSocket netratat: {message_type}.
+GAME_SERVER_UNKNOWN_ERROR,Server error: an unknown error occurred.,Eroare server: a apărut o eroare necunoscută.
+GAME_RECYCLE_REQUEST_SENT,Recycling request sent.,Cerere de reciclare trimisă.
+GAME_RECYCLED,"You recycled {quantity} resources and received {gold} gold.","Ai reciclat {quantity} resurse și ai primit {gold} galbeni."
+GAME_OFFER_CREATED,The offer was created.,Oferta a fost creată.
+GAME_OFFER_CANCELLED,The offer was withdrawn.,Oferta a fost retrasă.
+GAME_TRADE_COMPLETED,Trade completed.,Tranzacție finalizată.
+GAME_MARKET_REQUEST,market,piață
+GAME_MAP_ACTION,map action,acțiunea pe hartă
+GAME_OFFER_CREATION,offer creation,crearea ofertei
+GAME_OFFER_ACCEPTANCE,offer acceptance,acceptarea ofertei
+GAME_OFFER_CANCELLATION,offer withdrawal,retragerea ofertei
+GAME_SESSION_LEAVE,leaving the session,părăsirea sesiunii
+GAME_RECYCLING,recycling,reciclare
+
+TILE_FIELD,Field,Teren agricol
+TILE_QUARRY,Quarry,Carieră
+TILE_FOREST,Forest,Pădure
+BUILDING_FARM,Farm,Fermă
+BUILDING_MINE,Mine,Mină
+BUILDING_LUMBERYARD,Lumberyard,Lemnărie
+RESOURCE_WOOD,Wood,Lemn
+RESOURCE_STONE,Stone,Piatră
+RESOURCE_GRAIN,Grain,Grâne
+RESOURCE_GOLD,Gold,Galbeni
+BUILDING_BUILD,Build,Construiește
+BUILDING_UPGRADE,Upgrade,Upgradează
+BUILDING_COLLECT,Collect,Colectează
+BUILDING_LOT_TITLE,"Plot ({x}, {y})","Lot ({x}, {y})"
+BUILDING_EMPTY_INFO,"Tile type: {tile}\nCan build: {building}\nBuild cost: {cost}\nLevel 1 production: 1 unit/minute\nLevel 1 capacity: {capacity} units","Tip lot: {tile}\nSe poate construi: {building}\nCost construire: {cost}\nProducție nivel 1: 1 unitate/minut\nCapacitate nivel 1: {capacity} unități"
+BUILDING_TITLE,{building} - Level {level},{building} - Nivel {level}
+BUILDING_LEVEL,Level: {level},Nivel: {level}
+BUILDING_PRODUCTION,Production: {amount} units/minute,Producție: {amount} unități/minut
+BUILDING_STORAGE,Storage: {stored} / {capacity},Stocare: {stored} / {capacity}
+BUILDING_UPGRADE_COST,Upgrade cost: {cost},Cost upgrade: {cost}
+BUILDING_AFTER_UPGRADE,"After upgrade: {production} units/minute, capacity {capacity}","După upgrade: {production} unități/minut, capacitate {capacity}"
+BUILDING_MAX_LEVEL,Building is at maximum level.,Clădirea este la nivel maxim.
+BUILDING_COST_ITEM,{amount} {resource},{amount} {resource}
+
+MARKET_TITLE,Market,Piață
+MARKET_CREATE_OFFER,Create offer,Creează ofertă
+MARKET_BUY,Buy,Cumpăr
+MARKET_SELL,Sell,Vând
+MARKET_QUANTITY,Quantity:,Cantitate:
+MARKET_PRICE,Price:,Preț:
+MARKET_CREATE,Create,Creează
+MARKET_AVAILABLE_OFFERS,Available offers,Oferte disponibile
+MARKET_RECYCLE_RESOURCES,Recycle resources,Reciclare resurse
+MARKET_RECYCLE,Recycle,Reciclează
+MARKET_PLAYER_STATE,Player state,Starea jucătorului
+MARKET_PLAYER_STATE_OVERVIEW,Player and market state,Stare jucător / piață
+MARKET_NO_ACTIVE_OFFERS,There are no active offers.,Nu există oferte active.
+MARKET_UNKNOWN_CREATOR,unknown,necunoscut
+MARKET_OFFER_ROW,"{type} {resource} | remaining: {remaining} | price: {price} | from: {creator}","{type} {resource} | rămas: {remaining} | preț: {price} | de la: {creator}"
+MARKET_ACCEPT,Accept,Acceptă
+MARKET_WITHDRAW,Withdraw,Retrage
+MARKET_BUY_ACTION,Buy,Cumpără
+MARKET_SELL_ACTION,Sell,Vinde
+MARKET_MINIMUM_QUANTITY,The minimum accepted quantity is {quantity}.,Cantitatea minimă acceptată este {quantity}.
+MARKET_QUANTITY_EXCEEDS_AVAILABLE,The requested quantity exceeds the available quantity.,Cantitatea cerută depășește cantitatea disponibilă.
+MARKET_INSUFFICIENT_GOLD,"You do not have enough gold. Cost: {cost}, available: {available}.","Nu ai suficienți galbeni. Cost: {cost}, disponibil: {available}."
+MARKET_INSUFFICIENT_RESOURCE,"You do not have enough resources. Required: {required}, available: {available}.","Nu ai suficiente resurse. Necesar: {required}, disponibil: {available}."
+MARKET_NO_RESOURCE_TO_SELL,You do not own this resource to sell.,Nu ai această resursă de vândut.
+MARKET_PLAYER_STATE_BODY,"Resources:\nWood: {wood}\nStone: {stone}\nGrain: {grain}\nGold: {gold}\n\nMarket indicators:\nInflation: {inflation}\nAverage wood price: {wood_price}\nAverage stone price: {stone_price}\nAverage grain price: {grain_price}","Resurse:\nLemn: {wood}\nPiatră: {stone}\nGrâne: {grain}\nGalbeni: {gold}\n\nIndicatori piață:\nInflație: {inflation}\nPreț mediu lemn: {wood_price}\nPreț mediu piatră: {stone_price}\nPreț mediu grâne: {grain_price}"
+
+GAME_BUILD_INVALID_PAYLOAD,The selected tile is invalid.,Lotul selectat este invalid.
+GAME_TILE_NOT_FOUND,The selected tile does not exist.,Lotul selectat nu există.
+GAME_TILE_OCCUPIED,This tile already contains a building.,Pe acest lot există deja o clădire.
+GAME_BUILD_INSUFFICIENT_RESOURCES,"Insufficient resources to build. Missing: {resource}.","Resurse insuficiente pentru construire. Lipsește: {resource}."
+GAME_COLLECT_INVALID_PAYLOAD,The selected building is invalid.,Clădirea selectată este invalidă.
+GAME_NO_BUILDING,There is no building on this tile.,Nu există clădire pe acest lot.
+GAME_NOTHING_TO_COLLECT,This building has no resources to collect.,Clădirea nu are resurse de colectat.
+GAME_UPGRADE_INVALID_PAYLOAD,The selected building is invalid.,Clădirea selectată este invalidă.
+GAME_UPGRADE_MAX_LEVEL,This building is already at the maximum level.,Clădirea este deja la nivel maxim.
+GAME_UPGRADE_INSUFFICIENT_RESOURCES,"Insufficient resources to upgrade. Missing: {resource}.","Resurse insuficiente pentru upgrade. Lipsește: {resource}."
+MARKET_INVALID_OFFER,The offer data is invalid.,Datele ofertei sunt invalide.
+MARKET_OFFER_NOT_FOUND,The offer does not exist.,Oferta nu există.
+MARKET_OFFER_UNAVAILABLE,This offer is no longer available.,Oferta nu mai este disponibilă.
+MARKET_CANNOT_ACCEPT_OWN_OFFER,You cannot accept your own offer.,Nu poți accepta propria ofertă.
+MARKET_CANNOT_WITHDRAW_OFFER,You cannot withdraw this offer.,Nu poți retrage această ofertă.
+MARKET_ACTION_FAILED,The market action could not be completed.,Acțiunea din piață nu a putut fi finalizată.
+
+RESULT_TITLE,Session result,Rezultatul sesiunii
+RESULT_WIN,VICTORY,VICTORIE
+RESULT_LOSS,DEFEAT,ÎNFRÂNGERE
+RESULT_SUMMARY,"Game result: {result}\nFinal inflation: {inflation}\nAverage economic score: {score}\n\nPlayer results:","Final de joc: {result}\nInflație finală: {inflation}\nScor economic mediu: {score}\n\nRezultate jucători:"
+RESULT_NO_INDIVIDUAL,No individual results are available.,Nu există rezultate individuale disponibile.
+RESULT_PLAYER_LINE,"- {name} | score: {score} | rank: {rank} | trades: {trades} | value: {value}","- {name} | scor: {score} | rang: {rank} | tranzacții: {trades} | valoare: {value}"
+
+DEV_FINISH_SESSION,DEV: finish session,DEV: finalizează sesiunea
+DEV_BOT_OFFER,DEV: bot offer ({price} gold),DEV: ofertă bot ({price} galbeni)
+DEV_FINISH_SENT,DEV_FORCE_FINISH_SESSION sent.,DEV_FORCE_FINISH_SESSION trimis.
+DEV_BOT_OFFER_SENT,DEV_SEED_BOT_OFFER sent at price {price}.,DEV_SEED_BOT_OFFER trimis cu preț {price}.
+DEV_BOT_OFFER_CREATED,The test bot offer was created.,Oferta botului de test a fost creată.
+
+NETWORK_REQUEST_SEND_FAILED,Could not send the request to the server.,Nu s-a putut trimite cererea către server.
+NETWORK_SERVER_UNREACHABLE,Could not contact the server.,Nu s-a putut contacta serverul.
+NETWORK_INVALID_RESPONSE,Invalid response received from the server.,S-a primit un răspuns invalid de la server.
+WS_MISSING_AUTH_TOKEN,No authentication token is available for the WebSocket connection.,Nu există token de autentificare pentru conexiunea WebSocket.
+WS_CONNECTION_FAILED,The WebSocket connection failed.,Conexiunea WebSocket a eșuat.
+USER_ALREADY_CONNECTED,This user is already connected from another client.,Acest utilizator este deja conectat dintr-un alt client.

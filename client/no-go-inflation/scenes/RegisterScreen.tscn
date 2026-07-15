@@ -63,28 +63,28 @@ theme_override_constants/separation = 10
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=2134579007]
 layout_mode = 2
-text = "Creare cont"
+text = "AUTH_REGISTER_TITLE"
 horizontal_alignment = 1
 
 [node name="UsernameLineEdit" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1870016182]
 layout_mode = 2
-placeholder_text = "Nume de uitilizator"
+placeholder_text = "AUTH_USERNAME"
 
 [node name="EmailLineEdit" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1567318229]
 layout_mode = 2
-placeholder_text = "Email"
+placeholder_text = "AUTH_EMAIL"
 
 [node name="PasswordLineEdit" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1778354011]
 layout_mode = 2
-placeholder_text = "Parolă"
+placeholder_text = "AUTH_PASSWORD"
 
 [node name="RegisterButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1155454923]
 layout_mode = 2
-text = "Înregistrare"
+text = "AUTH_REGISTER"
 
 [node name="BackButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1914861649]
 layout_mode = 2
-text = "Înapoi"
+text = "COMMON_BACK"
 
 [node name="StatusLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=601103735]
 custom_minimum_size = Vector2(360, 50)

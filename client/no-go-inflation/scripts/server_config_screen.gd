@@ -37,10 +37,9 @@ func _populate_form() -> void:
 
 
 func _update_current_server_label() -> void:
-	current_server_label.text = (
-		"Server curent: %s"
-		% ClientConfig.get_api_base_url()
-	)
+	current_server_label.text = tr("SERVER_CURRENT").format({
+		"host": ClientConfig.get_server_host()
+	})
 
 
 func _on_host_submitted(_submitted_text: String) -> void:
@@ -51,9 +50,7 @@ func _on_test_and_save_pressed() -> void:
 	var candidate_host := ClientConfig.normalize_server_host(host_input.text)
 
 	if not _is_supported_host(candidate_host):
-		status_label.text = (
-			"Introdu o adresă IPv4 validă sau lasă câmpul gol pentru localhost."
-		)
+		status_label.text = tr("SERVER_INVALID_ADDRESS")
 		return
 
 	_pending_host = candidate_host
@@ -64,7 +61,9 @@ func _on_test_and_save_pressed() -> void:
 		ClientConfig.SERVER_PORT,
 	]
 
-	status_label.text = "Se verifică %s..." % health_url
+	status_label.text = tr("SERVER_TESTING").format({
+		"url": health_url
+	})
 
 	var request_error := health_request.request(
 		health_url,
@@ -74,9 +73,7 @@ func _on_test_and_save_pressed() -> void:
 
 	if request_error != OK:
 		_set_testing_state(false)
-		status_label.text = (
-			"Nu s-a putut inițializa verificarea serverului."
-		)
+		status_label.text = tr("SERVER_REQUEST_ERROR")
 
 
 func _is_supported_host(host: String) -> bool:
@@ -103,17 +100,13 @@ func _on_health_request_completed(
 	_set_testing_state(false)
 
 	if result != HTTPRequest.RESULT_SUCCESS:
-		status_label.text = (
-			"Serverul nu a putut fi contactat. "
-			+ "Verifică adresa, rețeaua și firewall-ul."
-		)
+		status_label.text = tr("SERVER_REQUEST_FAILED")
 		return
 
 	if response_code != 200:
-		status_label.text = (
-			"Serverul a răspuns cu status HTTP %d."
-			% response_code
-		)
+		status_label.text = tr("SERVER_RESPONSE").format({
+			"status": response_code
+		})
 		return
 
 	var parsed_response = JSON.parse_string(
@@ -124,17 +117,13 @@ func _on_health_request_completed(
 		typeof(parsed_response) != TYPE_DICTIONARY
 		or str(parsed_response.get("message", "")) != "OK"
 	):
-		status_label.text = (
-			"Adresa răspunde, dar nu pare să fie un server No-go Inflation."
-		)
+		status_label.text = tr("SERVER_NOT_NO_GO_INFLATION")
 		return
 
 	var save_error := ClientConfig.set_server_host(_pending_host)
 
 	if save_error != OK:
-		status_label.text = (
-			"Serverul este disponibil, dar adresa nu a putut fi salvată."
-		)
+		status_label.text = tr("SERVER_SAVE_ERROR")
 		return
 
 	if _pending_host == ClientConfig.DEFAULT_HOST:
@@ -143,7 +132,7 @@ func _on_health_request_completed(
 		host_input.text = _pending_host
 
 	_update_current_server_label()
-	status_label.text = "Conexiune reușită. Adresa serverului a fost salvată."
+	status_label.text = tr("SERVER_CONNECT_SUCCESS")
 
 
 func _set_testing_state(is_testing: bool) -> void:
