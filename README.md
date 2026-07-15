@@ -61,7 +61,7 @@ The application follows an authoritative client-server design:
 | Server | Node.js, TypeScript, Express, `ws` |
 | Database | PostgreSQL, `pg`, SQL migrations |
 | Security and validation | JWT, bcrypt, Zod |
-| Tooling | npm, dotenv, draw\.io |
+| Tooling | npm, dotenv, draw.io |
 
 ## Run locally
 
@@ -71,14 +71,33 @@ The application follows an authoritative client-server design:
 - PostgreSQL
 - Godot 4.x
 
-### 1. Configure the database
+### 1. Start the database
+
+#### Docker Compose (recommended)
+
+Start PostgreSQL and apply the database migrations automatically:
 
 ```bash
-createdb no_go_inflation
+docker compose up -d database
+```
 
+The development database uses the credentials from `server/.env.example`.
+
+#### Local PostgreSQL
+
+Create the database user and database:
+
+``` bash
+createuser -P game_user
+createdb -O game_user no_go_inflation
+```
+
+Then apply the migrations:
+
+``` bash
 cd server
-psql -U postgres -d no_go_inflation -f db/migrations/01_users.sql
-psql -U postgres -d no_go_inflation -f db/migrations/02_game_state_tables.sql
+psql -U game_user -d no_go_inflation -f db/migrations/01_users.sql
+psql -U game_user -d no_go_inflation -f db/migrations/02_game_state_tables.sql
 ```
 
 ### 2. Configure and start the server
@@ -89,11 +108,13 @@ Copy the example configuration, then replace the placeholder database password a
 cp server/.env.example server/.env
 ```
 
+For local PostgreSQL, set `DB_PASSWORD` in `server/.env` to the password chosen for `game_user`. The default values in `.env.example` match the Docker Compose database.
+
 Then start the server:
 
 ```
 cd server
-npm install
+npm ci
 npm run dev
 ```
 

@@ -1,10 +1,13 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "",
-  "keywords": [],
-  "license": "ISC",
-  "author": "",
+  "description": "Authoritative backend for the No-go Inflation multiplayer game.",
+  "keywords": ["godot", "multiplayer", "websocket", "typescript", "postgresql"],
+  "license": "GPL-3.0-or-later",
+  "author": "Dragoș-Matei Mincinoiu",
+  "engines": {
+    "node": ">=22"
+  },
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
