@@ -66,32 +66,20 @@ theme = ExtResource("1_xf8o7")
 theme_override_constants/separation = 10
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=281321621]
+visible = false
 layout_mode = 2
 theme = ExtResource("1_xf8o7")
-text = "Despre"
+text = "ABOUT_TITLE"
 horizontal_alignment = 1
 
 [node name="Label" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=724038419]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
-text = "Academia de Studii Economice din București
-Facultatea de Cibernetică, Statistică și Informatică Economică
-Specializarea Informatică Economică
-
-Lucrare de licență
-JOC COLABORATIV 2D MULTIPLAYER
-
-Absolvent
-Mincinoiu Dragoș-Matei
-
-Coordonator științific
-Asist. univ. dr. Vîlcea Alexandru-Lucian
-
-București, iulie 2026"
+text = "ABOUT_BODY"
 horizontal_alignment = 1
 autowrap_mode = 3
 
 [node name="BackButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=650730082]
 layout_mode = 2
 theme = ExtResource("1_xf8o7")
-text = "Înapoi"
+text = "COMMON_BACK"

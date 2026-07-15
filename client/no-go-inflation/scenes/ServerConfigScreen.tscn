@@ -63,21 +63,20 @@ theme_override_constants/separation = 10
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=2134579007]
 layout_mode = 2
-text = "Configurare server"
+text = "SERVER_TITLE"
 horizontal_alignment = 1
 
 [node name="DescriptionLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1800910501]
 layout_mode = 2
-text = "Introdu adresa IPv4 afișată de server.
-Lasă câmpul gol pentru localhost."
+text = "SERVER_DESCRIPTION"
 
 [node name="CurrentServerLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1004361236]
 layout_mode = 2
-text = "Server curent:"
+text = "SERVER_CURRENT"
 
 [node name="HostInput" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1870016182]
 layout_mode = 2
-placeholder_text = "Exemplu: 192.168.1.144"
+placeholder_text = "SERVER_ADDRESS_PLACEHOLDER"
 
 [node name="StatusLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=601103735]
 custom_minimum_size = Vector2(360, 50)
@@ -86,10 +85,10 @@ autowrap_mode = 3
 
 [node name="TestAndSaveButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1155454923]
 layout_mode = 2
-text = "Verifică și salvează"
+text = "SERVER_TEST_AND_SAVE"
 
 [node name="BackButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1914861649]
 layout_mode = 2
-text = "Înapoi"
+text = "COMMON_BACK"
 
 [node name="HealthRequest" type="HTTPRequest" parent="." unique_id=773848140]

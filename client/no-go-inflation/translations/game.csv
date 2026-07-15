@@ -5,3 +5,28 @@ MENU_REGISTER,Register,Înregistrare
 MENU_SERVER_CONFIGURATION,Server configuration,Configurare server
 MENU_ABOUT,About,Despre
 MENU_QUIT,Quit,Ieșire
+AUTH_LOGIN_TITLE,Log in,Intrare în cont
+AUTH_REGISTER_TITLE,Create an account,Creare cont
+AUTH_EMAIL,Email,Email
+AUTH_PASSWORD,Password,Parolă
+AUTH_USERNAME,Username,Nume utilizator
+AUTH_LOGIN,Log in,Conectare
+AUTH_REGISTER,Register,Înregistrare
+COMMON_BACK,Back,Înapoi
+SERVER_TITLE,Server configuration,Configurare server
+SERVER_CURRENT,Current server: {host},Server curent: {host}
+SERVER_ADDRESS_PLACEHOLDER,Example: 192.168.1.144,Exemplu: 192.168.1.144
+SERVER_TEST_AND_SAVE,Test and save,Verifică și salvează
+SERVER_INVALID_ADDRESS,Enter a valid IPv4 address or leave the field empty for localhost.,Introdu o adresă IPv4 validă sau lasă câmpul gol pentru localhost.
+SERVER_TESTING,Testing {url}...,Se verifică {url}...
+SERVER_CONNECT_SUCCESS,Connection successful. The server address has been saved.,Conexiune reușită. Adresa serverului a fost salvată.
+SERVER_DESCRIPTION,Enter the IPv4 address of the server.\nLeave empty for localhost.,Introdu adresa IPv4 a server-ului.\nLasă liber pentru localhost.
+SERVER_REQUEST_ERROR,Server testing could not begin.,Nu s-a putut inițializa verificarea serverului.
+SERVER_REQUEST_FAILED,"The server could not be reached. Check the address, the network and the firewall.","Serverul nu a putut fi contactat. Verifică adresa, rețeaua și firewall-ul."
+SERVER_RESPONSE,Server answered with HTTP status {status}.,Serverul a răspuns cu status HTTP {status}.
+SERVER_NOT_NO_GO_INFLATION,"The address responds, but it does not seem to be a No go Inflation server.","Adresa răspunde, dar nu pare să fie un server No-go Inflation."
+SERVER_SAVE_ERROR,"The server is available, but the address could not be saved.","Serverul este disponibil, dar adresa nu a putut fi salvată."
+ABOUT_TITLE,About,Despre
+ABOUT_BODY,"University of Economic Studies Bucharest\nFaculty of Cybernetics, Statistics and Economic Informatics\nSpecialization in Economic Informatics\n\nBachelor's thesis\nMODELLING AND BALANCING OF DEMAND AND PRODUCTION IN A COLLABORATIVE STRATEGY GAME\n\nGraduate\nMincinoiu Dragoș-Matei\n\nScientific coordinator\nAssistant. dr. Vîlcea Alexandru-Lucian\n\nBucharest, July 2026","Academia de Studii Economice din București\nFacultatea de Cibernetică, Statistică și Informatică Economică\nSpecializarea Informatică Economică\n\nLucrare de licență\nMODELAREA ȘI ECHILIBRAREA CERERII ȘI A PRODUCȚIEI ÎNTR-UN JOC COLABORATIV DE STRATEGIE\n\nAbsolvent\nMincinoiu Dragoș-Matei\n\nCoordonator științific\nAsist. univ. dr. Vîlcea Alexandru-Lucian\n\nBucurești, iulie 2026"
+HOW_TO_PLAY_TITLE,How to play,Cum se joacă
+HOW_TO_PLAY_BODY,"1. The host creates a lobby and sends the code to the other players.\n2. Each player gets their own map.\n3. Build buildings on matching tiles.\n4. Buildings produce resources over time.\n5. Collect resources and use them for upgrades or trades.\n6. Create or accept offers in the market.\n7. Keep inflation under control until the end of the session.","1. Gazda creează un lobby și trimite codul celorlalți jucători.\n2. Fiecare jucător primește o hartă proprie.\n3. Construiește clădiri pe tile-uri potrivite.\n4. Clădirile produc resurse în timp.\n5. Colectează resursele și folosește-le pentru îmbunătățiri sau tranzacții.\n6. Creează sau acceptă oferte în piață.\n7. Menține inflația sub control până la finalul sesiunii."

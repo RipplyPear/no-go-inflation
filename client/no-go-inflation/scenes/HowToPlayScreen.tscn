@@ -67,22 +67,16 @@ theme_override_constants/separation = 10
 [node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=281321621]
 layout_mode = 2
 theme = ExtResource("4_j5p4p")
-text = "Cum se joacă"
+text = "HOW_TO_PLAY_TITLE"
 horizontal_alignment = 1
 
 [node name="Label" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1012313247]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
-text = "1. Host-ul creează un lobby și trimite codul celuilalt jucător.
-2. Fiecare jucător primește o hartă proprie.
-3. Construiește clădiri pe tile-uri potrivite.
-4. Clădirile produc resurse în timp.
-5. Colectează resursele și folosește-le pentru upgrade-uri sau tranzacții.
-6. Creează sau acceptă oferte în piață.
-7. Menține inflația sub control până la finalul sesiunii."
+text = "HOW_TO_PLAY_BODY"
 autowrap_mode = 3
 
 [node name="BackButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1959675158]
 layout_mode = 2
 theme = ExtResource("4_j5p4p")
-text = "Înapoi"
+text = "COMMON_BACK"
