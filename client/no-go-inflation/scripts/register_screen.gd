@@ -47,11 +47,11 @@ func _on_register_pressed() -> void:
 	var password := password_input.text
 
 	if username.is_empty() or email.is_empty() or password.is_empty():
-		_set_status("Completează username, email și parolă.")
+		_set_status(tr("AUTH_REGISTER_REQUIRED"))
 		return
 
 	register_button.disabled = true
-	_set_status("Se creează contul...")
+	_set_status(tr("AUTH_REGISTERING"))
 
 	AuthClient.register_user(username, email, password)
 
@@ -62,7 +62,7 @@ func _on_back_pressed() -> void:
 
 func _on_register_succeeded(_user: Dictionary) -> void:
 	register_button.disabled = false
-	_set_status("Cont creat cu succes. Apasă Înapoi și autentifică-te.")
+	_set_status(tr("AUTH_REGISTER_SUCCESS_BACK"))
 
 
 func _on_auth_failed(message: String) -> void:

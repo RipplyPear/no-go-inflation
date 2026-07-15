@@ -111,37 +111,28 @@ func _is_success_status(status_code: int) -> bool:
 
 
 func _get_error_message(parsed_response: Dictionary) -> String:
-	var errors = parsed_response.get("errors", [])
+	var code := str(parsed_response.get("code", "AUTH_UNKNOWN_ERROR"))
+	var params = parsed_response.get("params", {})
 	
-	if typeof(errors) == TYPE_ARRAY and not errors.is_empty():
-		var first_error = errors[0]
+	if typeof(params) != TYPE_DICTIONARY:
+		params = {}
+	
+	var display_params := {}
+	
+	for key in params:
+		var value = params[key]
 		
-		if typeof(first_error) == TYPE_DICTIONARY:
-			var field_message := str(first_error.get("message", ""))
-			
-			if not field_message.is_empty():
-				return _translate_auth_error(field_message)
+		if typeof(value) == TYPE_FLOAT and is_equal_approx(value, round(value)):
+			display_params[key] = int(value)
+		else:
+			display_params[key] = value
 	
-	var message := str(parsed_response.get("message", "Eroare de autentificare."))
-	return _translate_auth_error(message)
-
-
-func _translate_auth_error(message: String) -> String:
-	match message:
-		"Validation failed":
-			return "Datele introduse nu sunt valide."
-		"Invalid email address":
-			return "Adresa de email nu este validă."
-		"Username or email already in use":
-			return "Username-ul sau email-ul este deja folosit."
-		"Invalid email or password":
-			return "Email sau parolă incorectă."
-		"Password must be at least 6 characters long":
-			return "Parola trebuie să aibă cel puțin 6 caractere."
-		"Password is required":
-			return "Parola este obligatorie."
-		_:
-			return message
+	var translated := tr(code)
+	
+	if translated == code:
+		return tr("AUTH_UNKNOWN_ERROR")
+	
+	return translated.format(display_params)
 
 
 func _handle_register_success(parsed_response: Dictionary) -> void:

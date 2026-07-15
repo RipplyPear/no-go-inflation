@@ -23,7 +23,7 @@ func _ready() -> void:
 	_connect_ui_signals()
 	_connect_socket_signals()
 	_apply_entry_mode()
-	_set_status("Alătură-te cu un cod.")
+	_set_status(tr("LOBBY_JOIN_WITH_CODE"))
 
 
 func _exit_tree() -> void:
@@ -34,27 +34,28 @@ func _exit_tree() -> void:
 func _connect_ui_signals() -> void:
 	if not create_lobby_button.pressed.is_connected(_on_create_lobby_pressed):
 		create_lobby_button.pressed.connect(_on_create_lobby_pressed)
-	
+
 	if not join_lobby_button.pressed.is_connected(_on_join_lobby_pressed):
 		join_lobby_button.pressed.connect(_on_join_lobby_pressed)
-	
+
 	if not start_session_button.pressed.is_connected(_on_start_session_pressed):
 		start_session_button.pressed.connect(_on_start_session_pressed)
-	
+
 	if not copy_code_button.pressed.is_connected(_on_copy_code_pressed):
 		copy_code_button.pressed.connect(_on_copy_code_pressed)
-	
+
 	if not back_button.pressed.is_connected(_on_back_pressed):
 		back_button.pressed.connect(_on_back_pressed)
-	
+
 	if not join_back_button.pressed.is_connected(_on_join_back_pressed):
 		join_back_button.pressed.connect(_on_join_back_pressed)
-	
+
 	if not paste_code_button.pressed.is_connected(_on_paste_code_pressed):
 		paste_code_button.pressed.connect(_on_paste_code_pressed)
-	
+
 	if not join_code_input.text_submitted.is_connected(_on_join_code_submitted):
 		join_code_input.text_submitted.connect(_on_join_code_submitted)
+
 
 func _connect_socket_signals() -> void:
 	if not GameSocket.message_received.is_connected(_on_ws_message_received):
@@ -63,51 +64,50 @@ func _connect_socket_signals() -> void:
 
 func _apply_entry_mode() -> void:
 	var mode := GameState.lobby_entry_mode
-	
+
 	create_lobby_button.visible = false
 	start_session_button.disabled = true
-	
+
 	if mode == "host":
 		lobby_code_label.visible = true
 		copy_code_button.visible = true
 		back_button.visible = true
-		
+
 		join_code_input.visible = false
 		join_lobby_button.visible = false
 		join_back_button.visible = false
-		
+
 		start_session_button.visible = true
 		paste_code_button.visible = false
-		
-		_set_status("Se creează lobby-ul...")
+
+		_set_status(tr("LOBBY_CREATING"))
 		call_deferred("_auto_create_lobby")
 		return
-	
+
 	if mode == "join":
 		lobby_code_label.visible = false
 		copy_code_button.visible = false
 		back_button.visible = false
-		
+
 		join_code_input.visible = true
 		join_lobby_button.visible = true
 		join_back_button.visible = true
-		
+
 		paste_code_button.visible = true
 		start_session_button.visible = false
-		
-		_set_status("Introdu codul primit de la host.")
-		return
+
+		_set_status(tr("LOBBY_ENTER_RECEIVED_CODE"))
 
 
 func _on_paste_code_pressed() -> void:
 	var code := DisplayServer.clipboard_get().strip_edges().to_upper()
-	
+
 	if code.is_empty():
-		_set_status("Clipboard-ul nu conține un cod de lobby.")
+		_set_status(tr("LOBBY_CLIPBOARD_EMPTY"))
 		return
-	
+
 	join_code_input.text = code
-	_set_status("Cod lipit: %s" % code)
+	_set_status(tr("LOBBY_CODE_PASTED").format({"code": code}))
 
 
 func _on_join_code_submitted(_text: String) -> void:
@@ -116,42 +116,42 @@ func _on_join_code_submitted(_text: String) -> void:
 
 
 func _on_create_lobby_pressed() -> void:
-	_set_status("Se creează lobby-ul...")
+	_set_status(tr("LOBBY_CREATING"))
 	_set_lobby_buttons_disabled(true)
 
 	if not GameSocket.send_message(WsMessageType.CREATE_LOBBY):
 		_set_lobby_buttons_disabled(false)
-		_set_status("Nu s-a putut trimite cererea de creare lobby.")
+		_set_status(tr("LOBBY_COULD_NOT_SEND"))
 
 
 func _on_join_lobby_pressed() -> void:
 	var code := join_code_input.text.strip_edges().to_upper()
-	
+
 	if code.is_empty():
-		_set_status("Introdu codul lobby-ului.")
+		_set_status(tr("LOBBY_ENTER_CODE"))
 		return
-	
-	_set_status("Se încearcă alăturarea la lobby...")
+
+	_set_status(tr("LOBBY_JOINING"))
 	_set_lobby_buttons_disabled(true)
-	
+
 	var sent := GameSocket.send_message(WsMessageType.JOIN_LOBBY, {
 		"lobbyCode": code
 	})
-	
+
 	if not sent:
 		_set_lobby_buttons_disabled(false)
-		_set_status("Nu s-a putut trimite cererea de alăturare.")
-	
+		_set_status(tr("LOBBY_COULD_NOT_SEND_JOIN"))
+
 	paste_code_button.visible = false
 
 
-func _on_copy_code_pressed() -> void:	
+func _on_copy_code_pressed() -> void:
 	if lobby_code.is_empty():
-		_set_status("Nu există încă un cod de lobby de copiat.")
+		_set_status(tr("LOBBY_NO_CODE_TO_COPY"))
 		return
-	
+
 	DisplayServer.clipboard_set(lobby_code)
-	_set_status("Codul lobby-ului a fost copiat: %s" % lobby_code)
+	_set_status(tr("LOBBY_CODE_COPIED").format({"code": lobby_code}))
 
 
 func _on_back_pressed() -> void:
@@ -168,25 +168,25 @@ func _on_join_back_pressed() -> void:
 func _leave_lobby_if_needed() -> void:
 	if session_id.is_empty():
 		return
-	
+
 	GameSocket.send_message(WsMessageType.LEAVE_LOBBY, {
 		"sessionId": session_id
 	})
-	
+
 	session_id = ""
 	lobby_code = ""
 	is_host = false
-	
+
 	GameState.session_id = ""
 	GameState.lobby_code = ""
 
 
 func _on_start_session_pressed() -> void:
 	if session_id.is_empty():
-		_set_status("Nu există lobby activ.")
+		_set_status(tr("LOBBY_NO_ACTIVE_LOBBY"))
 		return
 
-	_set_status("Se pornește sesiunea...")
+	_set_status(tr("LOBBY_STARTING"))
 	start_session_button.disabled = true
 
 	var sent := GameSocket.send_message(WsMessageType.START_SESSION, {
@@ -195,111 +195,111 @@ func _on_start_session_pressed() -> void:
 
 	if not sent:
 		start_session_button.disabled = false
-		_set_status("Nu s-a putut trimite cererea de pornire.")
+		_set_status(tr("LOBBY_COULD_NOT_SEND_START"))
 
 
 func _on_ws_message_received(message: Dictionary) -> void:
 	var message_type := str(message.get("type", ""))
-	
+
 	match message_type:
 		WsMessageType.LOBBY_STATE:
 			_handle_lobby_state(message)
-		
+
 		WsMessageType.SESSION_STATE:
 			_handle_session_state(message)
-		
+
 		WsMessageType.SESSION_CANCELLED:
 			_handle_session_cancelled(message)
-		
+
 		WsMessageType.ERROR:
 			_handle_error(message)
-		
-		_:
-			pass
 
 
 func _handle_session_cancelled(message: Dictionary) -> void:
 	var payload = message.get("payload", {})
-	var reason := "Lobby-ul a fost închis."
-	
+	var reason := tr("LOBBY_CANCELLED_DEFAULT")
+
 	if typeof(payload) == TYPE_DICTIONARY:
-		reason = str(payload.get("reason", reason))
-	
+		reason = _get_localized_payload_message(
+			payload,
+			"LOBBY_CANCELLED_DEFAULT"
+		)
+
 	session_id = ""
 	lobby_code = ""
 	is_host = false
-	
+
 	GameState.session_id = ""
 	GameState.lobby_code = ""
-	
+
 	create_lobby_button.visible = false
 	join_code_input.visible = false
 	join_lobby_button.visible = false
 	join_back_button.visible = false
 	copy_code_button.visible = false
 	start_session_button.visible = false
-	
+
 	back_button.visible = true
 	back_button.disabled = false
-	back_button.text = "Înapoi la meniu"
-	
-	participants_label.text = "Participanți: -"
+	back_button.text = tr("LOBBY_BACK_TO_MENU")
+
+	participants_label.text = tr("LOBBY_PARTICIPANTS_EMPTY")
 	_set_status(reason)
 
 
 func _handle_lobby_state(message: Dictionary) -> void:
 	var payload = message.get("payload", {})
-	
+
 	if typeof(payload) != TYPE_DICTIONARY:
-		_set_status("LOBBY_STATE invalid primit de la server.")
+		_set_status(tr("LOBBY_STATE_INVALID"))
 		_set_lobby_buttons_disabled(false)
 		return
-	
+
 	session_id = str(payload.get("sessionId", ""))
 	lobby_code = str(payload.get("lobbyCode", ""))
-	
+
 	var participant = payload.get("participant", {})
 	if typeof(participant) != TYPE_DICTIONARY:
 		participant = {}
-	
+
 	is_host = str(participant.get("role", "")) == "host"
-	
+
 	_update_lobby_ui(payload)
-	
+
 	create_lobby_button.visible = false
 	join_code_input.visible = false
 	join_lobby_button.visible = false
 	join_back_button.visible = false
-	
+
 	copy_code_button.visible = is_host
 	start_session_button.visible = is_host
-	
+
 	back_button.visible = true
 	back_button.disabled = false
-	back_button.text = "Înapoi"
-	
+	back_button.text = tr("COMMON_BACK")
+
 	var connected_count := _count_connected_participants(payload)
 	start_session_button.disabled = not is_host or connected_count < 2
-	
+
 	if is_host:
 		if connected_count < 2:
-			_set_status("Lobby creat. Așteaptă încă un jucător conectat.")
+			_set_status(tr("LOBBY_CREATED_WAITING"))
 		else:
-			_set_status("Lobby creat. Poți porni sesiunea.")
+			_set_status(tr("LOBBY_CREATED_READY"))
 	else:
-		_set_status("Te-ai alăturat lobby-ului. Așteaptă ca host-ul să pornească sesiunea.")
+		_set_status(tr("LOBBY_JOINED_WAITING"))
 
 
 func _auto_create_lobby() -> void:
 	if not GameSocket.send_message(WsMessageType.CREATE_LOBBY):
-		_set_status("Nu s-a putut trimite cererea de creare lobby.")
+		_set_status(tr("LOBBY_COULD_NOT_SEND"))
 
 
 func _handle_session_state(message: Dictionary) -> void:
 	var payload = message.get("payload", {})
 
 	if typeof(payload) != TYPE_DICTIONARY:
-		_set_status("SESSION_STATE invalid primit de la server.")
+		_set_status(tr("LOBBY_SESSION_STATE_INVALID"))
 		return
 
 	GameState.load_session_state(payload)
@@ -309,10 +309,10 @@ func _handle_session_state(message: Dictionary) -> void:
 func _handle_error(message: Dictionary) -> void:
 	var payload = message.get("payload", {})
 
-	if typeof(payload) != TYPE_DICTIONARY:
-		_set_status("Eroare necunoscută.")
+	if typeof(payload) == TYPE_DICTIONARY:
+		_set_status(_get_localized_payload_message(payload, "LOBBY_UNKNOWN_ERROR"))
 	else:
-		_set_status(str(payload.get("message", "Eroare necunoscută.")))
+		_set_status(tr("LOBBY_UNKNOWN_ERROR"))
 
 	_set_lobby_buttons_disabled(false)
 
@@ -323,54 +323,92 @@ func _handle_error(message: Dictionary) -> void:
 		start_session_button.disabled = not is_host
 
 
+func _get_localized_payload_message(payload: Dictionary, fallback_key: String) -> String:
+	var code := str(payload.get("code", ""))
+
+	if code.is_empty():
+		return tr(fallback_key)
+
+	var raw_params = payload.get("params", {})
+	var params: Dictionary = {}
+
+	if typeof(raw_params) == TYPE_DICTIONARY:
+		params = raw_params
+
+	var display_params := {}
+
+	for key in params:
+		var value = params[key]
+
+		if typeof(value) == TYPE_FLOAT and is_equal_approx(value, round(value)):
+			display_params[key] = int(value)
+		else:
+			display_params[key] = value
+
+	var translated := tr(code)
+
+	if translated == code:
+		return tr(fallback_key)
+
+	return translated.format(display_params)
+
+
 func _update_lobby_ui(payload: Dictionary) -> void:
-	lobby_code_label.text = "Cod lobby: %s" % lobby_code
-	
+	lobby_code_label.text = tr("LOBBY_CODE").format({
+		"code": lobby_code
+	})
+
 	var participants = payload.get("participants", [])
-	
+
 	if typeof(participants) != TYPE_ARRAY:
-		participants_label.text = "Participanți: -"
+		participants_label.text = tr("LOBBY_PARTICIPANTS_EMPTY")
 		return
-	
+
 	var lines: Array[String] = []
-	
+
 	for item in participants:
 		if typeof(item) != TYPE_DICTIONARY:
 			continue
-		
-		var display_name := str(item.get("displayName", "Jucător"))
+
+		var display_name := str(item.get("displayName", tr("LOBBY_DEFAULT_PLAYER")))
 		var role := str(item.get("role", "player"))
-		var role_label := "host" if role == "host" else "jucător"
+		var role_key := "LOBBY_ROLE_HOST" if role == "host" else "LOBBY_ROLE_PLAYER"
 		var is_connected := bool(item.get("isConnected", true))
-		var connection_label := "conectat" if is_connected else "deconectat"
-		
-		lines.append("- %s (%s, %s)" % [
-			display_name,
-			role_label,
-			connection_label
-		])
-	
+		var connection_key := (
+			"LOBBY_CONNECTION_CONNECTED"
+			if is_connected
+			else "LOBBY_CONNECTION_DISCONNECTED"
+		)
+
+		lines.append(tr("LOBBY_PARTICIPANT_ENTRY").format({
+			"name": display_name,
+			"role": tr(role_key),
+			"connection": tr(connection_key)
+		}))
+
 	if lines.is_empty():
-		participants_label.text = "Participanți: -"
+		participants_label.text = tr("LOBBY_PARTICIPANTS_EMPTY")
 	else:
-		participants_label.text = "Participanți:\n%s" % "\n".join(lines)
+		participants_label.text = tr("LOBBY_PARTICIPANTS_LIST").format({
+			"participants": "\n".join(lines)
+		})
 
 
 func _count_connected_participants(payload: Dictionary) -> int:
 	var participants = payload.get("participants", [])
-	
+
 	if typeof(participants) != TYPE_ARRAY:
 		return 0
-	
+
 	var count := 0
-	
+
 	for item in participants:
 		if typeof(item) != TYPE_DICTIONARY:
 			continue
-		
+
 		if bool(item.get("isConnected", false)):
 			count += 1
-	
+
 	return count
 
 

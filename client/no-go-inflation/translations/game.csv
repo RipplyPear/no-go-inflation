@@ -12,6 +12,23 @@ AUTH_PASSWORD,Password,Parolă
 AUTH_USERNAME,Username,Nume utilizator
 AUTH_LOGIN,Log in,Conectare
 AUTH_REGISTER,Register,Înregistrare
+AUTH_LOGIN_REQUIRED,Enter your email and password.,Completează email și parolă.
+AUTH_REGISTER_REQUIRED,"Enter a username, email, and password.","Completează username, email și parolă."
+AUTH_LOGGING_IN,Logging in...,Autentificare...
+AUTH_REGISTERING,Creating account...,Se creează contul...
+AUTH_REGISTER_SUCCESS,Account created successfully. You can now log in.,Cont creat cu succes. Te poți autentifica.
+AUTH_REGISTER_SUCCESS_BACK,Account created successfully. Press Back and log in.,Cont creat cu succes. Apasă Înapoi și autentifică-te.
+AUTH_LOGIN_SUCCESS,"Login successful. Welcome, {username}!","Login reușit. Bun venit, {username}!"
+AUTH_WEBSOCKET_VALIDATING,WebSocket connected. Validating session...,WebSocket conectat. Se validează sesiunea...
+AUTH_UNKNOWN_ERROR,An unknown error occurred.,Eroare necunoscută.
+AUTH_USERNAME_TOO_SHORT,"Username must be at least {min} characters long.","Username-ul trebuie să aibă cel puțin {min} caractere."
+AUTH_USERNAME_TOO_LONG,"Username cannot exceed {max} characters.","Username-ul nu poate depăși {max} caractere."
+AUTH_INVALID_EMAIL,Enter a valid email address.,Introdu o adresă de email validă.
+AUTH_PASSWORD_TOO_SHORT,"Password must be at least {min} characters long.","Parola trebuie să aibă cel puțin {min} caractere."
+AUTH_INVALID_INPUT,The submitted data is invalid.,Datele introduse nu sunt valide.
+AUTH_IDENTITY_ALREADY_EXISTS,This username or email address is already in use.,Username-ul sau adresa de email este deja folosită.
+AUTH_INVALID_CREDENTIALS,Incorrect email or password.,Email sau parolă incorectă.
+AUTH_REGISTRATION_FAILED,Could not complete registration. Please try again.,Nu s-a putut finaliza înregistrarea. Încearcă din nou.
 COMMON_BACK,Back,Înapoi
 SERVER_TITLE,Server configuration,Configurare server
 SERVER_CURRENT,Current server: {host},Server curent: {host}
@@ -30,3 +47,44 @@ ABOUT_TITLE,About,Despre
 ABOUT_BODY,"University of Economic Studies Bucharest\nFaculty of Cybernetics, Statistics and Economic Informatics\nSpecialization in Economic Informatics\n\nBachelor's thesis\nMODELLING AND BALANCING OF DEMAND AND PRODUCTION IN A COLLABORATIVE STRATEGY GAME\n\nGraduate\nMincinoiu Dragoș-Matei\n\nScientific coordinator\nAssistant. dr. Vîlcea Alexandru-Lucian\n\nBucharest, July 2026","Academia de Studii Economice din București\nFacultatea de Cibernetică, Statistică și Informatică Economică\nSpecializarea Informatică Economică\n\nLucrare de licență\nMODELAREA ȘI ECHILIBRAREA CERERII ȘI A PRODUCȚIEI ÎNTR-UN JOC COLABORATIV DE STRATEGIE\n\nAbsolvent\nMincinoiu Dragoș-Matei\n\nCoordonator științific\nAsist. univ. dr. Vîlcea Alexandru-Lucian\n\nBucurești, iulie 2026"
 HOW_TO_PLAY_TITLE,How to play,Cum se joacă
 HOW_TO_PLAY_BODY,"1. The host creates a lobby and sends the code to the other players.\n2. Each player gets their own map.\n3. Build buildings on matching tiles.\n4. Buildings produce resources over time.\n5. Collect resources and use them for upgrades or trades.\n6. Create or accept offers in the market.\n7. Keep inflation under control until the end of the session.","1. Gazda creează un lobby și trimite codul celorlalți jucători.\n2. Fiecare jucător primește o hartă proprie.\n3. Construiește clădiri pe tile-uri potrivite.\n4. Clădirile produc resurse în timp.\n5. Colectează resursele și folosește-le pentru îmbunătățiri sau tranzacții.\n6. Creează sau acceptă oferte în piață.\n7. Menține inflația sub control până la finalul sesiunii."
+LOBBY_TITLE,Lobby,Lobby
+LOBBY_CODE_EMPTY,Lobby code: -,Cod lobby: -
+LOBBY_CODE,Lobby code: {code},Cod lobby: {code}
+LOBBY_COPY_CODE,Copy code,Copiază codul
+LOBBY_CODE_PLACEHOLDER,Lobby code,Cod lobby
+LOBBY_PASTE_CODE,Paste code,Lipește codul
+LOBBY_JOIN,Join,Alătură-te
+LOBBY_CREATE,Create lobby,Creează lobby
+LOBBY_START_SESSION,Start session,Pornește sesiunea
+LOBBY_BACK_TO_MENU,Back to menu,Înapoi la meniu
+LOBBY_PARTICIPANTS_EMPTY,Participants: -,Participanți: -
+LOBBY_PARTICIPANTS_LIST,"Participants:
+{participants}","Participanți:
+{participants}"
+LOBBY_JOIN_WITH_CODE,Join with a lobby code.,Alătură-te cu un cod.
+LOBBY_CREATING,Creating lobby...,Se creează lobby-ul...
+LOBBY_ENTER_RECEIVED_CODE,Enter the code received from the host.,Introdu codul primit de la gazdă.
+LOBBY_CLIPBOARD_EMPTY,The clipboard does not contain a lobby code.,Clipboard-ul nu conține un cod de lobby.
+LOBBY_CODE_PASTED,Lobby code pasted: {code},Cod lipit: {code}
+LOBBY_JOINING,Joining lobby...,Se încearcă alăturarea la lobby...
+LOBBY_CODE_COPIED,Lobby code copied: {code},Codul lobby-ului a fost copiat: {code}
+LOBBY_NO_ACTIVE_LOBBY,There is no active lobby.,Nu există lobby activ.
+LOBBY_STARTING,Starting session...,Se pornește sesiunea...
+LOBBY_CREATED_WAITING,Lobby created. Waiting for another player to connect.,Lobby creat. Se așteaptă conectarea unui alt jucător.
+LOBBY_CREATED_READY,Lobby created. You can start the session.,Lobby creat. Poți porni sesiunea.
+LOBBY_JOINED_WAITING,You joined the lobby. Waiting for the host to start the session.,Te-ai alăturat lobby-ului. Așteaptă ca gazda să pornească sesiunea.
+LOBBY_COULD_NOT_SEND,Could not send the create lobby request.,Nu s-a putut trimite cererea de creare lobby.
+LOBBY_ENTER_CODE,Enter lobby code.,Introdu codul lobby-ului.
+LOBBY_COULD_NOT_SEND_JOIN,Could not send the join lobby request.,Nu s-a putut trimite cererea de alăturare la lobby.
+LOBBY_NO_CODE_TO_COPY,There is no lobby code to copy yet.,Nu există încă un cod de lobby de copiat.
+LOBBY_COULD_NOT_SEND_START,Could not send the start session request.,Nu s-a putut trimite cererea de pornire a sesiunii.
+LOBBY_CANCELLED_DEFAULT,The lobby was closed.,Lobby-ul a fost închis.
+LOBBY_STATE_INVALID,Invalid lobby state received from the server.,S-a primit o stare de lobby invalidă de la server.
+LOBBY_SESSION_STATE_INVALID,Invalid session state received from the server.,S-a primit o stare de sesiune invalidă de la server.
+LOBBY_UNKNOWN_ERROR,An unknown lobby error occurred.,A apărut o eroare necunoscută în lobby.
+LOBBY_DEFAULT_PLAYER,Player,Jucător
+LOBBY_ROLE_HOST,Host,Gazdă
+LOBBY_ROLE_PLAYER,Player,Jucător
+LOBBY_CONNECTION_CONNECTED,connected,conectat
+LOBBY_CONNECTION_DISCONNECTED,disconnected,deconectat
+LOBBY_PARTICIPANT_ENTRY,"- {name} ({role}, {connection})","- {name} ({role}, {connection})"
