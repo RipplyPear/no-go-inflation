@@ -111,3 +111,14 @@ By default, the client connects to `localhost`. To play on the same local networ
 ### Development notes
 
 The game includes debug-only controls for local testing and demonstrations. They are available only in debug client builds and are rejected by the server when `NODE_ENV=production`.
+
+
+## License
+
+Copyright © 2026 Dragoș-Matei Mincinoiu
+
+The source code is licensed under the [GNU General Public License v3.0](LICENSE).
+
+Third-party assets and fonts are not covered by this license. Their respective license notices are included with the assets.
+
+Third-party assets, themes, and fonts retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
