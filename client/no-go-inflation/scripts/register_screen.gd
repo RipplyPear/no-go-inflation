@@ -61,8 +61,10 @@ func _on_back_pressed() -> void:
 
 
 func _on_register_succeeded(_user: Dictionary) -> void:
+	#print("REGISTER SUCCESS handler reached")
+	#print("Translation: ", tr("AUTH_REGISTER_SUCCESS"))
 	register_button.disabled = false
-	_set_status(tr("AUTH_REGISTER_SUCCESS_BACK"))
+	_set_status(tr("AUTH_REGISTER_SUCCESS"))
 
 
 func _on_auth_failed(message: String) -> void:

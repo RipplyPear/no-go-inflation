@@ -75,10 +75,6 @@ text = "MENU_LOGIN"
 layout_mode = 2
 text = "MENU_REGISTER"
 
-[node name="ServerConfigButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1564386638]
-layout_mode = 2
-text = "MENU_SERVER_CONFIGURATION"
-
 [node name="AboutButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1468028763]
 layout_mode = 2
 text = "MENU_ABOUT"
@@ -86,6 +82,13 @@ text = "MENU_ABOUT"
 [node name="ExitButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=384747208]
 layout_mode = 2
 text = "MENU_QUIT"
+
+[node name="HSeparator" type="HSeparator" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=777459113]
+layout_mode = 2
+
+[node name="ServerConfigButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1564386638]
+layout_mode = 2
+text = "MENU_SERVER_CONFIGURATION"
 
 [node name="LanguageOptionButton" type="OptionButton" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=25053069]
 layout_mode = 2

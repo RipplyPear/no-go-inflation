@@ -10,6 +10,7 @@ import {
 import { ResourceType } from '../game.types';
 import { randomInt } from 'node:crypto';
 import { parseJoinLobbyPayload, parseStartSessionPayload } from '../../websocket/wsPayloadParsers';
+import { ClientError } from '../../errors/ClientError';
 
 const LOBBY_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const LOBBY_CODE_LENGTH = 6;
@@ -305,7 +306,7 @@ export async function joinLobby(user: AuthenticatedUser, rawPayload: unknown) {
   const payload = parseJoinLobbyPayload(rawPayload);
 
   if (!payload) {
-    throw new Error('Payload invalid pentru JOIN_LOBBY.');
+    throw new ClientError('LOBBY_INVALID_JOIN_PAYLOAD');
   }
 
   const client = await pool.connect();
@@ -324,13 +325,13 @@ export async function joinLobby(user: AuthenticatedUser, rawPayload: unknown) {
     );
 
     if (sessionResult.rows.length === 0) {
-      throw new Error('Lobby-ul nu există.');
+      throw new ClientError('LOBBY_NOT_FOUND');
     }
 
     const session = sessionResult.rows[0];
 
     if (session.status !== 'lobby') {
-      throw new Error('Lobby-ul nu mai este disponibil.');
+      throw new ClientError('LOBBY_UNAVAILABLE');
     }
 
     const existingParticipantResult = await client.query(
@@ -372,7 +373,7 @@ export async function joinLobby(user: AuthenticatedUser, rawPayload: unknown) {
     const participantCount = Number(participantCountResult.rows[0]?.participant_count ?? 0);
 
     if (participantCount >= MAX_LOBBY_PARTICIPANTS) {
-      throw new Error('Lobby-ul este plin.');
+      throw new ClientError('LOBBY_FULL');
     }
 
     await client.query(
@@ -406,7 +407,7 @@ export async function startLobbySession(user: AuthenticatedUser, rawPayload: unk
   const payload = parseStartSessionPayload(rawPayload);
 
   if (!payload) {
-    throw new Error('Payload invalid pentru START_SESSION.');
+    throw new ClientError('LOBBY_INVALID_START_PAYLOAD');
   }
 
   const client = await pool.connect();
@@ -425,17 +426,17 @@ export async function startLobbySession(user: AuthenticatedUser, rawPayload: unk
     );
 
     if (sessionResult.rows.length === 0) {
-      throw new Error('Sesiunea nu există.');
+      throw new ClientError('LOBBY_SESSION_NOT_FOUND');
     }
 
     const session = sessionResult.rows[0];
 
     if (session.status !== 'lobby') {
-      throw new Error('Sesiunea nu este în starea lobby.');
+      throw new ClientError('LOBBY_SESSION_NOT_IN_LOBBY');
     }
 
     if (Number(session.host_user_id) !== user.id) {
-      throw new Error('Doar host-ul poate porni sesiunea.');
+      throw new ClientError('LOBBY_START_NOT_HOST');
     }
 
     const participantsResult = await client.query(
@@ -451,7 +452,7 @@ export async function startLobbySession(user: AuthenticatedUser, rawPayload: unk
     );
 
     if (participantsResult.rows.length < MIN_PARTICIPANTS_TO_START) {
-      throw new Error('Nu sunt suficienți participanți pentru pornirea sesiunii.');
+      throw new ClientError('LOBBY_START_NOT_ENOUGH_PLAYERS');
     }
 
     for (const participant of participantsResult.rows) {

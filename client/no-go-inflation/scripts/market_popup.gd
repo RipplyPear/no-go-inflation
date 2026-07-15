@@ -7,7 +7,6 @@ signal cancel_offer_requested(offer_id: String)
 signal recycle_requested(resource: String, quantity: int)
 
 @onready var panel: PanelContainer = $PanelContainer
-
 @onready var type_option: OptionButton = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CreatePanel/TypeOption
 @onready var resource_option: OptionButton = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CreatePanel/ResourceOption
 @onready var amount_spin: SpinBox = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CreatePanel/AmountSpin
@@ -16,27 +15,20 @@ signal recycle_requested(resource: String, quantity: int)
 @onready var recycle_resource_option: OptionButton = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel/RecycleResourceOption
 @onready var recycle_amount_spin: SpinBox = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel/RecycleAmountSpin
 @onready var recycle_button: Button = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel/RecycleButton
-
 @onready var offer_list: VBoxContainer = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/OffersPanel/OfferScroll/OfferList
-@onready var player_state_panel: VBoxContainer = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel
 @onready var player_state_title: Label = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel/PlayerStateTitle
 @onready var player_state_label: Label = $PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PlayerStatePanel/PlayerStateLabel
-
 @onready var x_button: Button = $PanelContainer/MarginContainer/VBoxContainer/HeaderHBox/XButton
 @onready var close_button: Button = $PanelContainer/MarginContainer/VBoxContainer/CloseButton
 
 
 func _ready() -> void:
 	panel.visible = false
-	
 	_setup_offer_options()
 	_setup_spin_boxes()
 	_connect_signals()
-	
 	panel.position = Vector2(90, 120)
 	panel.custom_minimum_size = Vector2(1100, 500)
-	
-	player_state_title.text = "Starea jucătorului"
 	refresh_player_state()
 
 
@@ -61,18 +53,20 @@ func set_market_state(market_state: Dictionary) -> void:
 
 func _setup_offer_options() -> void:
 	type_option.clear()
-	type_option.add_item("Cumpărare")
-	type_option.add_item("Vânzare")
-	
+	type_option.add_item(tr("MARKET_BUY"))
+	type_option.add_item(tr("MARKET_SELL"))
 	resource_option.clear()
-	resource_option.add_item(GameDomain.RESOURCE_LABELS.get(GameDomain.RESOURCE_WOOD, "Lemn"))
-	resource_option.add_item(GameDomain.RESOURCE_LABELS.get(GameDomain.RESOURCE_STONE, "Piatră"))
-	resource_option.add_item(GameDomain.RESOURCE_LABELS.get(GameDomain.RESOURCE_GRAIN, "Grâne"))
+	recycle_resource_option.clear()
+	for resource in GameDomain.BASIC_RESOURCES:
+		var label := GameDomain.get_resource_label(resource)
+		resource_option.add_item(label)
+		recycle_resource_option.add_item(label)
 
 
 func _setup_spin_boxes() -> void:
 	_configure_spin_box(amount_spin, 1, 999, 10)
 	_configure_spin_box(price_spin, 1, 999, 1)
+	_configure_spin_box(recycle_amount_spin, 1, 999, 1)
 
 
 func _configure_spin_box(spin_box: SpinBox, min_value: int, max_value: int, default_value: int) -> void:
@@ -92,22 +86,8 @@ func _connect_signals() -> void:
 
 
 func _on_recycle_pressed() -> void:
-	var selected_index := recycle_resource_option.selected
-	var resource := ""
-	
-	match selected_index:
-		0:
-			resource = GameDomain.RESOURCE_WOOD
-		1:
-			resource = GameDomain.RESOURCE_STONE
-		2:
-			resource = GameDomain.RESOURCE_GRAIN
-		_:
-			resource = GameDomain.RESOURCE_WOOD
-		
-	var quantity := int(recycle_amount_spin.value)
-	
-	recycle_requested.emit(resource, quantity)
+	var index := clampi(recycle_resource_option.selected, 0, GameDomain.BASIC_RESOURCES.size() - 1)
+	recycle_requested.emit(GameDomain.BASIC_RESOURCES[index], int(recycle_amount_spin.value))
 
 
 func _on_create_pressed() -> void:
@@ -115,20 +95,15 @@ func _on_create_pressed() -> void:
 	var resource := _get_selected_resource()
 	_update_offer_amount_limit()
 	var amount := int(amount_spin.value)
-	var price := int(price_spin.value)
-	
 	if offer_type == GameDomain.OFFER_SELL:
 		var owned := GameState.get_resource_amount(resource)
-		
 		if owned <= 0:
-			push_warning("Nu ai această resursă de vândut.")
+			push_warning(tr("MARKET_NO_RESOURCE_TO_SELL"))
 			return
-		
 		if amount > owned:
 			amount = owned
 			amount_spin.value = owned
-	
-	create_offer_requested.emit(offer_type, resource, amount, price)
+	create_offer_requested.emit(offer_type, resource, amount, int(price_spin.value))
 
 
 func _on_offer_inputs_changed(_index: int) -> void:
@@ -136,11 +111,8 @@ func _on_offer_inputs_changed(_index: int) -> void:
 
 
 func _update_offer_amount_limit() -> void:
-	var offer_type := _get_selected_offer_type()
-	var resource := _get_selected_resource()
-	
-	if offer_type == GameDomain.OFFER_SELL:
-		var owned := GameState.get_resource_amount(resource)
+	if _get_selected_offer_type() == GameDomain.OFFER_SELL:
+		var owned := GameState.get_resource_amount(_get_selected_resource())
 		amount_spin.max_value = max(1, owned)
 		amount_spin.value = min(amount_spin.value, amount_spin.max_value)
 	else:
@@ -148,40 +120,29 @@ func _update_offer_amount_limit() -> void:
 
 
 func _get_selected_offer_type() -> String:
-	var selected_index := clampi(type_option.selected, 0, GameDomain.OFFER_TYPES.size() - 1)
-	return GameDomain.OFFER_TYPES[selected_index]
+	return GameDomain.OFFER_TYPES[clampi(type_option.selected, 0, GameDomain.OFFER_TYPES.size() - 1)]
 
 
 func _get_selected_resource() -> String:
-	var selected_index := clampi(resource_option.selected, 0, GameDomain.BASIC_RESOURCES.size() - 1)
-	return GameDomain.BASIC_RESOURCES[selected_index]
+	return GameDomain.BASIC_RESOURCES[clampi(resource_option.selected, 0, GameDomain.BASIC_RESOURCES.size() - 1)]
 
 
 func _render_offer_list(market_state: Dictionary) -> void:
 	_clear_offer_list()
-	
 	var offers = market_state.get("offers", [])
-	
 	if typeof(offers) != TYPE_ARRAY or offers.is_empty():
-		_add_empty_offer_label()
+		var label := Label.new()
+		label.text = tr("MARKET_NO_ACTIVE_OFFERS")
+		offer_list.add_child(label)
 		return
-	
 	for offer in offers:
-		if typeof(offer) != TYPE_DICTIONARY:
-			continue
-	
-		_add_offer_row(offer)
+		if typeof(offer) == TYPE_DICTIONARY:
+			_add_offer_row(offer)
 
 
 func _clear_offer_list() -> void:
 	for child in offer_list.get_children():
 		child.queue_free()
-
-
-func _add_empty_offer_label() -> void:
-	var empty_label := Label.new()
-	empty_label.text = "Nu există oferte active."
-	offer_list.add_child(empty_label)
 
 
 func _add_offer_row(offer: Dictionary) -> void:
@@ -195,12 +156,10 @@ func _add_offer_row(offer: Dictionary) -> void:
 func show_offer_error(offer_id: String, message: String) -> void:
 	if offer_id.is_empty():
 		return
-	
 	for child in offer_list.get_children():
 		if child is MarketOfferRow and child.matches_offer(offer_id):
 			child.show_error(message)
 			return
-	
 	push_warning(message)
 
 
@@ -214,47 +173,24 @@ func _on_offer_row_cancel_requested(offer_id: String) -> void:
 
 func _update_side_panel(market_state: Dictionary) -> void:
 	var economy := _get_economy_for_display(market_state)
-	var average_prices: Dictionary = economy.get("averagePrices", {})
-	
-	var inflation := int(economy.get("inflation", 20))
-	
-	player_state_title.text = "Stare jucător / piață"
-	
-	player_state_label.text = (
-		"Resurse:\n" +
-		"Lemn: %d\n" +
-		"Piatră: %d\n" +
-		"Grâne: %d\n" +
-		"Galbeni: %d\n\n" +
-		"Indicatori piață:\n" +
-		"Inflație: %d\n" +
-		"Preț mediu lemn: %.2f\n" +
-		"Preț mediu piatră: %.2f\n" +
-		"Preț mediu grâne: %.2f"
-	) % [
-		_get_resource_amount(GameDomain.RESOURCE_WOOD),
-		_get_resource_amount(GameDomain.RESOURCE_STONE),
-		_get_resource_amount(GameDomain.RESOURCE_GRAIN),
-		_get_resource_amount(GameDomain.RESOURCE_GALBENI),
-		inflation,
-		_get_average_price(average_prices, GameDomain.RESOURCE_WOOD),
-		_get_average_price(average_prices, GameDomain.RESOURCE_STONE),
-		_get_average_price(average_prices, GameDomain.RESOURCE_GRAIN)
-	]
+	var prices: Dictionary = economy.get("averagePrices", {})
+	player_state_title.text = tr("MARKET_PLAYER_STATE_OVERVIEW")
+	player_state_label.text = tr("MARKET_PLAYER_STATE_BODY").format({
+		"wood": GameState.get_resource_amount(GameDomain.RESOURCE_WOOD),
+		"stone": GameState.get_resource_amount(GameDomain.RESOURCE_STONE),
+		"grain": GameState.get_resource_amount(GameDomain.RESOURCE_GRAIN),
+		"gold": GameState.get_resource_amount(GameDomain.RESOURCE_GALBENI),
+		"inflation": int(economy.get("inflation", 20)),
+		"wood_price": _get_average_price(prices, GameDomain.RESOURCE_WOOD),
+		"stone_price": _get_average_price(prices, GameDomain.RESOURCE_STONE),
+		"grain_price": _get_average_price(prices, GameDomain.RESOURCE_GRAIN),
+	})
 
 
 func _get_economy_for_display(market_state: Dictionary) -> Dictionary:
 	var economy = market_state.get("economy", GameState.economy)
-	
-	if typeof(economy) != TYPE_DICTIONARY:
-		return GameState.economy
-	
-	return economy
+	return economy if typeof(economy) == TYPE_DICTIONARY else GameState.economy
 
 
-func _get_resource_amount(resource: String) -> int:
-	return GameState.get_resource_amount(resource)
-
-
-func _get_average_price(average_prices: Dictionary, resource: String) -> float:
-	return float(average_prices.get(resource, GameState.get_average_price(resource)))
+func _get_average_price(prices: Dictionary, resource: String) -> float:
+	return float(prices.get(resource, GameState.get_average_price(resource)))
