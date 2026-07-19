@@ -8,7 +8,19 @@ No-go Inflation is a 2D multiplayer game in which players build local economies,
 
 Built as my Bachelor's degree project at the Bucharest University of Economic Studies (ASE).
 
-![Gameplay map](documentation/screenshots/en/gameplay.png)
+## Demo
+
+<a href="https://www.youtube.com/watch?v=NpRHOrQSMNo">
+    <img
+        style="max-width:500px;"
+        src="documentation/media/demo-thumbnail.png"
+        alt="Watch the No-go Inflation multiplayer demo"
+    />
+</a>
+
+Two Godot clients connect to the same authoritative Node.js / TypeScript server and interact through a shared economy.
+
+[-> Watch the 2:28 multiplayer demo on YouTube](https://www.youtube.com/watch?v=NpRHOrQSMNo)
 
 ## Highlights
 
