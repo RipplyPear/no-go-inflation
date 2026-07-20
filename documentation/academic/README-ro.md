@@ -18,4 +18,4 @@ Proiect realizat ca lucrare de licență la Academia de Studii Economice din Buc
 - [Stack tehnologic](./reference/technology-stack-ro.md)
 - [Clădiri și reguli de producție](./reference/buildings-and-production-ro.md)
 - [Cerințe nefuncționale](./reference/non-functional-requirements-ro.md)
-- [Masterdoc — referință istorică de proiectare](./reference/masterdoc-ro.md)
+- [Masterdoc - referință istorică de proiectare](./reference/masterdoc-ro.md)

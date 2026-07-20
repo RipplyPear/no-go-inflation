@@ -1,4 +1,4 @@
-# No-go Inflation — prezentare academică
+# No-go Inflation - prezentare academică
 
 [← Înapoi la documentația academică](./README-ro.md)
 
@@ -52,4 +52,4 @@ Versiunea actuală este un MVP funcțional și nu include matchmaking automat, c
 - [Arhitectura sistemului](./reference/system-architecture-ro.md)
 - [Cerințe nefuncționale](./reference/non-functional-requirements-ro.md)
 - [Reguli de clădiri și producție](./reference/buildings-and-production-ro.md)
-- [Masterdoc — referință istorică de proiectare](./reference/masterdoc-ro.md)
+- [Masterdoc - referință istorică de proiectare](./reference/masterdoc-ro.md)
